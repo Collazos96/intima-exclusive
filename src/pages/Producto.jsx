@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getProducto } from '../hooks/useApi'
 import { getProducto, registrarVisita } from '../hooks/useApi'
 
 export default function Producto() {
