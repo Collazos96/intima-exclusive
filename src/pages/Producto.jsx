@@ -130,10 +130,10 @@ export default function Producto() {
               )}
               {tab === 'tallas' && (
                 <div>
-                  <img src="https://i.ibb.co/5ZNt1P0/guia-talla.png" alt="Guía de tallas" className="w-full border border-[#D9C4A8] mb-4"/>
+                  <img src="https://images.intimaexclusive.com/GUIA-TALLAS.png" alt="Guía de tallas" className="w-full border border-[#D9C4A8] mb-4"/>
                   <p className="font-bold text-[#3A1A20] mb-2">¿Cómo saber tu talla?</p>
                   <p className="mb-3">En la parte superior de nuestros brassieres manejamos:</p>
-                  <img src="https://i.ibb.co/1YNw4rhT/tabla.png" alt="Tabla de tallas" className="w-full border border-[#D9C4A8] mb-3"/>
+                  <img src="https://images.intimaexclusive.com/tabla.png" alt="Tabla de tallas" className="w-full border border-[#D9C4A8] mb-3"/>
                   <p>La mayoría de nuestros pantys son ajustables, se gradúan a los lados y se adaptan a diferentes tallas.</p>
                 </div>
               )}
