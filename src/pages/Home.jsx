@@ -18,6 +18,11 @@ export default function Home() {
     }
     load()
   }, [])
+    if (!categorias.length) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F5EDE0]">
+      <p className="font-serif italic text-[#C4A882] text-xl">Cargando...</p>
+    </div>
+  )
 
   return (
     <main>
