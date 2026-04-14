@@ -6,6 +6,7 @@ workers_dev = true
 [vars]
 ENVIRONMENT = "production"
 
+
 [[d1_databases]]
 binding = "DB"
 database_name = "intima-exclusive-db"
