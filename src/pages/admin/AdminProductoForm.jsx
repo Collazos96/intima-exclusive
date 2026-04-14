@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { crearProducto, editarProducto, isAuthenticated } from '../../hooks/useAdmin'
 import { getCategorias, getProducto } from '../../hooks/useApi'
+import ImageUploader from '../../components/ImageUploader'
 
 const TALLAS_DISPONIBLES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL']
 
@@ -12,7 +13,7 @@ const productoVacio = {
   categoria_id: 'sets',
   nuevo: true,
   descripcion: '',
-  imagenes: [''],
+  imagenes: [],
   colores: [{ nombre: '', tallas: [] }],
 }
 
@@ -45,7 +46,7 @@ export default function AdminProductoForm() {
           categoria_id: prod.categoria_id,
           nuevo: prod.nuevo === 1,
           descripcion: prod.descripcion,
-          imagenes: prod.imagenes.length > 0 ? prod.imagenes : [''],
+          imagenes: prod.imagenes.length > 0 ? prod.imagenes : [],
           colores: prod.colores.length > 0 ? prod.colores.map(c => ({
             nombre: c.nombre,
             tallas: c.tallas,
@@ -73,7 +74,11 @@ export default function AdminProductoForm() {
 
   function eliminarImagen(index) {
     const nuevas = form.imagenes.filter((_, i) => i !== index)
-    setForm(f => ({ ...f, imagenes: nuevas.length > 0 ? nuevas : [''] }))
+    setForm(f => ({ ...f, imagenes: nuevas }))
+  }
+
+  function handleImagenSubida(url) {
+    setForm(f => ({ ...f, imagenes: [...f.imagenes, url] }))
   }
 
   function handleColorNombre(index, valor) {
@@ -154,7 +159,6 @@ export default function AdminProductoForm() {
     <main className="min-h-screen bg-[#FAF5EE] pt-[70px]">
       <div className="max-w-3xl mx-auto px-8 py-10">
 
-        {/* HEADER */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="font-serif text-2xl text-[#4E0F1C]">
@@ -171,7 +175,6 @@ export default function AdminProductoForm() {
           </button>
         </div>
 
-        {/* ALERTAS */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 font-sans text-sm px-4 py-3 mb-6">
             {error}
@@ -185,7 +188,6 @@ export default function AdminProductoForm() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
-          {/* DATOS BASICOS */}
           <div className="bg-white border border-[#D9C4A8] p-6">
             <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-[#7A5A60] mb-5 pb-3 border-b border-[#F5EDE0]">
               Datos basicos
@@ -270,36 +272,44 @@ export default function AdminProductoForm() {
               Imagenes
             </h2>
             <p className="font-sans text-[0.72rem] text-[#B09090] mb-4">
-              Ingresa las URLs de las imagenes subidas a Cloudflare R2. Formato: https://images.intimaexclusive.com/NOMBRE.jpg
+              Sube imagenes directamente o ingresa una URL de Cloudflare R2.
             </p>
+            <div className="mb-5">
+              <p className="font-sans text-[0.65rem] tracking-widest uppercase text-[#7A5A60] mb-3">Subir nueva imagen</p>
+              <ImageUploader onUpload={handleImagenSubida}/>
+            </div>
             <div className="space-y-3">
-              {form.imagenes.map((img, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <span className="font-sans text-[0.62rem] text-[#B09090] w-5">{i + 1}</span>
-                  <input
-                    type="url"
-                    value={img}
-                    onChange={e => handleImagen(i, e.target.value)}
-                    className="flex-1 border border-[#D9C4A8] px-3 py-2.5 font-sans text-sm text-[#3A1A20] outline-none focus:border-[#7B1A2E]"
-                    placeholder="https://images.intimaexclusive.com/..."
-                  />
-                  {img && (
-                    <img src={img} alt="" className="w-10 h-10 object-cover border border-[#D9C4A8]" onError={e => e.target.style.display='none'}/>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => eliminarImagen(i)}
-                    className="border border-red-200 text-red-400 px-2 py-2 font-sans text-[0.6rem] hover:bg-red-50 transition-colors">
-                    X
-                  </button>
-                </div>
-              ))}
+              <p className="font-sans text-[0.65rem] tracking-widest uppercase text-[#7A5A60] mb-2">Imagenes agregadas</p>
+              {form.imagenes.filter(i => i.trim()).length === 0 ? (
+                <p className="font-sans text-[0.72rem] text-[#B09090] italic">No hay imagenes agregadas aun.</p>
+              ) : (
+                form.imagenes.map((img, i) => (
+                  img.trim() ? (
+                    <div key={i} className="flex gap-3 items-center border border-[#F5EDE0] p-2">
+                      <span className="font-sans text-[0.62rem] text-[#B09090] w-5">{i + 1}</span>
+                      <img src={img} alt="" className="w-12 h-12 object-cover border border-[#D9C4A8]" onError={e => e.target.style.display='none'}/>
+                      <input
+                        type="url"
+                        value={img}
+                        onChange={e => handleImagen(i, e.target.value)}
+                        className="flex-1 border border-[#D9C4A8] px-3 py-2 font-sans text-[0.72rem] text-[#3A1A20] outline-none focus:border-[#7B1A2E]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => eliminarImagen(i)}
+                        className="border border-red-200 text-red-400 px-3 py-2 font-sans text-[0.6rem] tracking-widest uppercase hover:bg-red-50 transition-colors">
+                        Eliminar
+                      </button>
+                    </div>
+                  ) : null
+                ))
+              )}
             </div>
             <button
               type="button"
               onClick={agregarImagen}
               className="mt-4 border border-[#D9C4A8] text-[#7A5A60] px-4 py-2 font-sans text-[0.65rem] tracking-widest uppercase hover:border-[#7B1A2E] hover:text-[#7B1A2E] transition-colors">
-              + Agregar imagen
+              + Agregar URL manualmente
             </button>
           </div>
 
@@ -355,7 +365,6 @@ export default function AdminProductoForm() {
             </button>
           </div>
 
-          {/* SUBMIT */}
           <div className="flex gap-3 justify-end">
             <button
               type="button"
