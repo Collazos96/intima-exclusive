@@ -11,3 +11,7 @@ ENVIRONMENT = "production"
 binding = "DB"
 database_name = "intima-exclusive-db"
 database_id = "5834bd47-d068-411d-b551-0b94602e7f73"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "intima-exclusive-images"
