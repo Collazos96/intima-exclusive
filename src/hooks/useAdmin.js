@@ -61,3 +61,7 @@ export async function eliminarProducto(id) {
     method: 'DELETE',
   })
 }
+
+export async function getAnalytics() {
+  return authFetch('/api/admin/analytics')
+}
