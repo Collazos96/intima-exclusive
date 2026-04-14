@@ -19,3 +19,11 @@ export async function getProducto(id) {
   const res = await fetch(`${API}/api/productos/${id}`)
   return res.json()
 }
+
+export async function registrarVisita(id) {
+  try {
+    await fetch(`${API}/api/visita/${id}`, { method: 'POST' })
+  } catch (err) {
+    console.error('Error registrando visita:', err)
+  }
+}

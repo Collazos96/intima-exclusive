@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getProducto } from '../hooks/useApi'
+import { getProducto, registrarVisita } from '../hooks/useApi'
 
 export default function Producto() {
   const { id } = useParams()
@@ -18,6 +19,7 @@ export default function Producto() {
       const data = await getProducto(id)
       setProd(data)
       setLoading(false)
+      await registrarVisita(id)
     }
     load()
   }, [id])

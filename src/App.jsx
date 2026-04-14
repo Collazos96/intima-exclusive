@@ -8,6 +8,7 @@ import GuiaTallas from './pages/GuiaTallas'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminPanel from './pages/admin/AdminPanel'
 import AdminProductoForm from './pages/admin/AdminProductoForm'
+import AdminAnalytics from './pages/admin/AdminAnalytics'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/admin/productos/nuevo" element={<AdminProductoForm />} />
         <Route path="/admin/productos/:id/editar" element={<AdminProductoForm />} />
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />  
         <Route path="/*" element={
           <>
             <Navbar />

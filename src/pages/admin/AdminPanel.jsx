@@ -65,6 +65,11 @@ export default function AdminPanel() {
               className="border border-[#D9C4A8] text-[#7A5A60] px-6 py-2.5 font-sans text-[0.68rem] tracking-widest uppercase hover:border-[#7B1A2E] hover:text-[#7B1A2E] transition-colors">
               Cerrar sesion
             </button>
+            <button
+                onClick={() => nav('/admin/analytics')}
+                className="border border-[#D9C4A8] text-[#7A5A60] px-6 py-2.5 font-sans text-[0.68rem] tracking-widest uppercase hover:border-[#7B1A2E] hover:text-[#7B1A2E] transition-colors">
+                Analytics
+            </button>
           </div>
         </div>
 
