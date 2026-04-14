@@ -65,3 +65,10 @@ export async function eliminarProducto(id) {
 export async function getAnalytics() {
   return authFetch('/api/admin/analytics')
 }
+
+export async function actualizarStock(colorId, talla, stock) {
+  return authFetch(`/api/admin/stock/${colorId}/${talla}`, {
+    method: 'PUT',
+    body: JSON.stringify({ stock }),
+  })
+}

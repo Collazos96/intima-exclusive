@@ -31,7 +31,25 @@ export default function Producto() {
 
   if (!prod) return <div className="pt-24 text-center text-[#7A5A60]">Producto no encontrado</div>
 
-  const tallasDisp = colorSel ? (prod.colores.find(c => c.nombre === colorSel)?.tallas || []) : []
+    const tallasDisp = colorSel
+    ? (prod.colores.find(c => c.nombre === colorSel)?.tallas || [])
+    : []
+
+    function stockDeTalla(talla) {
+    if (!colorSel) return 0
+    const color = prod.colores.find(c => c.nombre === colorSel)
+    if (!color) return 0
+    const t = color.tallas.find(t => t.talla === talla)
+    return t ? t.stock : 0
+    }
+
+    function tallaDisponible(talla) {
+    if (!colorSel) return false
+    const color = prod.colores.find(c => c.nombre === colorSel)
+    if (!color) return false
+    const t = color.tallas.find(t => t.talla === talla)
+    return t && t.stock > 0
+    }
   const formatPrecio = (p) => '$' + p.toLocaleString('es-CO')
 
   function pedir() {
@@ -84,19 +102,33 @@ export default function Producto() {
             Talla — <strong>{tallaSel || 'Selecciona una talla'}</strong>
           </span>
           <div className="flex gap-2 flex-wrap mb-2">
-            {['S','M','L','XL'].map(t => {
-              const disp = tallasDisp.includes(t)
-              return (
-                <button key={t} onClick={() => disp && setTallaSel(t)} disabled={!disp}
-                  className={`w-11 h-11 font-sans text-[0.78rem] border-2 transition-all flex items-center justify-center
+            {['XS','S','M','L','XL','2XL','3XL','4XL'].map(t => {
+                const existe = tallasDisp.some(td => (typeof td === 'string' ? td : td.talla) === t)
+                const disponible = tallaDisponible(t)
+                const stock = stockDeTalla(t)
+                if (!existe) return null
+                return (
+                <button key={t}
+                    onClick={() => disponible && setTallaSel(t)}
+                    disabled={!disponible}
+                    title={disponible ? `${stock} unidades disponibles` : 'Agotado'}
+                    className={`w-11 h-11 font-sans text-[0.78rem] border-2 transition-all flex items-center justify-center relative
                     ${tallaSel === t ? 'border-[#7B1A2E] bg-[#7B1A2E] text-[#F5EDE0]' :
-                    disp ? 'border-[#D9C4A8] text-[#3A1A20] hover:border-[#7B1A2E]' :
+                    disponible ? 'border-[#D9C4A8] text-[#3A1A20] hover:border-[#7B1A2E]' :
                     'border-[#D9C4A8] text-[#B09090] opacity-30 cursor-not-allowed line-through'}`}>
-                  {t}
+                    {t}
+                    {disponible && stock <= 3 && tallaSel !== t && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
+                    )}
                 </button>
-              )
+                )
             })}
-          </div>
+            </div>
+            {tallaSel && stockDeTalla(tallaSel) <= 3 && stockDeTalla(tallaSel) > 0 && (
+            <p className="font-sans text-[0.7rem] text-amber-600 mb-2">
+                Quedan pocas unidades de esta talla.
+            </p>
+            )}
           <button onClick={() => nav('/guia-tallas')} className="font-sans text-[0.7rem] text-[#7B1A2E] underline mb-5 block">
             Guía de tallas →
           </button>

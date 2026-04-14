@@ -47,23 +47,6 @@ export default {
       )
       return new Response(JSON.stringify(productosConImagenes), { headers: corsHeaders })
     }
-    // Registro de visita al ver un producto
-    if (path.startsWith('/api/visita/') && request.method === 'POST') {
-        const id = path.split('/')[3]
-        const ua = request.headers.get('user-agent') || ''
-        const dispositivo = /mobile/i.test(ua) ? 'movil' : 'escritorio'
-        const fecha = new Date().toISOString().split('T')[0]
-
-        try {
-            await env.DB.prepare(
-            'INSERT INTO visitas (producto_id, fecha, dispositivo) VALUES (?, ?, ?)'
-            ).bind(id, fecha, dispositivo).run()
-        } catch (err) {
-            console.error('Error registrando visita:', err)
-        }
-
-        return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })
-    }
 
     if (path.startsWith('/api/productos/') && !path.includes('/admin/')) {
       const id = path.split('/')[3]
@@ -82,9 +65,9 @@ export default {
       const coloresConTallas = await Promise.all(
         colores.results.map(async (c) => {
           const tallas = await env.DB.prepare(
-            'SELECT talla FROM tallas WHERE color_id = ?'
+            'SELECT talla, stock FROM tallas WHERE color_id = ?'
           ).bind(c.id).all()
-          return { ...c, tallas: tallas.results.map(t => t.talla) }
+          return { ...c, tallas: tallas.results.map(t => ({ talla: t.talla, stock: t.stock })) }
         })
       )
 
@@ -111,6 +94,21 @@ export default {
       return new Response(JSON.stringify(productosConImagenes), { headers: corsHeaders })
     }
 
+    if (path.startsWith('/api/visita/') && request.method === 'POST') {
+      const id = path.split('/')[3]
+      const ua = request.headers.get('user-agent') || ''
+      const dispositivo = /mobile/i.test(ua) ? 'movil' : 'escritorio'
+      const fecha = new Date().toISOString().split('T')[0]
+      try {
+        await env.DB.prepare(
+          'INSERT INTO visitas (producto_id, fecha, dispositivo) VALUES (?, ?, ?)'
+        ).bind(id, fecha, dispositivo).run()
+      } catch (err) {
+        console.error('Error registrando visita:', err)
+      }
+      return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })
+    }
+
     // ==================
     // RUTAS ADMIN
     // ==================
@@ -131,57 +129,15 @@ export default {
           const coloresConTallas = await Promise.all(
             colores.results.map(async (c) => {
               const tallas = await env.DB.prepare(
-                'SELECT talla FROM tallas WHERE color_id = ?'
+                'SELECT talla, stock FROM tallas WHERE color_id = ?'
               ).bind(c.id).all()
-              return { ...c, tallas: tallas.results.map(t => t.talla) }
+              return { ...c, tallas: tallas.results }
             })
           )
           return { ...p, imagenes: imagenes.results, colores: coloresConTallas }
         })
       )
       return new Response(JSON.stringify(productosCompletos), { headers: corsHeaders })
-    }
-
-    // GET /api/admin/analytics
-    if (path === '/api/admin/analytics' && request.method === 'GET') {
-        const totalVisitas = await env.DB.prepare(
-            'SELECT COUNT(*) as total FROM visitas'
-        ).first()
-
-        const visitasHoy = await env.DB.prepare(
-            'SELECT COUNT(*) as total FROM visitas WHERE fecha = ?'
-        ).bind(new Date().toISOString().split('T')[0]).first()
-
-        const productosMasVistos = await env.DB.prepare(`
-            SELECT p.id, p.nombre, p.categoria_id, COUNT(v.id) as visitas
-            FROM productos p
-            LEFT JOIN visitas v ON p.id = v.producto_id
-            GROUP BY p.id
-            ORDER BY visitas DESC
-            LIMIT 10
-        `).all()
-
-        const visitasPorDia = await env.DB.prepare(`
-            SELECT fecha, COUNT(*) as total
-            FROM visitas
-            WHERE fecha >= date('now', '-30 days')
-            GROUP BY fecha
-            ORDER BY fecha ASC
-        `).all()
-
-        const visitasPorDispositivo = await env.DB.prepare(`
-            SELECT dispositivo, COUNT(*) as total
-            FROM visitas
-            GROUP BY dispositivo
-        `).all()
-
-        return new Response(JSON.stringify({
-            totalVisitas: totalVisitas.total,
-            visitasHoy: visitasHoy.total,
-            productosMasVistos: productosMasVistos.results,
-            visitasPorDia: visitasPorDia.results,
-            visitasPorDispositivo: visitasPorDispositivo.results,
-        }), { headers: corsHeaders })
     }
 
     // POST /api/admin/productos
@@ -204,10 +160,12 @@ export default {
           'INSERT INTO colores (producto_id, nombre) VALUES (?, ?)'
         ).bind(id, color.nombre).run()
         const colorId = colorResult.meta.last_row_id
-        for (const talla of color.tallas) {
+        for (const t of color.tallas) {
+          const talla = typeof t === 'string' ? t : t.talla
+          const stock = typeof t === 'object' ? (t.stock ?? 10) : 10
           await env.DB.prepare(
-            'INSERT INTO tallas (color_id, talla) VALUES (?, ?)'
-          ).bind(colorId, talla).run()
+            'INSERT INTO tallas (color_id, talla, stock) VALUES (?, ?, ?)'
+          ).bind(colorId, talla, stock).run()
         }
       }
 
@@ -244,10 +202,12 @@ export default {
           'INSERT INTO colores (producto_id, nombre) VALUES (?, ?)'
         ).bind(id, color.nombre).run()
         const colorId = colorResult.meta.last_row_id
-        for (const talla of color.tallas) {
+        for (const t of color.tallas) {
+          const talla = typeof t === 'string' ? t : t.talla
+          const stock = typeof t === 'object' ? (t.stock ?? 10) : 10
           await env.DB.prepare(
-            'INSERT INTO tallas (color_id, talla) VALUES (?, ?)'
-          ).bind(colorId, talla).run()
+            'INSERT INTO tallas (color_id, talla, stock) VALUES (?, ?, ?)'
+          ).bind(colorId, talla, stock).run()
         }
       }
 
@@ -256,32 +216,88 @@ export default {
 
     // DELETE /api/admin/productos/:id
     if (path.startsWith('/api/admin/productos/') && request.method === 'DELETE') {
-        const id = path.split('/')[4]
+      const id = path.split('/')[4]
 
-        const imagenes = await env.DB.prepare(
-            'SELECT url FROM imagenes WHERE producto_id = ?'
-        ).bind(id).all()
-
-        for (const img of imagenes.results) {
-            const nombreArchivo = img.url.split('/').pop()
-            try {
-            await env.IMAGES.delete(nombreArchivo)
-            } catch (err) {
-            console.error('Error eliminando imagen de R2:', nombreArchivo, err)
-            }
+      const imagenes = await env.DB.prepare(
+        'SELECT url FROM imagenes WHERE producto_id = ?'
+      ).bind(id).all()
+      for (const img of imagenes.results) {
+        const nombreArchivo = img.url.split('/').pop()
+        try {
+          await env.IMAGES.delete(nombreArchivo)
+        } catch (err) {
+          console.error('Error eliminando imagen de R2:', nombreArchivo, err)
         }
+      }
 
-        const colores = await env.DB.prepare(
-            'SELECT id FROM colores WHERE producto_id = ?'
-        ).bind(id).all()
-        for (const c of colores.results) {
-            await env.DB.prepare('DELETE FROM tallas WHERE color_id = ?').bind(c.id).run()
-        }
-        await env.DB.prepare('DELETE FROM colores WHERE producto_id = ?').bind(id).run()
-        await env.DB.prepare('DELETE FROM imagenes WHERE producto_id = ?').bind(id).run()
-        await env.DB.prepare('DELETE FROM productos WHERE id = ?').bind(id).run()
+      const colores = await env.DB.prepare(
+        'SELECT id FROM colores WHERE producto_id = ?'
+      ).bind(id).all()
+      for (const c of colores.results) {
+        await env.DB.prepare('DELETE FROM tallas WHERE color_id = ?').bind(c.id).run()
+      }
+      await env.DB.prepare('DELETE FROM colores WHERE producto_id = ?').bind(id).run()
+      await env.DB.prepare('DELETE FROM imagenes WHERE producto_id = ?').bind(id).run()
+      await env.DB.prepare('DELETE FROM productos WHERE id = ?').bind(id).run()
 
-        return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })
+      return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })
+    }
+
+    // PUT /api/admin/stock/:colorId/:talla
+    if (path.startsWith('/api/admin/stock/') && request.method === 'PUT') {
+      const partes = path.split('/')
+      const colorId = partes[4]
+      const talla = partes[5]
+      const body = await request.json()
+      const { stock } = body
+
+      await env.DB.prepare(
+        'UPDATE tallas SET stock = ? WHERE color_id = ? AND talla = ?'
+      ).bind(stock, colorId, talla).run()
+
+      return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })
+    }
+
+    // GET /api/admin/analytics
+    if (path === '/api/admin/analytics' && request.method === 'GET') {
+      const totalVisitas = await env.DB.prepare(
+        'SELECT COUNT(*) as total FROM visitas'
+      ).first()
+
+      const visitasHoy = await env.DB.prepare(
+        'SELECT COUNT(*) as total FROM visitas WHERE fecha = ?'
+      ).bind(new Date().toISOString().split('T')[0]).first()
+
+      const productosMasVistos = await env.DB.prepare(`
+        SELECT p.id, p.nombre, p.categoria_id, COUNT(v.id) as visitas
+        FROM productos p
+        LEFT JOIN visitas v ON p.id = v.producto_id
+        GROUP BY p.id
+        ORDER BY visitas DESC
+        LIMIT 10
+      `).all()
+
+      const visitasPorDia = await env.DB.prepare(`
+        SELECT fecha, COUNT(*) as total
+        FROM visitas
+        WHERE fecha >= date('now', '-30 days')
+        GROUP BY fecha
+        ORDER BY fecha ASC
+      `).all()
+
+      const visitasPorDispositivo = await env.DB.prepare(`
+        SELECT dispositivo, COUNT(*) as total
+        FROM visitas
+        GROUP BY dispositivo
+      `).all()
+
+      return new Response(JSON.stringify({
+        totalVisitas: totalVisitas.total,
+        visitasHoy: visitasHoy.total,
+        productosMasVistos: productosMasVistos.results,
+        visitasPorDia: visitasPorDia.results,
+        visitasPorDispositivo: visitasPorDispositivo.results,
+      }), { headers: corsHeaders })
     }
 
     // POST /api/admin/imagenes/upload
@@ -313,7 +329,6 @@ export default {
       const urlPublica = `https://images.intimaexclusive.com/${nombreArchivo}`
       return new Response(JSON.stringify({ ok: true, url: urlPublica }), { headers: corsHeaders })
     }
-
 
     return new Response(JSON.stringify({ error: 'Ruta no encontrada' }), {
       status: 404,

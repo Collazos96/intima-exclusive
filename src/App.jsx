@@ -9,6 +9,7 @@ import AdminLogin from './pages/admin/AdminLogin'
 import AdminPanel from './pages/admin/AdminPanel'
 import AdminProductoForm from './pages/admin/AdminProductoForm'
 import AdminAnalytics from './pages/admin/AdminAnalytics'
+import AdminInventario from './pages/admin/AdminInventario'
 
 function App() {
   return (
