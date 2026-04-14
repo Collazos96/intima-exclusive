@@ -1,0 +1,12 @@
+name = "intima-exclusive-api"
+main = "worker/index.js"
+compatibility_date = "2026-04-14"
+workers_dev = true
+
+[vars]
+ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "intima-exclusive-db"
+database_id = "5834bd47-d068-411d-b551-0b94602e7f73"
