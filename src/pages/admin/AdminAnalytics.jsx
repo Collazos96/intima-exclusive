@@ -18,6 +18,9 @@ export default function AdminAnalytics() {
       setLoading(false)
     }
     cargar()
+    const intervalo = setInterval(cargar, 600000) // Actualizar cada 10 minutos (600,000 ms)
+
+    return () => clearInterval(intervalo)
   }, [])
 
   if (loading) return (
