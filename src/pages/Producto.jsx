@@ -129,7 +129,7 @@ export default function Producto() {
               )}
               {tab === 'tallas' && (
                 <div>
-                  <img src="https://images.intimaexclusive.com/guia-talla.png" alt="Guía de tallas" className="w-full border border-[#D9C4A8] mb-4"/>
+                  <img src="https://images.intimaexclusive.com/GUIA-TALLAS.png" alt="Guía de tallas" className="w-full border border-[#D9C4A8] mb-4"/>
                   <p className="font-bold text-[#3A1A20] mb-2">¿Cómo saber tu talla?</p>
                   <p className="mb-3">En la parte superior de nuestros brassieres manejamos:</p>
                   <img src="https://images.intimaexclusive.com/tabla.png" alt="Tabla de tallas" className="w-full border border-[#D9C4A8] mb-3"/>
