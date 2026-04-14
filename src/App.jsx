@@ -19,7 +19,8 @@ function App() {
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/admin/productos/nuevo" element={<AdminProductoForm />} />
         <Route path="/admin/productos/:id/editar" element={<AdminProductoForm />} />
-        <Route path="/admin/analytics" element={<AdminAnalytics />} />  
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />
+        <Route path="/admin/inventario" element={<AdminInventario />} />
         <Route path="/*" element={
           <>
             <Navbar />
