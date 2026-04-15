@@ -12,6 +12,9 @@ import Categoria from './pages/Categoria'
 import Producto from './pages/Producto'
 import GuiaTallas from './pages/GuiaTallas'
 import Favoritos from './pages/Favoritos'
+import Politica from './pages/Politica'
+import Faq from './pages/Faq'
+import Nosotros from './pages/Nosotros'
 import { queryClient } from './lib/queryClient'
 
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'))
@@ -79,6 +82,9 @@ function App() {
                     <Route path="/producto/:id" element={<Producto />} />
                     <Route path="/guia-tallas" element={<GuiaTallas />} />
                     <Route path="/favoritos" element={<Favoritos />} />
+                    <Route path="/politica" element={<Politica />} />
+                    <Route path="/faq" element={<Faq />} />
+                    <Route path="/nosotros" element={<Nosotros />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Footer />

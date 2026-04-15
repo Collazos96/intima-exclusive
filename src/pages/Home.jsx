@@ -24,16 +24,50 @@ export default function Home() {
     <main id="main">
       <Seo
         path="/"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'Store',
-          name: 'Íntima Exclusive',
-          description: 'Lencería íntima premium hecha en Colombia',
-          url: 'https://intimaexclusive.com',
-          logo: 'https://images.intimaexclusive.com/LOGO-INTIMA.jpg',
-          areaServed: { '@type': 'Country', name: 'Colombia' },
-          sameAs: ['https://www.instagram.com/intima_exclusive'],
-        }}
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Store',
+            name: 'Íntima Exclusive',
+            description: 'Lencería íntima premium hecha con amor en Colombia. Sets, corsets, bodys y accesorios. Tallas XS a 4XL.',
+            url: 'https://intimaexclusive.com',
+            logo: {
+              '@type': 'ImageObject',
+              url: 'https://images.intimaexclusive.com/LOGO-INTIMA.jpg',
+            },
+            image: 'https://images.intimaexclusive.com/LOGO-INTIMA.jpg',
+            telephone: '+57-302-855-6022',
+            priceRange: '$$',
+            address: {
+              '@type': 'PostalAddress',
+              addressCountry: 'CO',
+            },
+            areaServed: { '@type': 'Country', name: 'Colombia' },
+            contactPoint: {
+              '@type': 'ContactPoint',
+              telephone: '+57-302-855-6022',
+              contactType: 'customer service',
+              availableLanguage: ['es'],
+              areaServed: 'CO',
+            },
+            sameAs: ['https://www.instagram.com/intima_exclusive'],
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'Íntima Exclusive',
+            url: 'https://intimaexclusive.com',
+            inLanguage: 'es-CO',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: {
+                '@type': 'EntryPoint',
+                urlTemplate: 'https://intimaexclusive.com/categoria/{search_term_string}',
+              },
+              'query-input': 'required name=search_term_string',
+            },
+          },
+        ]}
       />
       {/* HERO */}
       <section className="min-h-screen flex items-center justify-center text-center relative bg-cream-200 px-8 pt-20 pb-16 overflow-hidden">
@@ -154,24 +188,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TESTIMONIOS */}
-      <section className="py-20 px-8 bg-cream-100 text-center">
-        <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Ellas hablan</span>
-        <h2 className="font-serif text-[clamp(1.4rem,3vw,2.2rem)] text-wine-900 mb-1">Lo que dicen nuestras <em className="text-wine-600">clientas</em></h2>
-        <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-4xl mx-auto">
-          {[['La calidad es increíble. Me lo puse y me sentí completamente diferente — más yo que nunca.','Valentina R., Bogotá'],
-            ['Finalmente una marca que piensa en todas las tallas. Me queda como si lo hubieran hecho para mí.','Daniela M., Cali'],
-            ['El empaque es una obra de arte y la atención al cliente es top. Compré tres veces y cada vez mejor.','Sofía L., Medellín']
-          ].map(([t,n]) => (
-            <div key={n} className="p-7 border-l-2 border-wine-500 bg-cream-50 text-left">
-              <div className="text-wine-600 tracking-widest mb-3" aria-label="Calificación 5 de 5 estrellas" role="img">★★★★★</div>
-              <p className="font-sans text-[0.82rem] text-taupe-600 leading-relaxed italic mb-3">"{t}"</p>
-              <span className="font-sans text-[0.7rem] tracking-widest uppercase text-wine-600">— {n}</span>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* NEWSLETTER */}
       <section className="py-20 px-8 bg-wine-600 text-center">

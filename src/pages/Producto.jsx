@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { getProducto, registrarVisita } from '../hooks/useApi'
+import { getProducto, getReviews, registrarVisita } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
 import { useCart } from '../lib/cartStore'
 import GuiaTallasModal from '../components/GuiaTallasModal'
@@ -27,6 +27,13 @@ export default function Producto() {
   const { data: prod, isLoading, isError } = useQuery({
     queryKey: qk.producto(id),
     queryFn: () => getProducto(id),
+    enabled: !!id,
+  })
+
+  // Pre-cargamos reseñas para poder incluir aggregateRating en el JSON-LD
+  const { data: reviewsData } = useQuery({
+    queryKey: qk.reviews(id),
+    queryFn: () => getReviews(id),
     enabled: !!id,
   })
 
@@ -98,36 +105,77 @@ export default function Producto() {
 
   return (
     <main id="main" className="pt-[70px] min-h-screen">
-      <link
-        rel="preload"
-        as="image"
-        href={prod.imagenes[0]}
-        imageSrcSet={prod.imagenes[0] ? `${prod.imagenes[0]} 900w` : undefined}
-      />
+      <link rel="preload" as="image" href={prod.imagenes[0]} />
       <Seo
         title={prod.nombre}
         description={prod.descripcion ? prod.descripcion.slice(0, 160) : `${prod.nombre} — Íntima Exclusive.`}
         image={prod.imagenes[0]}
         path={`/producto/${prod.id}`}
         type="product"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'Product',
-          name: prod.nombre,
-          description: prod.descripcion,
-          image: prod.imagenes,
-          brand: { '@type': 'Brand', name: 'Íntima Exclusive' },
-          category: prod.categoria_id,
-          offers: {
-            '@type': 'Offer',
-            priceCurrency: 'COP',
-            price: prod.precio,
-            availability: stockTotal > 0
-              ? 'https://schema.org/InStock'
-              : 'https://schema.org/OutOfStock',
-            url: `https://intimaexclusive.com/producto/${prod.id}`,
-          },
-        }}
+        jsonLd={(() => {
+          const next = new Date()
+          next.setFullYear(next.getFullYear() + 1)
+          const priceValidUntil = next.toISOString().split('T')[0]
+          const productLd = {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: prod.nombre,
+            description: prod.descripcion,
+            image: prod.imagenes,
+            sku: prod.id,
+            brand: { '@type': 'Brand', name: 'Íntima Exclusive' },
+            category: prod.categoria_id,
+            offers: {
+              '@type': 'Offer',
+              priceCurrency: 'COP',
+              price: prod.precio,
+              priceValidUntil,
+              availability: stockTotal > 0
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+              itemCondition: 'https://schema.org/NewCondition',
+              url: `https://intimaexclusive.com/producto/${prod.id}`,
+              seller: { '@type': 'Organization', name: 'Íntima Exclusive' },
+              hasMerchantReturnPolicy: {
+                '@type': 'MerchantReturnPolicy',
+                applicableCountry: 'CO',
+                returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                merchantReturnDays: 30,
+                returnMethod: 'https://schema.org/ReturnByMail',
+                returnFees: 'https://schema.org/FreeReturn',
+              },
+              shippingDetails: {
+                '@type': 'OfferShippingDetails',
+                shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'CO' },
+                shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'COP' },
+                deliveryTime: {
+                  '@type': 'ShippingDeliveryTime',
+                  handlingTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 2, unitCode: 'DAY' },
+                  transitTime: { '@type': 'QuantitativeValue', minValue: 2, maxValue: 5, unitCode: 'DAY' },
+                },
+              },
+            },
+          }
+          if (reviewsData?.total > 0 && reviewsData.promedio) {
+            productLd.aggregateRating = {
+              '@type': 'AggregateRating',
+              ratingValue: reviewsData.promedio,
+              reviewCount: reviewsData.total,
+              bestRating: 5,
+              worstRating: 1,
+            }
+          }
+          const breadcrumbLd = {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://intimaexclusive.com/' },
+              { '@type': 'ListItem', position: 2, name: prod.categoria_id, item: `https://intimaexclusive.com/categoria/${prod.categoria_id}` },
+              { '@type': 'ListItem', position: 3, name: prod.nombre },
+            ],
+          }
+          return [productLd, breadcrumbLd]
+        })()}
       />
       <div className="bg-cream-200 border-b border-gold-300 px-8 py-4">
         <nav aria-label="Breadcrumb" className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400">
