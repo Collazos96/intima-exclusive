@@ -38,6 +38,25 @@ export default function Categoria() {
         title={`${cat?.nombre || 'Categoría'} — Lencería`}
         description={cat ? `${cat.nombre}: ${cat.sub}. Envío discreto a toda Colombia, cambios hasta 30 días.` : undefined}
         path={`/categoria/${id}`}
+        jsonLd={cat ? [
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://intimaexclusive.com/' },
+              { '@type': 'ListItem', position: 2, name: cat.nombre },
+            ],
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            name: `${cat.nombre} — Íntima Exclusive`,
+            description: cat.sub,
+            url: `https://intimaexclusive.com/categoria/${id}`,
+            inLanguage: 'es-CO',
+            isPartOf: { '@type': 'WebSite', url: 'https://intimaexclusive.com' },
+          },
+        ] : undefined}
       />
       <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-8">
         <nav aria-label="Breadcrumb" className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">

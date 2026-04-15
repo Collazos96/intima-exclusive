@@ -21,6 +21,9 @@ dist-ssr
 # Claude Code local config
 .claude/
 
+# Screenshots de auditoría (generados por agentes SEO)
+screenshots/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

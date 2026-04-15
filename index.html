@@ -9,11 +9,38 @@
     <link rel="apple-touch-icon" href="https://images.intimaexclusive.com/LOGO-INTIMA.jpg" />
 
     <link rel="preconnect" href="https://images.intimaexclusive.com" crossorigin />
-    <link rel="preconnect" href="https://intima-exclusive-api.juanfecolla.workers.dev" crossorigin />
+    <link rel="preconnect" href="https://api.intimaexclusive.com" crossorigin />
 
     <title>Íntima Exclusive — Lencería femenina premium hecha en Colombia</title>
     <meta name="description" content="Lencería íntima premium hecha con amor en Colombia. Sets, corsets, bodys y accesorios. Tallas XS a 4XL. Envío discreto a todo el país, cambios hasta 30 días." />
-    <link rel="canonical" href="https://intimaexclusive.com/" />
+    <!-- Canonical dinámico por ruta vía componente <Seo /> (React 19 metadata hoisting) -->
+    <!-- NO agregar canonical estático aquí; sobreescribiría el canonical dinámico si el bot lee el HTML antes del JS -->
+
+    <!-- Organization schema estático para que bots sin-JS (WhatsApp, Perplexity, CCBot) lo indexen -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Íntima Exclusive",
+      "url": "https://intimaexclusive.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://images.intimaexclusive.com/LOGO-INTIMA.jpg"
+      },
+      "description": "Lencería íntima premium hecha con amor en Colombia. Sets, corsets, bodys y accesorios. Tallas XS a 4XL.",
+      "areaServed": { "@type": "Country", "name": "Colombia" },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+57-302-855-6022",
+        "contactType": "customer service",
+        "areaServed": "CO",
+        "availableLanguage": ["es"]
+      },
+      "sameAs": [
+        "https://www.instagram.com/intima_exclusive"
+      ]
+    }
+    </script>
 
     <meta property="og:site_name" content="Íntima Exclusive" />
     <meta property="og:locale" content="es_CO" />
