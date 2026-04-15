@@ -332,7 +332,7 @@ export default {
           return await handleAdminStock(request, env, cors, decodeURIComponent(stockMatch[1]), decodeURIComponent(stockMatch[2]))
         }
         if (method === 'GET' && path === '/api/admin/analytics') {
-          return await handleAnalytics(env, cors)
+          return await handleAnalytics(request, env, cors)
         }
         if (method === 'POST' && path === '/api/admin/imagenes/upload') {
           return await handleUpload(request, env, cors)
@@ -669,31 +669,74 @@ async function handleAdminStock(request, env, cors, colorIdStr, talla) {
   return ok({ ok: true }, cors)
 }
 
-async function handleAnalytics(env, cors) {
-  const [totalVisitas, visitasHoy, productosMasVistos, visitasPorDia, visitasPorDispositivo] = await Promise.all([
+async function handleAnalytics(request, env, cors) {
+  const url = new URL(request.url)
+  const rangoParam = url.searchParams.get('rango') || '30d'
+  const diasMap = { '7d': 7, '30d': 30, '90d': 90 }
+  const dias = diasMap[rangoParam] || 30
+  const hoy = new Date().toISOString().split('T')[0]
+
+  const [
+    totalVisitas,
+    visitasHoy,
+    visitasRango,
+    visitasPrevio,
+    productosMasVistos,
+    visitasPorDia,
+    visitasPorDispositivo,
+    visitasPorCategoria,
+  ] = await Promise.all([
     env.DB.prepare('SELECT COUNT(*) as total FROM visitas').first(),
-    env.DB.prepare('SELECT COUNT(*) as total FROM visitas WHERE fecha = ?').bind(new Date().toISOString().split('T')[0]).first(),
+    env.DB.prepare('SELECT COUNT(*) as total FROM visitas WHERE fecha = ?').bind(hoy).first(),
+    env.DB.prepare(`SELECT COUNT(*) as total FROM visitas WHERE fecha >= date('now', ?)`).bind(`-${dias} days`).first(),
+    env.DB.prepare(`SELECT COUNT(*) as total FROM visitas WHERE fecha >= date('now', ?) AND fecha < date('now', ?)`).bind(`-${dias * 2} days`, `-${dias} days`).first(),
     env.DB.prepare(`
       SELECT p.id, p.nombre, p.categoria_id, COUNT(v.id) as visitas
       FROM productos p
-      LEFT JOIN visitas v ON p.id = v.producto_id
+      LEFT JOIN visitas v ON p.id = v.producto_id AND v.fecha >= date('now', ?)
+      WHERE p.deleted_at IS NULL
       GROUP BY p.id
       ORDER BY visitas DESC
       LIMIT 10
-    `).all(),
+    `).bind(`-${dias} days`).all(),
     env.DB.prepare(`
       SELECT fecha, COUNT(*) as total FROM visitas
-      WHERE fecha >= date('now', '-30 days')
+      WHERE fecha >= date('now', ?)
       GROUP BY fecha ORDER BY fecha ASC
-    `).all(),
-    env.DB.prepare('SELECT dispositivo, COUNT(*) as total FROM visitas GROUP BY dispositivo').all(),
+    `).bind(`-${dias} days`).all(),
+    env.DB.prepare(`
+      SELECT dispositivo, COUNT(*) as total FROM visitas
+      WHERE fecha >= date('now', ?)
+      GROUP BY dispositivo
+    `).bind(`-${dias} days`).all(),
+    env.DB.prepare(`
+      SELECT p.categoria_id as categoria, COUNT(v.id) as total
+      FROM visitas v
+      JOIN productos p ON p.id = v.producto_id
+      WHERE v.fecha >= date('now', ?)
+      GROUP BY p.categoria_id
+      ORDER BY total DESC
+    `).bind(`-${dias} days`).all(),
   ])
+
+  const prev = visitasPrevio?.total ?? 0
+  const curr = visitasRango?.total ?? 0
+  const cambio = prev === 0
+    ? (curr > 0 ? 100 : 0)
+    : Math.round(((curr - prev) / prev) * 100)
+
   return ok({
+    rango: rangoParam,
+    dias,
     totalVisitas: totalVisitas.total,
     visitasHoy: visitasHoy.total,
+    visitasRango: curr,
+    visitasPrevio: prev,
+    cambioPorcentual: cambio,
     productosMasVistos: productosMasVistos.results,
     visitasPorDia: visitasPorDia.results,
     visitasPorDispositivo: visitasPorDispositivo.results,
+    visitasPorCategoria: visitasPorCategoria.results,
   }, cors)
 }
 
