@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getAdminProductos, eliminarProducto, removeToken, isAuthenticated } from '../../hooks/useAdmin'
+import { getAdminProductos, eliminarProducto, logout, isAuthenticated } from '../../hooks/useAdmin'
 
 export default function AdminPanel() {
   const nav = useNavigate()
@@ -33,8 +33,8 @@ export default function AdminPanel() {
     await cargarProductos()
   }
 
-  function handleLogout() {
-    removeToken()
+  async function handleLogout() {
+    await logout()
     nav('/admin/login')
   }
 

@@ -1,3 +1,5 @@
+import jwt from '@tsndr/cloudflare-worker-jwt'
+
 // ===== Config =====
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://intimaexclusive.com',
@@ -5,6 +7,10 @@ const DEFAULT_ALLOWED_ORIGINS = [
 ]
 const SITE_BASE = 'https://intimaexclusive.com'
 const IMAGES_PUBLIC_BASE = 'https://images.intimaexclusive.com'
+
+const COOKIE_AUTH = 'intima_admin'       // httpOnly, contiene JWT
+const COOKIE_HINT = 'intima_admin_hint'  // legible por JS, solo flag
+const JWT_TTL_SECONDS = 60 * 60 * 8      // 8 horas
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
@@ -36,6 +42,7 @@ function buildCorsHeaders(request, env) {
   }
   if (origin && (allowed.includes(origin) || (isDev && /^https?:\/\/localhost(:\d+)?$/.test(origin)))) {
     headers['Access-Control-Allow-Origin'] = origin
+    headers['Access-Control-Allow-Credentials'] = 'true'
   }
   return headers
 }
@@ -54,10 +61,57 @@ const tooMany = (cors, retryAfter) => {
 const serverError = (cors) => json({ error: 'Error interno' }, 500, cors)
 const notFound = (cors) => json({ error: 'Ruta no encontrada' }, 404, cors)
 
-function isAdmin(request, env) {
+function parseCookies(header) {
+  const out = {}
+  if (!header) return out
+  for (const part of header.split(';')) {
+    const idx = part.indexOf('=')
+    if (idx === -1) continue
+    const k = part.slice(0, idx).trim()
+    const v = part.slice(idx + 1).trim()
+    if (k) out[k] = decodeURIComponent(v)
+  }
+  return out
+}
+
+async function isAdmin(request, env) {
+  // 1) JWT en cookie httpOnly
+  const cookies = parseCookies(request.headers.get('Cookie'))
+  const token = cookies[COOKIE_AUTH]
+  if (token) {
+    try {
+      const valido = await jwt.verify(token, env.ADMIN_TOKEN)
+      if (valido) return true
+    } catch { /* token invalido */ }
+  }
+  // 2) Legacy: Authorization Bearer = ADMIN_TOKEN raw (compat transitoria)
   const auth = request.headers.get('Authorization')
-  if (!auth || !auth.startsWith('Bearer ') || !env.ADMIN_TOKEN) return false
-  return timingSafeEqual(auth.slice(7), env.ADMIN_TOKEN)
+  if (auth && auth.startsWith('Bearer ') && env.ADMIN_TOKEN) {
+    if (timingSafeEqual(auth.slice(7), env.ADMIN_TOKEN)) return true
+  }
+  return false
+}
+
+function buildAuthCookies(token, origin) {
+  const isSecure = !/^http:\/\/localhost/.test(origin || '')
+  const crossSite = !!origin && !/intimaexclusive\.com$/.test(new URL(origin).hostname)
+  const sameSite = crossSite ? 'None' : 'Lax'
+  const secureFlag = isSecure || crossSite ? '; Secure' : ''
+  return [
+    `${COOKIE_AUTH}=${token}; HttpOnly${secureFlag}; SameSite=${sameSite}; Path=/; Max-Age=${JWT_TTL_SECONDS}`,
+    `${COOKIE_HINT}=1${secureFlag}; SameSite=${sameSite}; Path=/; Max-Age=${JWT_TTL_SECONDS}`,
+  ]
+}
+
+function clearAuthCookies(origin) {
+  const isSecure = !/^http:\/\/localhost/.test(origin || '')
+  const crossSite = !!origin && !/intimaexclusive\.com$/.test(new URL(origin).hostname)
+  const sameSite = crossSite ? 'None' : 'Lax'
+  const secureFlag = isSecure || crossSite ? '; Secure' : ''
+  return [
+    `${COOKIE_AUTH}=; HttpOnly${secureFlag}; SameSite=${sameSite}; Path=/; Max-Age=0`,
+    `${COOKIE_HINT}=; ${secureFlag.trim()}; SameSite=${sameSite}; Path=/; Max-Age=0`,
+  ]
 }
 
 function timingSafeEqual(a, b) {
@@ -214,14 +268,26 @@ export default {
         return await handleCreateReview(request, env, cors, decodeURIComponent(reviewsMatch[1]))
       }
 
+      // ========== Autenticación admin (sin gate) ==========
+      if (method === 'POST' && path === '/api/admin/login') {
+        return await handleAdminLogin(request, env, cors)
+      }
+      if (method === 'POST' && path === '/api/admin/logout') {
+        return handleAdminLogout(request, cors)
+      }
+
       // ========== Rutas admin ==========
       if (path.startsWith('/api/admin/')) {
         const ip = getClientIp(request)
         const rl = await rateLimit(env, `admin-auth:${ip}`, { windowSec: 60, max: 30 })
         if (!rl.ok) return tooMany(cors, rl.retryAfter)
-        if (!isAdmin(request, env)) {
+        if (!(await isAdmin(request, env))) {
           await rateLimit(env, `admin-fail:${ip}`, { windowSec: 300, max: 10 })
           return unauthorized(cors)
+        }
+
+        if (method === 'GET' && path === '/api/admin/me') {
+          return ok({ ok: true }, cors)
         }
 
         if (method === 'GET' && path === '/api/admin/productos') {
@@ -661,6 +727,54 @@ async function handleAdminDeleteReview(env, cors, id) {
   const res = await env.DB.prepare('DELETE FROM reviews WHERE id = ?').bind(id).run()
   if (res.meta.changes === 0) return json({ error: 'No encontrada' }, 404, cors)
   return ok({ ok: true }, cors)
+}
+
+// ===== Autenticación admin (JWT + cookie) =====
+async function handleAdminLogin(request, env, cors) {
+  const ip = getClientIp(request)
+  const rl = await rateLimit(env, `admin-login:${ip}`, { windowSec: 300, max: 10 })
+  if (!rl.ok) return tooMany(cors, rl.retryAfter)
+
+  const body = await safeJson(request)
+  const password = body?.password
+  if (typeof password !== 'string' || password.length === 0) return bad('Password requerido', cors)
+  if (!env.ADMIN_TOKEN) return serverError(cors)
+
+  if (!timingSafeEqual(password, env.ADMIN_TOKEN)) {
+    await rateLimit(env, `admin-fail:${ip}`, { windowSec: 300, max: 10 })
+    return unauthorized(cors)
+  }
+
+  const now = Math.floor(Date.now() / 1000)
+  const token = await jwt.sign(
+    { sub: 'admin', iat: now, exp: now + JWT_TTL_SECONDS },
+    env.ADMIN_TOKEN,
+  )
+
+  const origin = request.headers.get('Origin')
+  const [cookieAuth, cookieHint] = buildAuthCookies(token, origin)
+
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: [
+      ...Object.entries(cors),
+      ['Set-Cookie', cookieAuth],
+      ['Set-Cookie', cookieHint],
+    ],
+  })
+}
+
+function handleAdminLogout(request, cors) {
+  const origin = request.headers.get('Origin')
+  const [cookieAuth, cookieHint] = clearAuthCookies(origin)
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: [
+      ...Object.entries(cors),
+      ['Set-Cookie', cookieAuth],
+      ['Set-Cookie', cookieHint],
+    ],
+  })
 }
 
 // ===== Sitemap =====

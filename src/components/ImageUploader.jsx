@@ -3,10 +3,6 @@ import { compressToWebp } from '../lib/imageCompress'
 
 const API = import.meta.env.VITE_API_URL || 'https://intima-exclusive-api.juanfecolla.workers.dev'
 
-function getToken() {
-  return sessionStorage.getItem('admin_token')
-}
-
 export default function ImageUploader({ onUpload }) {
   const uid = useId()
   const [subiendo, setSubiendo] = useState(false)
@@ -40,9 +36,7 @@ export default function ImageUploader({ onUpload }) {
     try {
       const res = await fetch(`${API}/api/admin/imagenes/upload`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${getToken()}`,
-        },
+        credentials: 'include',
         body: formData,
       })
 
