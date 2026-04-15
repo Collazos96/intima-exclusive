@@ -9,6 +9,9 @@ import GuiaTallasModal from '../components/GuiaTallasModal'
 import Seo from '../components/Seo'
 import Img from '../components/Img'
 import Reviews from '../components/Reviews'
+import { ProductoDetalleSkeleton } from '../components/Skeletons'
+import WishlistButton from '../components/WishlistButton'
+import ProductosRelacionados from '../components/ProductosRelacionados'
 
 export default function Producto() {
   const { id } = useParams()
@@ -32,9 +35,9 @@ export default function Producto() {
   }, [id, prod])
 
   if (isLoading) return (
-    <div className="pt-24 min-h-screen flex items-center justify-center">
-      <p className="font-serif italic text-gold-500 text-xl">Cargando...</p>
-    </div>
+    <main id="main" className="pt-[70px] min-h-screen">
+      <ProductoDetalleSkeleton />
+    </main>
   )
 
   if (isError || !prod) return <div className="pt-24 text-center text-taupe-600">Producto no encontrado</div>
@@ -223,6 +226,9 @@ export default function Producto() {
           <button onClick={pedirAhora} className="w-full bg-whatsapp-500 text-white py-3.5 font-sans text-[0.72rem] tracking-widest uppercase hover:opacity-90 transition-opacity">
             📲 Pedir solo este por WhatsApp
           </button>
+          <div className="mt-3 flex justify-center">
+            <WishlistButton producto={prod} variant="full" />
+          </div>
           <ul className="grid grid-cols-3 gap-2 mt-4 font-sans text-[0.65rem] text-taupe-600">
             <li className="flex flex-col items-center text-center gap-1 p-2 bg-cream-100 border border-gold-300">
               <span aria-hidden="true">🤫</span><span>Empaque discreto</span>
@@ -270,6 +276,7 @@ export default function Producto() {
         </div>
       </div>
       <div className="max-w-5xl mx-auto px-8 pb-16">
+        <ProductosRelacionados productoId={prod.id} />
         <Reviews productoId={prod.id} />
       </div>
       <GuiaTallasModal open={guiaAbierta} onClose={() => setGuiaAbierta(false)} />

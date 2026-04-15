@@ -4,6 +4,7 @@ import { getCategorias, getProductos } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
 import ProductCard from '../components/ProductCard'
 import Seo from '../components/Seo'
+import { CategoryGridSkeleton, ProductGridSkeleton } from '../components/Skeletons'
 
 const iconos = { sets:'🌸', corsets:'🪢', lenceria:'✨', bodys:'🎀', accesorios:'💎' }
 
@@ -13,17 +14,11 @@ export default function Home() {
     queryKey: qk.categorias,
     queryFn: getCategorias,
   })
-  const { data: productos = [] } = useQuery({
+  const { data: productos = [], isLoading: cargandoProductos } = useQuery({
     queryKey: qk.productos,
     queryFn: getProductos,
   })
   const destacados = productos.filter(p => p.nuevo === 1)
-
-  if (cargandoCategorias || !categorias.length) return (
-    <div className="min-h-screen flex items-center justify-center bg-cream-200">
-      <p className="font-serif italic text-gold-500 text-xl">Cargando...</p>
-    </div>
-  )
 
   return (
     <main id="main">
@@ -67,6 +62,7 @@ export default function Home() {
         <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Explora</span>
         <h2 className="font-serif text-[clamp(1.4rem,3vw,2.2rem)] text-wine-900 mb-1">Nuestras <em className="text-wine-600">categorías</em></h2>
         <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
+        {cargandoCategorias ? <CategoryGridSkeleton /> : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 max-w-4xl mx-auto">
           {categorias.map(c => (
             <Link
@@ -81,6 +77,7 @@ export default function Home() {
             </Link>
           ))}
         </div>
+        )}
       </section>
 
       {/* DESTACADOS */}
@@ -88,9 +85,11 @@ export default function Home() {
         <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Lo más deseado</span>
         <h2 className="font-serif text-[clamp(1.4rem,3vw,2.2rem)] text-wine-900 mb-1">Colección <em className="text-wine-600">destacada</em></h2>
         <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {destacados.map((p, i) => <ProductCard key={p.id} producto={p} priority={i < 3}/>)}
-        </div>
+        {cargandoProductos ? <ProductGridSkeleton count={3} /> : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {destacados.map((p, i) => <ProductCard key={p.id} producto={p} priority={i < 3}/>)}
+          </div>
+        )}
       </section>
 
       {/* FILOSOFÍA */}

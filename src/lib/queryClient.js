@@ -22,6 +22,7 @@ export const qk = {
   productosPorCategoria: (id) => ['productos', 'categoria', id],
   adminProductos: ['admin', 'productos'],
   analytics: ['admin', 'analytics'],
+  relacionados: (productoId) => ['relacionados', productoId],
   reviews: (productoId) => ['reviews', productoId],
   adminReviews: (estado) => ['admin', 'reviews', estado || 'all'],
 }

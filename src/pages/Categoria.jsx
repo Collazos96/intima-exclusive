@@ -4,6 +4,7 @@ import { getProductosByCategoria, getCategorias } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
 import ProductCard from '../components/ProductCard'
 import Seo from '../components/Seo'
+import { ProductGridSkeleton } from '../components/Skeletons'
 
 export default function Categoria() {
   const { id } = useParams()
@@ -20,13 +21,7 @@ export default function Categoria() {
   })
   const cat = categorias.find(c => c.id === id)
 
-  if (isLoading) return (
-    <div className="pt-24 min-h-screen flex items-center justify-center">
-      <p className="font-serif italic text-gold-500 text-xl">Cargando...</p>
-    </div>
-  )
-
-  if (!cat) return <div className="pt-24 text-center text-taupe-600">Categoría no encontrada</div>
+  if (!cat && !isLoading) return <div className="pt-24 text-center text-taupe-600">Categoría no encontrada</div>
 
   return (
     <main id="main" className="pt-[70px] min-h-screen">
@@ -38,16 +33,18 @@ export default function Categoria() {
       <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-8">
         <nav aria-label="Breadcrumb" className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">
           <Link to="/" className="text-wine-600 hover:underline focus-visible:outline-2 focus-visible:outline-wine-600">Inicio</Link>
-          {' / '}<span aria-current="page">{cat.nombre}</span>
+          {' / '}<span aria-current="page">{cat?.nombre || '...'}</span>
         </nav>
         <h1 className="font-serif text-[clamp(1.8rem,4vw,3rem)] tracking-widest uppercase text-wine-800">
-          <em className="text-wine-600">{cat.nombre}</em>
+          <em className="text-wine-600">{cat?.nombre || '...'}</em>
         </h1>
-        <p className="font-sans text-[0.85rem] text-taupe-600 mt-2">{cat.sub}</p>
+        {cat?.sub && <p className="font-sans text-[0.85rem] text-taupe-600 mt-2">{cat.sub}</p>}
         <div className="w-14 h-px bg-gold-500 mx-auto mt-4"/>
       </div>
       <div className="px-8 py-12 max-w-6xl mx-auto">
-        {prods.length > 0 ? (
+        {isLoading ? (
+          <ProductGridSkeleton count={6} />
+        ) : prods.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {prods.map(p => <ProductCard key={p.id} producto={p}/>)}
           </div>
