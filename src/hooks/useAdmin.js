@@ -97,7 +97,7 @@ export async function borrarPermanente(id) {
   return authFetch(`/api/admin/productos/${id}/permanente`, { method: 'DELETE' })
 }
 
-export const getAnalytics = () => authFetch('/api/admin/analytics')
+export const getAnalytics = (rango = '30d') => authFetch(`/api/admin/analytics?rango=${rango}`)
 
 export async function actualizarStock(colorId, talla, stock) {
   return authFetch(`/api/admin/stock/${colorId}/${talla}`, {
