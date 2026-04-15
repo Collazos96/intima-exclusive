@@ -23,19 +23,19 @@ export default function AdminLogin() {
   }
 
   return (
-    <main className="min-h-screen bg-[#FAF5EE] flex items-center justify-center px-4">
-      <div className="bg-white border border-[#D9C4A8] p-10 w-full max-w-md">
-        <h1 className="font-serif text-2xl text-[#4E0F1C] mb-2 text-center">Panel de administracion</h1>
-        <p className="font-sans text-[0.78rem] text-[#7A5A60] text-center mb-8 tracking-wide">Intima Exclusive</p>
+    <main className="min-h-screen bg-cream-100 flex items-center justify-center px-4">
+      <div className="bg-white border border-gold-300 p-10 w-full max-w-md">
+        <h1 className="font-serif text-2xl text-wine-800 mb-2 text-center">Panel de administracion</h1>
+        <p className="font-sans text-[0.78rem] text-taupe-600 text-center mb-8 tracking-wide">Intima Exclusive</p>
         <form onSubmit={handleLogin}>
-          <label className="block font-sans text-[0.68rem] tracking-widest uppercase text-[#7A5A60] mb-2">
+          <label className="block font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-2">
             Token de acceso
           </label>
           <input
             type="password"
             value={token}
             onChange={e => setToken(e.target.value)}
-            className="w-full border border-[#D9C4A8] px-4 py-3 font-sans text-sm text-[#3A1A20] outline-none focus:border-[#7B1A2E] mb-4"
+            className="w-full border border-gold-300 px-4 py-3 font-sans text-sm text-wine-900 outline-none focus:border-wine-600 mb-4"
             placeholder="Ingresa tu token"
             required
           />
@@ -45,7 +45,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#7B1A2E] text-[#F5EDE0] py-3 font-sans text-[0.72rem] tracking-widest uppercase hover:bg-[#4E0F1C] transition-colors disabled:opacity-50">
+            className="w-full bg-wine-600 text-cream-200 py-3 font-sans text-[0.72rem] tracking-widest uppercase hover:bg-wine-800 transition-colors disabled:opacity-50">
             {loading ? 'Verificando...' : 'Ingresar'}
           </button>
         </form>

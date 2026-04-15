@@ -59,7 +59,7 @@ export default function ImageUploader({ onUpload }) {
   }
 
   return (
-    <div className="border border-dashed border-[#D9C4A8] p-4 hover:border-[#7B1A2E] transition-colors">
+    <div className="border border-dashed border-gold-300 p-4 hover:border-wine-600 transition-colors">
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"
@@ -71,15 +71,15 @@ export default function ImageUploader({ onUpload }) {
       <label
         htmlFor={uid}
         className="flex flex-col items-center justify-center cursor-pointer gap-2">
-        <div className={`w-24 h-24 flex items-center justify-center border ${exito ? 'border-[#7B1A2E] bg-[#F5EDE0]' : 'border-[#D9C4A8] bg-[#F5EDE0]'}`}>
-          <span className="font-sans text-[0.6rem] text-[#B09090] text-center tracking-wide uppercase px-1">
+        <div className={`w-24 h-24 flex items-center justify-center border ${exito ? 'border-wine-600 bg-cream-200' : 'border-gold-300 bg-cream-200'}`}>
+          <span className="font-sans text-[0.6rem] text-taupe-400 text-center tracking-wide uppercase px-1">
             {subiendo ? 'Subiendo...' : exito ? 'Imagen subida' : 'Seleccionar imagen'}
           </span>
         </div>
-        <span className="font-sans text-[0.65rem] tracking-widest uppercase text-[#7A5A60]">
+        <span className="font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600">
           {subiendo ? 'Procesando...' : 'Clic para seleccionar'}
         </span>
-        <span className="font-sans text-[0.6rem] text-[#B09090]">JPG, PNG o WEBP - Max 5MB</span>
+        <span className="font-sans text-[0.6rem] text-taupe-400">JPG, PNG o WEBP - Max 5MB</span>
       </label>
       {error && (
         <p className="font-sans text-[0.7rem] text-red-500 mt-2 text-center">{error}</p>

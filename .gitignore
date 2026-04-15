@@ -15,6 +15,12 @@ dist-ssr
 .env.*
 !.env.example
 
+# Cloudflare Wrangler runtime
+.wrangler/
+
+# Claude Code local config
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
