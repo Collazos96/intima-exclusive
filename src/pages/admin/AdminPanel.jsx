@@ -75,6 +75,11 @@ export default function AdminPanel() {
                 className="border border-gold-300 text-taupe-600 px-6 py-2.5 font-sans text-[0.68rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
                 Inventario
             </button>
+            <button
+                onClick={() => nav('/admin/reviews')}
+                className="border border-gold-300 text-taupe-600 px-6 py-2.5 font-sans text-[0.68rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
+                Reseñas
+            </button>
           </div>
         </div>
 

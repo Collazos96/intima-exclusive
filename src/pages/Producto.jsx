@@ -7,6 +7,8 @@ import { qk } from '../lib/queryClient'
 import { useCart } from '../lib/cartStore'
 import GuiaTallasModal from '../components/GuiaTallasModal'
 import Seo from '../components/Seo'
+import Img from '../components/Img'
+import Reviews from '../components/Reviews'
 
 export default function Producto() {
   const { id } = useParams()
@@ -93,6 +95,12 @@ export default function Producto() {
 
   return (
     <main id="main" className="pt-[70px] min-h-screen">
+      <link
+        rel="preload"
+        as="image"
+        href={prod.imagenes[0]}
+        imageSrcSet={prod.imagenes[0] ? `${prod.imagenes[0]} 900w` : undefined}
+      />
       <Seo
         title={prod.nombre}
         description={prod.descripcion ? prod.descripcion.slice(0, 160) : `${prod.nombre} — Íntima Exclusive.`}
@@ -129,14 +137,34 @@ export default function Producto() {
       <div className="max-w-5xl mx-auto px-8 py-10 grid grid-cols-1 lg:grid-cols-[72px_1fr_1fr] gap-6 items-start">
         <div className="flex lg:flex-col flex-row gap-2 order-2 lg:order-1">
           {prod.imagenes.map((src, i) => (
-            <img key={i} src={src} alt={`${prod.nombre} ${i+1}`}
+            <button
+              key={i}
+              type="button"
               onClick={() => setMainImg(i)}
-              className={`w-16 h-16 object-cover cursor-pointer border-2 transition-all ${mainImg === i ? 'border-wine-600 opacity-100' : 'border-transparent opacity-60 hover:opacity-100'}`}
-            />
+              aria-label={`Ver foto ${i + 1} de ${prod.imagenes.length}`}
+              aria-current={mainImg === i}
+              className={`block border-2 transition-all focus-visible:outline-2 focus-visible:outline-wine-600 focus-visible:outline-offset-2 ${mainImg === i ? 'border-wine-600 opacity-100' : 'border-transparent opacity-60 hover:opacity-100'}`}
+            >
+              <Img
+                src={src}
+                alt={`${prod.nombre} — miniatura ${i + 1}`}
+                w={128}
+                q={70}
+                className="w-16 h-16 object-cover"
+              />
+            </button>
           ))}
         </div>
         <div className="order-1 lg:order-2 border border-gold-300 overflow-hidden bg-cream-200">
-          <img src={prod.imagenes[mainImg]} alt={prod.nombre} className="w-full aspect-[3/4] object-cover"/>
+          <Img
+            src={prod.imagenes[mainImg]}
+            alt={prod.nombre}
+            priority
+            widths={[600, 900, 1200]}
+            sizes="(min-width: 1024px) 45vw, 100vw"
+            w={900}
+            className="w-full aspect-[3/4] object-cover"
+          />
         </div>
         <div className="order-3">
           {prod.nuevo === 1 && <span className="inline-block bg-wine-600 text-cream-200 font-sans text-[0.55rem] tracking-widest px-2 py-0.5 mb-3 uppercase">Nuevo</span>}
@@ -240,6 +268,9 @@ export default function Producto() {
             </div>
           </div>
         </div>
+      </div>
+      <div className="max-w-5xl mx-auto px-8 pb-16">
+        <Reviews productoId={prod.id} />
       </div>
       <GuiaTallasModal open={guiaAbierta} onClose={() => setGuiaAbierta(false)} />
     </main>

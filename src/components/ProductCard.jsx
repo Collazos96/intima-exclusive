@@ -2,14 +2,14 @@ import { Link } from 'react-router-dom'
 import Carousel from './Carousel'
 import { formatPrecio } from '../data/productos'
 
-export default function ProductCard({ producto }) {
+export default function ProductCard({ producto, priority = false }) {
   return (
     <Link
       to={`/producto/${producto.id}`}
       aria-label={`Ver detalle de ${producto.nombre}`}
       className="group block bg-cream-50 border border-gold-300 overflow-hidden hover:border-wine-500 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-wine-600 focus-visible:outline-offset-2 transition-all duration-300"
     >
-      <Carousel imagenes={producto.imagenes} nombre={producto.nombre}/>
+      <Carousel imagenes={producto.imagenes} nombre={producto.nombre} priority={priority}/>
       <div className="p-4">
         {producto.nuevo === 1 && (
           <span className="inline-block bg-wine-600 text-cream-200 font-sans text-[0.55rem] tracking-widest px-2 py-0.5 mb-2 uppercase">Nuevo</span>

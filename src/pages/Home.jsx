@@ -89,7 +89,7 @@ export default function Home() {
         <h2 className="font-serif text-[clamp(1.4rem,3vw,2.2rem)] text-wine-900 mb-1">Colección <em className="text-wine-600">destacada</em></h2>
         <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {destacados.map(p => <ProductCard key={p.id} producto={p}/>)}
+          {destacados.map((p, i) => <ProductCard key={p.id} producto={p} priority={i < 3}/>)}
         </div>
       </section>
 

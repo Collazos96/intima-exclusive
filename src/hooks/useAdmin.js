@@ -72,3 +72,21 @@ export async function actualizarStock(colorId, talla, stock) {
     body: JSON.stringify({ stock }),
   })
 }
+
+export async function getAdminReviews(estado) {
+  const query = estado ? `?estado=${estado}` : ''
+  return authFetch(`/api/admin/reviews${query}`)
+}
+
+export async function aprobarReview(id, aprobada) {
+  return authFetch(`/api/admin/reviews/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ aprobada }),
+  })
+}
+
+export async function eliminarReview(id) {
+  return authFetch(`/api/admin/reviews/${id}`, {
+    method: 'DELETE',
+  })
+}
