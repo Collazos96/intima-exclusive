@@ -1,5 +1,14 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+
+const noopStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+}
+const safeStorage = createJSONStorage(() =>
+  typeof window !== 'undefined' ? window.localStorage : noopStorage
+)
 
 export const useWishlist = create(
   persist(
@@ -34,7 +43,13 @@ export const useWishlist = create(
     }),
     {
       name: 'intima-wishlist-v1',
+      storage: safeStorage,
       partialize: (state) => ({ items: state.items }),
+      skipHydration: true,
     }
   )
 )
+
+if (typeof window !== 'undefined') {
+  useWishlist.persist.rehydrate()
+}
