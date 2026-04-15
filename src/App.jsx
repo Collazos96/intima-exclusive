@@ -18,6 +18,7 @@ const AdminPanel = lazy(() => import('./pages/admin/AdminPanel'))
 const AdminProductoForm = lazy(() => import('./pages/admin/AdminProductoForm'))
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'))
 const AdminInventario = lazy(() => import('./pages/admin/AdminInventario'))
+const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'))
 
 function AdminFallback() {
   return <div className="min-h-screen flex items-center justify-center">Cargando…</div>
@@ -54,6 +55,7 @@ function App() {
                     <Route path="productos/:id/editar" element={<ProtectedRoute><AdminProductoForm /></ProtectedRoute>} />
                     <Route path="analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
                     <Route path="inventario" element={<ProtectedRoute><AdminInventario /></ProtectedRoute>} />
+                    <Route path="reviews" element={<ProtectedRoute><AdminReviews /></ProtectedRoute>} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>

@@ -8,6 +8,7 @@ import { useCart } from '../lib/cartStore'
 import GuiaTallasModal from '../components/GuiaTallasModal'
 import Seo from '../components/Seo'
 import Img from '../components/Img'
+import Reviews from '../components/Reviews'
 
 export default function Producto() {
   const { id } = useParams()
@@ -267,6 +268,9 @@ export default function Producto() {
             </div>
           </div>
         </div>
+      </div>
+      <div className="max-w-5xl mx-auto px-8 pb-16">
+        <Reviews productoId={prod.id} />
       </div>
       <GuiaTallasModal open={guiaAbierta} onClose={() => setGuiaAbierta(false)} />
     </main>

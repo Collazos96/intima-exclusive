@@ -15,6 +15,13 @@ export const getProductos = () => fetchJson('/api/productos')
 export const getProductosByCategoria = (id) => fetchJson(`/api/categoria/${id}`)
 export const getProducto = (id) => fetchJson(`/api/productos/${id}`)
 
+export const getReviews = (productoId) => fetchJson(`/api/productos/${productoId}/reviews`)
+export const crearReview = (productoId, data) => fetchJson(`/api/productos/${productoId}/reviews`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(data),
+})
+
 export async function registrarVisita(id) {
   try {
     await fetch(`${API}/api/visita/${id}`, { method: 'POST' })

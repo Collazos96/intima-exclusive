@@ -205,6 +205,15 @@ export default {
         return await handleVisita(request, env, cors, decodeURIComponent(visitaMatch[1]))
       }
 
+      // Reseñas: publicas (listar y crear pendientes)
+      const reviewsMatch = path.match(/^\/api\/productos\/([^/]+)\/reviews$/)
+      if (reviewsMatch && method === 'GET') {
+        return await handleListReviews(env, cors, decodeURIComponent(reviewsMatch[1]))
+      }
+      if (reviewsMatch && method === 'POST') {
+        return await handleCreateReview(request, env, cors, decodeURIComponent(reviewsMatch[1]))
+      }
+
       // ========== Rutas admin ==========
       if (path.startsWith('/api/admin/')) {
         const ip = getClientIp(request)
@@ -237,6 +246,18 @@ export default {
         }
         if (method === 'POST' && path === '/api/admin/imagenes/upload') {
           return await handleUpload(request, env, cors)
+        }
+
+        // Moderacion de reseñas
+        if (method === 'GET' && path === '/api/admin/reviews') {
+          return await handleAdminListReviews(request, env, cors)
+        }
+        const adminReviewMatch = path.match(/^\/api\/admin\/reviews\/(\d+)$/)
+        if (adminReviewMatch && method === 'PUT') {
+          return await handleAdminUpdateReview(request, env, cors, Number(adminReviewMatch[1]))
+        }
+        if (adminReviewMatch && method === 'DELETE') {
+          return await handleAdminDeleteReview(env, cors, Number(adminReviewMatch[1]))
         }
       }
 
@@ -566,6 +587,80 @@ async function handleUpload(request, env, cors) {
 
 async function safeJson(request) {
   try { return await request.json() } catch { return null }
+}
+
+// ===== Reseñas =====
+async function handleListReviews(env, cors, productoId) {
+  if (!ID_RE.test(productoId)) return bad('id inválido', cors)
+  const { results } = await env.DB.prepare(
+    'SELECT id, nombre, rating, comentario, fecha FROM reviews WHERE producto_id = ? AND aprobada = 1 ORDER BY fecha DESC LIMIT 50'
+  ).bind(productoId).all()
+  const agg = await env.DB.prepare(
+    'SELECT COUNT(*) as total, AVG(rating) as promedio FROM reviews WHERE producto_id = ? AND aprobada = 1'
+  ).bind(productoId).first()
+  return ok({
+    total: agg?.total ?? 0,
+    promedio: agg?.promedio ? Math.round(agg.promedio * 10) / 10 : null,
+    reviews: results,
+  }, cors)
+}
+
+async function handleCreateReview(request, env, cors, productoId) {
+  if (!ID_RE.test(productoId)) return bad('id inválido', cors)
+  const ip = getClientIp(request)
+  const rl = await rateLimit(env, `review:${ip}`, { windowSec: 3600, max: 5 })
+  if (!rl.ok) return tooMany(cors, rl.retryAfter)
+
+  const producto = await env.DB.prepare('SELECT id FROM productos WHERE id = ?').bind(productoId).first()
+  if (!producto) return json({ error: 'Producto no encontrado' }, 404, cors)
+
+  const body = await safeJson(request)
+  if (!body || typeof body !== 'object') return bad('Body inválido', cors)
+  const { nombre, rating, comentario } = body
+
+  if (typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.length > 60) {
+    return bad('Nombre inválido (2-60 caracteres)', cors)
+  }
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return bad('Rating inválido (1-5)', cors)
+  }
+  if (typeof comentario !== 'string' || comentario.trim().length < 10 || comentario.length > 2000) {
+    return bad('Comentario inválido (10-2000 caracteres)', cors)
+  }
+
+  const fecha = new Date().toISOString()
+  await env.DB.prepare(
+    'INSERT INTO reviews (producto_id, nombre, rating, comentario, fecha, aprobada) VALUES (?, ?, ?, ?, ?, 0)'
+  ).bind(productoId, nombre.trim(), rating, comentario.trim(), fecha).run()
+
+  return ok({ ok: true, mensaje: 'Tu reseña fue enviada y será publicada tras revisión.' }, cors)
+}
+
+async function handleAdminListReviews(request, env, cors) {
+  const url = new URL(request.url)
+  const estado = url.searchParams.get('estado') // 'pendientes' | 'aprobadas' | null (todas)
+  let query = 'SELECT r.*, p.nombre as producto_nombre FROM reviews r LEFT JOIN productos p ON r.producto_id = p.id'
+  const binds = []
+  if (estado === 'pendientes') { query += ' WHERE r.aprobada = 0'; }
+  else if (estado === 'aprobadas') { query += ' WHERE r.aprobada = 1'; }
+  query += ' ORDER BY r.fecha DESC LIMIT 200'
+  const { results } = await env.DB.prepare(query).bind(...binds).all()
+  return ok(results, cors)
+}
+
+async function handleAdminUpdateReview(request, env, cors, id) {
+  const body = await safeJson(request)
+  if (!body || typeof body.aprobada !== 'boolean') return bad('aprobada debe ser boolean', cors)
+  const res = await env.DB.prepare('UPDATE reviews SET aprobada = ? WHERE id = ?')
+    .bind(body.aprobada ? 1 : 0, id).run()
+  if (res.meta.changes === 0) return json({ error: 'No encontrada' }, 404, cors)
+  return ok({ ok: true }, cors)
+}
+
+async function handleAdminDeleteReview(env, cors, id) {
+  const res = await env.DB.prepare('DELETE FROM reviews WHERE id = ?').bind(id).run()
+  if (res.meta.changes === 0) return json({ error: 'No encontrada' }, 404, cors)
+  return ok({ ok: true }, cors)
 }
 
 // ===== Sitemap =====
