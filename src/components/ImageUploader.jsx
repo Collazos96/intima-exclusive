@@ -1,6 +1,7 @@
 import { useState, useId } from 'react'
+import { compressToWebp } from '../lib/imageCompress'
 
-const API = 'https://intima-exclusive-api.juanfecolla.workers.dev'
+const API = import.meta.env.VITE_API_URL || 'https://intima-exclusive-api.juanfecolla.workers.dev'
 
 function getToken() {
   return sessionStorage.getItem('admin_token')
@@ -31,8 +32,10 @@ export default function ImageUploader({ onUpload }) {
     setExito(false)
     setSubiendo(true)
 
+    // Comprimir a WebP (<= 1600px) en el navegador antes de subir.
+    const archivoFinal = await compressToWebp(archivo)
     const formData = new FormData()
-    formData.append('file', archivo)
+    formData.append('file', archivoFinal)
 
     try {
       const res = await fetch(`${API}/api/admin/imagenes/upload`, {
