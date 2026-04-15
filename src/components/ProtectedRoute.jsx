@@ -1,5 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { isAuthenticated } from '../hooks/useAdmin'
+// Import desde lib/authFlag (módulo pequeño y sin dependencias)
+// para que el bundle público NO arrastre todo useAdmin.
+import { isAuthenticated } from '../lib/authFlag'
 
 export default function ProtectedRoute({ children }) {
   const location = useLocation()

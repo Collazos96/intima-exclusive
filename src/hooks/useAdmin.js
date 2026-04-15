@@ -1,22 +1,9 @@
+import { isAuthenticated as isAuth, setAuthFlag, clearAuthFlag } from '../lib/authFlag'
+
 const API = import.meta.env.VITE_API_URL || 'https://api.intimaexclusive.com'
 
-// Flag de UI: el auth real vive en la cookie JWT HttpOnly del API.
-// Este flag solo evita un roundtrip en cada navegación admin.
-// Si la cookie expira, el primer authFetch devuelve 401 y limpiamos el flag.
-const AUTH_FLAG = 'intima_admin_session'
-
-export function isAuthenticated() {
-  if (typeof localStorage === 'undefined') return false
-  return localStorage.getItem(AUTH_FLAG) === '1'
-}
-
-function setAuthFlag() {
-  try { localStorage.setItem(AUTH_FLAG, '1') } catch { /* noop */ }
-}
-
-function clearAuthFlag() {
-  try { localStorage.removeItem(AUTH_FLAG) } catch { /* noop */ }
-}
+// Re-exportamos para no romper otros imports.
+export const isAuthenticated = isAuth
 
 async function authFetch(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
