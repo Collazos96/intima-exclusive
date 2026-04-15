@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import TablasTallas from './TablasTallas'
 
 export default function GuiaTallasModal({ open, onClose }) {
   const closeBtnRef = useRef(null)
@@ -47,32 +49,16 @@ export default function GuiaTallasModal({ open, onClose }) {
           </button>
         </header>
 
-        <div className="px-6 py-6 font-sans text-[0.88rem] text-taupe-600 leading-relaxed">
-          <img
-            src="https://images.intimaexclusive.com/GUIA-TALLAS.png"
-            alt="Guía visual de tallas"
-            loading="lazy"
-            className="w-full border border-gold-300 mb-6"
-          />
-
-          <h3 className="font-serif text-wine-800 text-lg mb-2">¿Cómo saber tu talla?</h3>
-          <p className="mb-3">En la parte superior de nuestros brassieres manejamos:</p>
-          <img
-            src="https://images.intimaexclusive.com/tabla.png"
-            alt="Tabla de tallas"
-            loading="lazy"
-            className="w-full border border-gold-300 mb-4"
-          />
-          <p className="mb-6">
-            La mayoría de nuestros pantys son ajustables: se gradúan a los lados y
-            se adaptan cómodamente a distintas tallas.
-          </p>
-
-          <div className="bg-cream-200 border-l-2 border-wine-500 px-4 py-3">
-            <p className="font-sans text-[0.8rem] text-wine-900">
-              <strong>Tip:</strong> Si estás entre dos tallas, te recomendamos elegir la más grande
-              para mayor comodidad. ¿Dudas? Escríbenos por WhatsApp y te ayudamos.
-            </p>
+        <div className="px-6 py-6">
+          <TablasTallas compact />
+          <div className="mt-5 text-center">
+            <Link
+              to="/guia-tallas"
+              onClick={onClose}
+              className="font-sans text-[0.7rem] tracking-widest uppercase text-wine-600 underline hover:text-wine-800 transition-colors"
+            >
+              Ver guía completa con instrucciones de medición →
+            </Link>
           </div>
         </div>
       </div>
