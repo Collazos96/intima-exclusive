@@ -1,9 +1,15 @@
 import { useNavigate } from 'react-router-dom'
+import Seo from '../components/Seo'
 
 export default function GuiaTallas() {
   const nav = useNavigate()
   return (
     <main className="pt-[70px] min-h-screen">
+      <Seo
+        title="Guía de tallas"
+        description="Cómo elegir tu talla en Íntima Exclusive. Tallas XS a 4XL, guía visual de brassieres y pantys."
+        path="/guia-tallas"
+      />
       <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-8">
         <p className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">
           <span onClick={() => nav('/')} className="text-wine-600 cursor-pointer hover:underline">Inicio</span>

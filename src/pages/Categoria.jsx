@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getProductosByCategoria, getCategorias } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
 import ProductCard from '../components/ProductCard'
+import Seo from '../components/Seo'
 
 export default function Categoria() {
   const { id } = useParams()
@@ -29,6 +30,11 @@ export default function Categoria() {
 
   return (
     <main className="pt-[70px] min-h-screen">
+      <Seo
+        title={`${cat.nombre} — Lencería ${cat.nombre.toLowerCase()}`}
+        description={`${cat.nombre}: ${cat.sub}. Envío discreto a toda Colombia, cambios hasta 30 días.`}
+        path={`/categoria/${id}`}
+      />
       <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-8">
         <p className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">
           <span onClick={() => nav('/')} className="text-wine-600 cursor-pointer hover:underline">Inicio</span>

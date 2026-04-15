@@ -3,6 +3,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'https://intimaexclusive.com',
   'https://www.intimaexclusive.com',
 ]
+const SITE_BASE = 'https://intimaexclusive.com'
 const IMAGES_PUBLIC_BASE = 'https://images.intimaexclusive.com'
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -178,6 +179,11 @@ export default {
       const url = new URL(request.url)
       const path = url.pathname
       const method = request.method
+
+      // ========== Sitemap (público, sin CORS) ==========
+      if (method === 'GET' && path === '/sitemap.xml') {
+        return await handleSitemap(env)
+      }
 
       // ========== Rutas públicas ==========
       if (method === 'GET' && path === '/api/categorias') {
@@ -560,4 +566,36 @@ async function handleUpload(request, env, cors) {
 
 async function safeJson(request) {
   try { return await request.json() } catch { return null }
+}
+
+// ===== Sitemap =====
+async function handleSitemap(env) {
+  const today = new Date().toISOString().split('T')[0]
+  const [cats, prods] = await Promise.all([
+    env.DB.prepare('SELECT id FROM categorias').all(),
+    env.DB.prepare('SELECT id FROM productos').all(),
+  ])
+
+  const urls = [
+    { loc: `${SITE_BASE}/`, priority: '1.0' },
+    { loc: `${SITE_BASE}/guia-tallas`, priority: '0.5' },
+    ...cats.results.map((c) => ({ loc: `${SITE_BASE}/categoria/${c.id}`, priority: '0.8' })),
+    ...prods.results.map((p) => ({ loc: `${SITE_BASE}/producto/${p.id}`, priority: '0.7' })),
+  ]
+
+  const xml =
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    urls.map((u) =>
+      `  <url><loc>${u.loc}</loc><lastmod>${today}</lastmod><priority>${u.priority}</priority></url>`
+    ).join('\n') +
+    '\n</urlset>\n'
+
+  return new Response(xml, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  })
 }
