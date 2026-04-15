@@ -1,5 +1,16 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+
+// SSR-safe: en el servidor no existe localStorage. Usamos un noop que devuelve
+// null para que persist no crashee. La hidratación real ocurre en cliente.
+const noopStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+}
+const safeStorage = createJSONStorage(() =>
+  typeof window !== 'undefined' ? window.localStorage : noopStorage
+)
 
 // Cada línea del carrito es única por (productoId, color, talla).
 const lineKey = (item) => `${item.productoId}::${item.color}::${item.talla}`
@@ -47,9 +58,17 @@ export const useCart = create(
     }),
     {
       name: 'intima-cart-v1',
+      storage: safeStorage,
       partialize: (state) => ({ items: state.items }),
+      // Server y primer client render arrancan vacíos; rehidratamos en el efecto del cliente
+      skipHydration: true,
     }
   )
 )
+
+// Rehidratar manualmente cuando el browser ya está disponible
+if (typeof window !== 'undefined') {
+  useCart.persist.rehydrate()
+}
 
 export { lineKey }

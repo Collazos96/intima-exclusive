@@ -221,7 +221,7 @@ function sniffMime(bytes) {
 
 // ===== Router =====
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const cors = buildCorsHeaders(request, env)
 
     if (request.method === 'OPTIONS') {
@@ -304,14 +304,20 @@ export default {
           return await handleAdminListProductos(env, cors)
         }
         if (method === 'POST' && path === '/api/admin/productos') {
-          return await handleAdminCrearProducto(request, env, cors)
+          const res = await handleAdminCrearProducto(request, env, cors)
+          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          return res
         }
         const editMatch = path.match(/^\/api\/admin\/productos\/([^/]+)$/)
         if (editMatch && method === 'PUT') {
-          return await handleAdminEditarProducto(request, env, cors, decodeURIComponent(editMatch[1]))
+          const res = await handleAdminEditarProducto(request, env, cors, decodeURIComponent(editMatch[1]))
+          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          return res
         }
         if (editMatch && method === 'DELETE') {
-          return await handleAdminEliminarProducto(env, cors, decodeURIComponent(editMatch[1]))
+          const res = await handleAdminEliminarProducto(env, cors, decodeURIComponent(editMatch[1]))
+          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          return res
         }
 
         // Limpieza de R2: huérfanas (archivos en R2 sin referencia en DB)
@@ -328,11 +334,15 @@ export default {
         }
         const restaurarMatch = path.match(/^\/api\/admin\/productos\/([^/]+)\/restaurar$/)
         if (restaurarMatch && method === 'POST') {
-          return await handleAdminRestaurarProducto(env, cors, decodeURIComponent(restaurarMatch[1]))
+          const res = await handleAdminRestaurarProducto(env, cors, decodeURIComponent(restaurarMatch[1]))
+          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          return res
         }
         const permanenteMatch = path.match(/^\/api\/admin\/productos\/([^/]+)\/permanente$/)
         if (permanenteMatch && method === 'DELETE') {
-          return await handleAdminBorrarPermanente(env, cors, decodeURIComponent(permanenteMatch[1]))
+          const res = await handleAdminBorrarPermanente(env, cors, decodeURIComponent(permanenteMatch[1]))
+          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          return res
         }
 
         const stockMatch = path.match(/^\/api\/admin\/stock\/([^/]+)\/([^/]+)$/)
@@ -352,10 +362,15 @@ export default {
         }
         const adminReviewMatch = path.match(/^\/api\/admin\/reviews\/(\d+)$/)
         if (adminReviewMatch && method === 'PUT') {
-          return await handleAdminUpdateReview(request, env, cors, Number(adminReviewMatch[1]))
+          const res = await handleAdminUpdateReview(request, env, cors, Number(adminReviewMatch[1]))
+          // Aprobar/ocultar reseña afecta aggregateRating en HTML pre-renderizado
+          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          return res
         }
         if (adminReviewMatch && method === 'DELETE') {
-          return await handleAdminDeleteReview(env, cors, Number(adminReviewMatch[1]))
+          const res = await handleAdminDeleteReview(env, cors, Number(adminReviewMatch[1]))
+          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          return res
         }
       }
 
@@ -867,6 +882,23 @@ async function handleUpload(request, env, cors) {
 
 async function safeJson(request) {
   try { return await request.json() } catch { return null }
+}
+
+// ===== Re-deploy de Cloudflare Pages =====
+// Llama al Deploy Hook configurado en Pages para re-buildear el sitio
+// y regenerar el HTML pre-renderizado tras cambios de catálogo.
+//
+// Configurar PAGES_DEPLOY_HOOK como secret:
+//   wrangler secret put PAGES_DEPLOY_HOOK
+// Valor: la URL del hook (Pages → Settings → Builds → Deploy hooks → Add).
+//
+// Se llama "fire and forget" via waitUntil para no bloquear al admin.
+function triggerPagesDeploy(env, ctx) {
+  if (!env.PAGES_DEPLOY_HOOK) return
+  const promise = fetch(env.PAGES_DEPLOY_HOOK, { method: 'POST' })
+    .then((r) => console.log('Pages deploy hook:', r.status))
+    .catch((err) => console.error('Pages deploy hook failed:', err))
+  if (ctx?.waitUntil) ctx.waitUntil(promise)
 }
 
 // ===== Productos relacionados =====

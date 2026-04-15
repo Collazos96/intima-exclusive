@@ -5,7 +5,6 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Preload selectivo: critical path sí, chunks lazy de admin no.
     modulePreload: {
       polyfill: false,
       resolveDependencies(_url, deps, { hostType }) {
@@ -20,8 +19,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // React core en chunk propio: beneficia cache entre rutas.
-          // Recharts NO se separa: se bundlea dentro del chunk lazy de AdminAnalytics.
           if (!id.includes('node_modules')) return
           if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/react-router')) {
             return 'react'
@@ -29,5 +26,11 @@ export default defineConfig({
         },
       },
     },
+  },
+  // SSR-specific config
+  ssr: {
+    // Sonner usa portales y sólo importa cosas en useEffect → safe pero
+    // mejor noExternal para que Vite lo procese y lo trate como ESM consistente.
+    noExternal: ['sonner', '@tanstack/react-query'],
   },
 })
