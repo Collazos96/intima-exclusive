@@ -263,6 +263,12 @@ export default {
         return await handleVisita(request, env, cors, decodeURIComponent(visitaMatch[1]))
       }
 
+      // Productos relacionados (misma categoria, excluye el propio)
+      const relMatch = path.match(/^\/api\/productos\/([^/]+)\/relacionados$/)
+      if (method === 'GET' && relMatch) {
+        return await handleRelacionados(env, cors, decodeURIComponent(relMatch[1]))
+      }
+
       // Reseñas: publicas (listar y crear pendientes)
       const reviewsMatch = path.match(/^\/api\/productos\/([^/]+)\/reviews$/)
       if (reviewsMatch && method === 'GET') {
@@ -676,6 +682,34 @@ async function handleUpload(request, env, cors) {
 
 async function safeJson(request) {
   try { return await request.json() } catch { return null }
+}
+
+// ===== Productos relacionados =====
+async function handleRelacionados(env, cors, productoId) {
+  if (!ID_RE.test(productoId)) return bad('id inválido', cors)
+
+  const prod = await env.DB.prepare(
+    'SELECT categoria_id FROM productos WHERE id = ?'
+  ).bind(productoId).first()
+  if (!prod) return json({ error: 'No encontrado' }, 404, cors)
+
+  const { results } = await env.DB.prepare(`
+    SELECT p.*, GROUP_CONCAT(i.url, '|') AS imagenes_concat
+    FROM productos p
+    LEFT JOIN (SELECT producto_id, url, orden FROM imagenes ORDER BY orden) i
+      ON i.producto_id = p.id
+    WHERE p.categoria_id = ? AND p.id != ?
+    GROUP BY p.id
+    ORDER BY p.nuevo DESC, RANDOM()
+    LIMIT 4
+  `).bind(prod.categoria_id, productoId).all()
+
+  const productos = results.map((p) => ({
+    ...p,
+    imagenes: p.imagenes_concat ? p.imagenes_concat.split('|') : [],
+    imagenes_concat: undefined,
+  }))
+  return ok(productos, cors)
 }
 
 // ===== Reseñas =====

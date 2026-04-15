@@ -15,6 +15,7 @@ export const getProductos = () => fetchJson('/api/productos')
 export const getProductosByCategoria = (id) => fetchJson(`/api/categoria/${id}`)
 export const getProducto = (id) => fetchJson(`/api/productos/${id}`)
 
+export const getRelacionados = (productoId) => fetchJson(`/api/productos/${productoId}/relacionados`)
 export const getReviews = (productoId) => fetchJson(`/api/productos/${productoId}/reviews`)
 export const crearReview = (productoId, data) => fetchJson(`/api/productos/${productoId}/reviews`, {
   method: 'POST',

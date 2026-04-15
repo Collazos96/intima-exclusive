@@ -11,6 +11,7 @@ import Home from './pages/Home'
 import Categoria from './pages/Categoria'
 import Producto from './pages/Producto'
 import GuiaTallas from './pages/GuiaTallas'
+import Favoritos from './pages/Favoritos'
 import { queryClient } from './lib/queryClient'
 
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'))
@@ -73,6 +74,7 @@ function App() {
                     <Route path="/categoria/:id" element={<Categoria />} />
                     <Route path="/producto/:id" element={<Producto />} />
                     <Route path="/guia-tallas" element={<GuiaTallas />} />
+                    <Route path="/favoritos" element={<Favoritos />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Footer />
