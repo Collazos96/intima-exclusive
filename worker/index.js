@@ -92,25 +92,29 @@ async function isAdmin(request, env) {
   return false
 }
 
+// El API y el frontend viven en dominios distintos (workers.dev vs intimaexclusive.com),
+// así que la cookie siempre es cross-site salvo que ambos corran en localhost.
+function cookieAttrs(origin) {
+  const isLocalhost = !!origin && /^http:\/\/localhost(:\d+)?$/.test(origin)
+  if (isLocalhost) {
+    return { sameSite: 'Lax', secure: '' }
+  }
+  return { sameSite: 'None', secure: '; Secure' }
+}
+
 function buildAuthCookies(token, origin) {
-  const isSecure = !/^http:\/\/localhost/.test(origin || '')
-  const crossSite = !!origin && !/intimaexclusive\.com$/.test(new URL(origin).hostname)
-  const sameSite = crossSite ? 'None' : 'Lax'
-  const secureFlag = isSecure || crossSite ? '; Secure' : ''
+  const { sameSite, secure } = cookieAttrs(origin)
   return [
-    `${COOKIE_AUTH}=${token}; HttpOnly${secureFlag}; SameSite=${sameSite}; Path=/; Max-Age=${JWT_TTL_SECONDS}`,
-    `${COOKIE_HINT}=1${secureFlag}; SameSite=${sameSite}; Path=/; Max-Age=${JWT_TTL_SECONDS}`,
+    `${COOKIE_AUTH}=${token}; HttpOnly${secure}; SameSite=${sameSite}; Path=/; Max-Age=${JWT_TTL_SECONDS}`,
+    `${COOKIE_HINT}=1${secure}; SameSite=${sameSite}; Path=/; Max-Age=${JWT_TTL_SECONDS}`,
   ]
 }
 
 function clearAuthCookies(origin) {
-  const isSecure = !/^http:\/\/localhost/.test(origin || '')
-  const crossSite = !!origin && !/intimaexclusive\.com$/.test(new URL(origin).hostname)
-  const sameSite = crossSite ? 'None' : 'Lax'
-  const secureFlag = isSecure || crossSite ? '; Secure' : ''
+  const { sameSite, secure } = cookieAttrs(origin)
   return [
-    `${COOKIE_AUTH}=; HttpOnly${secureFlag}; SameSite=${sameSite}; Path=/; Max-Age=0`,
-    `${COOKIE_HINT}=; ${secureFlag.trim()}; SameSite=${sameSite}; Path=/; Max-Age=0`,
+    `${COOKIE_AUTH}=; HttpOnly${secure}; SameSite=${sameSite}; Path=/; Max-Age=0`,
+    `${COOKIE_HINT}=${secure}; SameSite=${sameSite}; Path=/; Max-Age=0`,
   ]
 }
 
