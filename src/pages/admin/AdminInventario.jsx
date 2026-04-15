@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { getAdminProductos, actualizarStock, isAuthenticated } from '../../hooks/useAdmin'
 
 export default function AdminInventario() {
@@ -19,9 +20,14 @@ export default function AdminInventario() {
 
   async function cargar() {
     setLoading(true)
-    const data = await getAdminProductos()
-    setProductos(data)
-    setLoading(false)
+    try {
+      const data = await getAdminProductos()
+      setProductos(data)
+    } catch (err) {
+      toast.error(err.message || 'No se pudo cargar el inventario')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleStockChange(colorId, talla, valor) {
@@ -31,21 +37,24 @@ export default function AdminInventario() {
     const key = `${colorId}-${talla}`
     setGuardando(g => ({ ...g, [key]: true }))
 
-    await actualizarStock(colorId, talla, stock)
-
-    setGuardando(g => ({ ...g, [key]: false }))
-    setExito(e => ({ ...e, [key]: true }))
-    setTimeout(() => setExito(e => ({ ...e, [key]: false })), 2000)
-
-    setProductos(prev => prev.map(p => ({
-      ...p,
-      colores: p.colores.map(c => ({
-        ...c,
-        tallas: c.id === colorId
-          ? c.tallas.map(t => t.talla === talla ? { ...t, stock } : t)
-          : c.tallas
-      }))
-    })))
+    try {
+      await actualizarStock(colorId, talla, stock)
+      setExito(e => ({ ...e, [key]: true }))
+      setTimeout(() => setExito(e => ({ ...e, [key]: false })), 2000)
+      setProductos(prev => prev.map(p => ({
+        ...p,
+        colores: p.colores.map(c => ({
+          ...c,
+          tallas: c.id === colorId
+            ? c.tallas.map(t => t.talla === talla ? { ...t, stock } : t)
+            : c.tallas
+        }))
+      })))
+    } catch (err) {
+      toast.error(err.message || 'No se pudo actualizar el stock')
+    } finally {
+      setGuardando(g => ({ ...g, [key]: false }))
+    }
   }
 
   if (loading) return (

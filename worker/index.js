@@ -563,6 +563,8 @@ async function handleAdminEliminarProducto(env, cors, id) {
     env.DB.prepare('DELETE FROM tallas WHERE color_id IN (SELECT id FROM colores WHERE producto_id = ?)').bind(id),
     env.DB.prepare('DELETE FROM colores WHERE producto_id = ?').bind(id),
     env.DB.prepare('DELETE FROM imagenes WHERE producto_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM visitas WHERE producto_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM reviews WHERE producto_id = ?').bind(id),
     env.DB.prepare('DELETE FROM productos WHERE id = ?').bind(id),
   ])
 

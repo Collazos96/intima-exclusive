@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { getAdminProductos, eliminarProducto, logout, isAuthenticated } from '../../hooks/useAdmin'
 
 export default function AdminPanel() {
@@ -7,6 +8,7 @@ export default function AdminPanel() {
   const [productos, setProductos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [eliminando, setEliminando] = useState(null)
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -18,19 +20,29 @@ export default function AdminPanel() {
 
   async function cargarProductos() {
     setLoading(true)
-    const data = await getAdminProductos()
-    if (data.error) {
-      setError('No se pudieron cargar los productos.')
-    } else {
+    setError('')
+    try {
+      const data = await getAdminProductos()
       setProductos(data)
+    } catch (err) {
+      setError(err.message || 'No se pudieron cargar los productos.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function handleEliminar(id, nombre) {
     if (!confirm(`Confirma que deseas eliminar el producto: ${nombre}`)) return
-    await eliminarProducto(id)
-    await cargarProductos()
+    setEliminando(id)
+    try {
+      await eliminarProducto(id)
+      toast.success(`"${nombre}" eliminado`)
+      await cargarProductos()
+    } catch (err) {
+      toast.error(err.message || 'No se pudo eliminar el producto')
+    } finally {
+      setEliminando(null)
+    }
   }
 
   async function handleLogout() {
@@ -166,8 +178,9 @@ export default function AdminPanel() {
                         </button>
                         <button
                           onClick={() => handleEliminar(p.id, p.nombre)}
-                          className="border border-red-200 text-red-500 px-3 py-1.5 font-sans text-[0.6rem] tracking-widest uppercase hover:bg-red-50 transition-colors">
-                          Eliminar
+                          disabled={eliminando === p.id}
+                          className="border border-red-200 text-red-500 px-3 py-1.5 font-sans text-[0.6rem] tracking-widest uppercase hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                          {eliminando === p.id ? 'Eliminando…' : 'Eliminar'}
                         </button>
                       </div>
                     </td>
