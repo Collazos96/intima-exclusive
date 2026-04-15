@@ -1,14 +1,21 @@
 const API = import.meta.env.VITE_API_URL || 'https://intima-exclusive-api.juanfecolla.workers.dev'
 
-const HINT_COOKIE = 'intima_admin_hint'
-
-function hasHintCookie() {
-  if (typeof document === 'undefined') return false
-  return document.cookie.split(';').some((c) => c.trim().startsWith(`${HINT_COOKIE}=1`))
-}
+// Flag de UI: el auth real vive en la cookie JWT HttpOnly del API.
+// Este flag solo evita un roundtrip en cada navegación admin.
+// Si la cookie expira, el primer authFetch devuelve 401 y limpiamos el flag.
+const AUTH_FLAG = 'intima_admin_session'
 
 export function isAuthenticated() {
-  return hasHintCookie()
+  if (typeof localStorage === 'undefined') return false
+  return localStorage.getItem(AUTH_FLAG) === '1'
+}
+
+function setAuthFlag() {
+  try { localStorage.setItem(AUTH_FLAG, '1') } catch { /* noop */ }
+}
+
+function clearAuthFlag() {
+  try { localStorage.removeItem(AUTH_FLAG) } catch { /* noop */ }
 }
 
 async function authFetch(path, options = {}) {
@@ -21,8 +28,7 @@ async function authFetch(path, options = {}) {
     },
   })
   if (res.status === 401) {
-    // Cookie expiró o nunca existió — limpiar hint client-side
-    document.cookie = `${HINT_COOKIE}=; Path=/; Max-Age=0`
+    clearAuthFlag()
     throw new Error('No autorizado')
   }
   if (!res.ok) {
@@ -40,7 +46,11 @@ export async function login(password) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
   })
-  if (!res.ok) throw new Error('Credenciales inválidas')
+  if (!res.ok) {
+    clearAuthFlag()
+    throw new Error('Credenciales inválidas')
+  }
+  setAuthFlag()
   return res.json()
 }
 
@@ -51,7 +61,7 @@ export async function logout() {
       credentials: 'include',
     })
   } finally {
-    document.cookie = `${HINT_COOKIE}=; Path=/; Max-Age=0`
+    clearAuthFlag()
   }
 }
 
