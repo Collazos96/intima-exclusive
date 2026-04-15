@@ -5,7 +5,9 @@ workers_dev = true
 
 [vars]
 ENVIRONMENT = "production"
-# Lista separada por comas de orígenes permitidos por CORS
+# Lista separada por comas de orígenes permitidos por CORS.
+# El API se sirve desde api.intimaexclusive.com para que las cookies
+# sean same-site con el frontend (intimaexclusive.com).
 ALLOWED_ORIGINS = "https://intimaexclusive.com,https://www.intimaexclusive.com"
 
 # ADMIN_TOKEN se configura como secret en producción:

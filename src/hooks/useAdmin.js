@@ -1,4 +1,4 @@
-const API = import.meta.env.VITE_API_URL || 'https://intima-exclusive-api.juanfecolla.workers.dev'
+const API = import.meta.env.VITE_API_URL || 'https://api.intimaexclusive.com'
 
 // Flag de UI: el auth real vive en la cookie JWT HttpOnly del API.
 // Este flag solo evita un roundtrip en cada navegación admin.
