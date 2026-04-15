@@ -314,6 +314,14 @@ export default {
           return await handleAdminEliminarProducto(env, cors, decodeURIComponent(editMatch[1]))
         }
 
+        // Limpieza de R2: huérfanas (archivos en R2 sin referencia en DB)
+        if (method === 'GET' && path === '/api/admin/r2/orphans') {
+          return await handleListOrphansR2(env, cors)
+        }
+        if (method === 'POST' && path === '/api/admin/r2/cleanup') {
+          return await handleCleanupR2(request, env, cors)
+        }
+
         // Papelera: listar, restaurar y borrado permanente
         if (method === 'GET' && path === '/api/admin/papelera') {
           return await handleAdminListPapelera(env, cors)
@@ -621,6 +629,89 @@ async function handleAdminRestaurarProducto(env, cors, id) {
   ).bind(id).run()
   if (res.meta.changes === 0) return json({ error: 'No encontrado en papelera' }, 404, cors)
   return ok({ ok: true }, cors)
+}
+
+// ===== Limpieza R2: detecta archivos sin referencia en la DB =====
+async function handleListOrphansR2(env, cors) {
+  // Paginar R2 por si hay muchos objetos
+  let cursor = undefined
+  const r2Objects = []
+  do {
+    const list = await env.IMAGES.list({ cursor, limit: 1000 })
+    r2Objects.push(...list.objects)
+    cursor = list.truncated ? list.cursor : undefined
+  } while (cursor)
+
+  // Todas las URLs referenciadas desde la tabla imagenes
+  const { results } = await env.DB.prepare('SELECT url FROM imagenes').all()
+  const keysReferenciados = new Set(
+    results
+      .map((r) => r.url.split('/').pop())
+      .filter(Boolean)
+  )
+
+  const orphans = r2Objects
+    .filter((o) => !keysReferenciados.has(o.key))
+    .map((o) => ({
+      key: o.key,
+      size: o.size,
+      uploaded: o.uploaded?.toISOString?.() || null,
+    }))
+
+  const totalSize = orphans.reduce((s, o) => s + (o.size || 0), 0)
+
+  return ok({
+    totalR2: r2Objects.length,
+    referenciadas: r2Objects.length - orphans.length,
+    orphans,
+    totalSize,
+  }, cors)
+}
+
+async function handleCleanupR2(request, env, cors) {
+  const body = await safeJson(request)
+  if (!body || !Array.isArray(body.keys) || body.keys.length === 0) {
+    return bad('Envía un array "keys" con los archivos a eliminar', cors)
+  }
+  if (body.keys.length > 500) {
+    return bad('Máximo 500 archivos por limpieza', cors)
+  }
+  // Validación: claves con caracteres seguros; evita rutas absolutas o traversal
+  const keyRe = /^[A-Za-z0-9._-]+$/
+  const invalid = body.keys.find((k) => typeof k !== 'string' || !keyRe.test(k))
+  if (invalid) return bad(`Key inválida: ${invalid}`, cors)
+
+  // Doble chequeo server-side: NO borrar si la key está referenciada en la DB
+  const { results } = await env.DB.prepare('SELECT url FROM imagenes').all()
+  const keysReferenciados = new Set(
+    results.map((r) => r.url.split('/').pop()).filter(Boolean)
+  )
+
+  const eliminadas = []
+  const protegidas = []
+  const fallidas = []
+
+  for (const key of body.keys) {
+    if (keysReferenciados.has(key)) {
+      protegidas.push(key)
+      continue
+    }
+    try {
+      await env.IMAGES.delete(key)
+      eliminadas.push(key)
+    } catch (err) {
+      console.error('R2 delete', key, err)
+      fallidas.push(key)
+    }
+  }
+
+  return ok({
+    eliminadas: eliminadas.length,
+    protegidas: protegidas.length,
+    fallidas: fallidas.length,
+    detallesProtegidas: protegidas,
+    detallesFallidas: fallidas,
+  }, cors)
 }
 
 // Hard delete: borra todas las filas y los objetos en R2. Solo se ejecuta
