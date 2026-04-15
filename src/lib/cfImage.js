@@ -2,17 +2,20 @@
  * Genera una URL optimizada usando Cloudflare Image Transformations
  * (https://developers.cloudflare.com/images/transform-images/).
  *
- * Si el zone tiene Image Transformations activas, la imagen se entrega
- * redimensionada/re-codificada. Si no, el navegador sigue el 404
- * hasta la URL original — por eso validamos el dominio antes.
+ * IMPORTANTE: Image Transformations es un add-on ($5/mes). Si no está
+ * activado en tu zona, el endpoint /cdn-cgi/image/ responde 404.
  *
- * Uso:
- *   cfImage(url, { w: 400, q: 75 })
- *   srcSet(url, [400, 800, 1200])
+ * Por eso se activa vía env flag:
+ *   VITE_ENABLE_IMAGE_TRANSFORMS=true
+ *
+ * Cuando activas Image Transformations en el dashboard de Cloudflare,
+ * pon ese flag en true y redeployea el frontend — todo queda optimizado
+ * sin tocar más código.
  */
 
 const ORIGIN_WITH_TRANSFORMS = 'https://intimaexclusive.com'
 const R2_BASE = 'https://images.intimaexclusive.com'
+const ENABLED = import.meta.env.VITE_ENABLE_IMAGE_TRANSFORMS === 'true'
 
 function buildParams({ w, h, q = 80, fmt = 'auto', fit = 'cover' }) {
   const parts = []
@@ -26,6 +29,7 @@ function buildParams({ w, h, q = 80, fmt = 'auto', fit = 'cover' }) {
 
 export function cfImage(src, opts = {}) {
   if (!src || typeof src !== 'string') return src
+  if (!ENABLED) return src
   if (!src.startsWith(R2_BASE)) return src
   const params = buildParams(opts)
   if (!params) return src
@@ -33,7 +37,10 @@ export function cfImage(src, opts = {}) {
 }
 
 export function srcSet(src, widths, opts = {}) {
+  if (!ENABLED) return undefined
   return widths
     .map((w) => `${cfImage(src, { ...opts, w })} ${w}w`)
     .join(', ')
 }
+
+export const imageTransformsEnabled = ENABLED
