@@ -87,6 +87,16 @@ export async function eliminarProducto(id) {
   })
 }
 
+export const getPapelera = () => authFetch('/api/admin/papelera')
+
+export async function restaurarProducto(id) {
+  return authFetch(`/api/admin/productos/${id}/restaurar`, { method: 'POST' })
+}
+
+export async function borrarPermanente(id) {
+  return authFetch(`/api/admin/productos/${id}/permanente`, { method: 'DELETE' })
+}
+
 export const getAnalytics = () => authFetch('/api/admin/analytics')
 
 export async function actualizarStock(colorId, talla, stock) {
