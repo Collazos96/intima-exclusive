@@ -63,6 +63,7 @@ function App() {
               path="/*"
               element={
                 <>
+                  <a href="#main" className="skip-link">Saltar al contenido principal</a>
                   <Navbar />
                   <CartDrawer />
                   <Routes>

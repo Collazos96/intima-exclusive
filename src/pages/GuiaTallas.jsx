@@ -4,7 +4,7 @@ import Seo from '../components/Seo'
 export default function GuiaTallas() {
   const nav = useNavigate()
   return (
-    <main className="pt-[70px] min-h-screen">
+    <main id="main" className="pt-[70px] min-h-screen">
       <Seo
         title="Guía de tallas"
         description="Cómo elegir tu talla en Íntima Exclusive. Tallas XS a 4XL, guía visual de brassieres y pantys."

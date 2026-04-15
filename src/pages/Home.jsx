@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getCategorias, getProductos } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
@@ -26,7 +26,7 @@ export default function Home() {
   )
 
   return (
-    <main>
+    <main id="main">
       <Seo
         path="/"
         jsonLd={{
@@ -69,13 +69,16 @@ export default function Home() {
         <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 max-w-4xl mx-auto">
           {categorias.map(c => (
-            <div key={c.id} onClick={() => nav(`/categoria/${c.id}`)}
-              className="p-8 border border-gold-300 bg-cream-100 cursor-pointer hover:border-wine-600 hover:-translate-y-1 transition-all group">
-              <span className="block text-3xl mb-3">{iconos[c.id]}</span>
+            <Link
+              key={c.id}
+              to={`/categoria/${c.id}`}
+              className="block p-8 border border-gold-300 bg-cream-100 hover:border-wine-600 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-wine-600 focus-visible:outline-offset-2 transition-all group"
+            >
+              <span className="block text-3xl mb-3" aria-hidden="true">{iconos[c.id]}</span>
               <h3 className="font-sans text-[0.75rem] tracking-widest uppercase text-wine-900 mb-1">{c.nombre}</h3>
               <p className="font-sans text-[0.7rem] text-taupe-400">{c.sub}</p>
-              <span className="block text-[0.7rem] text-wine-600 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Ver →</span>
-            </div>
+              <span aria-hidden="true" className="block text-[0.7rem] text-wine-600 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Ver →</span>
+            </Link>
           ))}
         </div>
       </section>
@@ -163,7 +166,7 @@ export default function Home() {
             ['El empaque es una obra de arte y la atención al cliente es top. Compré tres veces y cada vez mejor.','Sofía L., Medellín']
           ].map(([t,n]) => (
             <div key={n} className="p-7 border-l-2 border-wine-500 bg-cream-50 text-left">
-              <div className="text-wine-600 tracking-widest mb-3">★★★★★</div>
+              <div className="text-wine-600 tracking-widest mb-3" aria-label="Calificación 5 de 5 estrellas" role="img">★★★★★</div>
               <p className="font-sans text-[0.82rem] text-taupe-600 leading-relaxed italic mb-3">"{t}"</p>
               <span className="font-sans text-[0.7rem] tracking-widest uppercase text-wine-600">— {n}</span>
             </div>
