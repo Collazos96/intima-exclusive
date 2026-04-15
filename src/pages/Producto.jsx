@@ -4,10 +4,13 @@ import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { getProducto, registrarVisita } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
+import { useCart } from '../lib/cartStore'
 
 export default function Producto() {
   const { id } = useParams()
   const nav = useNavigate()
+  const addItem = useCart((s) => s.addItem)
+  const openCart = useCart((s) => s.open)
   const [mainImg, setMainImg] = useState(0)
   const [colorSel, setColorSel] = useState(null)
   const [tallaSel, setTallaSel] = useState(null)
@@ -52,9 +55,30 @@ export default function Producto() {
     }
   const formatPrecio = (p) => '$' + p.toLocaleString('es-CO')
 
-  function pedir() {
-    if (!colorSel) { toast.error('Por favor selecciona un color.'); return }
-    if (!tallaSel) { toast.error('Por favor selecciona una talla.'); return }
+  function validarSeleccion() {
+    if (!colorSel) { toast.error('Por favor selecciona un color.'); return false }
+    if (!tallaSel) { toast.error('Por favor selecciona una talla.'); return false }
+    return true
+  }
+
+  function agregarAlCarrito() {
+    if (!validarSeleccion()) return
+    addItem({
+      productoId: prod.id,
+      nombre: prod.nombre,
+      precio: prod.precio,
+      color: colorSel,
+      talla: tallaSel,
+      cantidad: 1,
+      imagen: prod.imagenes[0],
+    })
+    toast.success('Añadido a tu selección', {
+      action: { label: 'Ver selección', onClick: () => openCart() },
+    })
+  }
+
+  function pedirAhora() {
+    if (!validarSeleccion()) return
     const msg = `Hola! Me interesa el ${prod.nombre} 🌹\n• Color: ${colorSel}\n• Talla: ${tallaSel}\n• Precio: ${formatPrecio(prod.precio)}\n¿Está disponible?`
     window.open('https://wa.me/573028556022?text=' + encodeURIComponent(msg), '_blank')
   }
@@ -132,11 +156,11 @@ export default function Producto() {
           <button onClick={() => nav('/guia-tallas')} className="font-sans text-[0.7rem] text-wine-600 underline mb-5 block">
             Guía de tallas →
           </button>
-          <button onClick={pedir} className="w-full bg-wine-600 text-cream-200 py-4 font-sans text-[0.75rem] tracking-widest uppercase hover:bg-wine-800 transition-colors mb-3">
-            Agregar al pedido
+          <button onClick={agregarAlCarrito} className="w-full bg-wine-600 text-cream-200 py-4 font-sans text-[0.75rem] tracking-widest uppercase hover:bg-wine-800 transition-colors mb-3">
+            Añadir a mi selección
           </button>
-          <button onClick={pedir} className="w-full bg-whatsapp-500 text-white py-3.5 font-sans text-[0.72rem] tracking-widest uppercase hover:opacity-90 transition-opacity">
-            📲 Pedir por WhatsApp
+          <button onClick={pedirAhora} className="w-full bg-whatsapp-500 text-white py-3.5 font-sans text-[0.72rem] tracking-widest uppercase hover:opacity-90 transition-opacity">
+            📲 Pedir solo este por WhatsApp
           </button>
           <div className="mt-7">
             <div className="flex border-b border-gold-300">

@@ -6,6 +6,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
+import CartDrawer from './components/CartDrawer'
 import Home from './pages/Home'
 import Categoria from './pages/Categoria'
 import Producto from './pages/Producto'
@@ -63,6 +64,7 @@ function App() {
               element={
                 <>
                   <Navbar />
+                  <CartDrawer />
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/categoria/:id" element={<Categoria />} />
