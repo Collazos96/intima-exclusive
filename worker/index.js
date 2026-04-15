@@ -521,6 +521,15 @@ async function handleAdminEditarProducto(request, env, cors, id) {
   const existe = await env.DB.prepare('SELECT id FROM productos WHERE id = ?').bind(id).first()
   if (!existe) return json({ error: 'No encontrado' }, 404, cors)
 
+  // Capturamos las URLs actuales antes de reemplazar, para borrar de R2 las que queden huérfanas.
+  const previas = await env.DB.prepare(
+    'SELECT url FROM imagenes WHERE producto_id = ?'
+  ).bind(id).all()
+  const nuevas = new Set(body.imagenes)
+  const huerfanas = previas.results
+    .map((r) => r.url)
+    .filter((url) => !nuevas.has(url))
+
   // Limpiar dependientes, actualizar producto y reinsertar imágenes — todo en un batch atómico.
   const cleanupStmts = [
     env.DB.prepare('UPDATE productos SET nombre = ?, precio = ?, categoria_id = ?, nuevo = ?, descripcion = ? WHERE id = ?')
@@ -533,6 +542,14 @@ async function handleAdminEditarProducto(request, env, cors, id) {
     ),
   ]
   await env.DB.batch(cleanupStmts)
+
+  // Best-effort: borrar de R2 las imágenes que el admin quitó.
+  for (const url of huerfanas) {
+    const nombreArchivo = url.split('/').pop()
+    if (nombreArchivo) {
+      try { await env.IMAGES.delete(nombreArchivo) } catch (err) { console.error('R2 delete huérfana', err) }
+    }
+  }
 
   for (const color of body.colores) {
     const res = await env.DB.prepare(
