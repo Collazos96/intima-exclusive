@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { getProducto, registrarVisita } from '../hooks/useApi'
@@ -92,7 +92,7 @@ export default function Producto() {
   )
 
   return (
-    <main className="pt-[70px] min-h-screen">
+    <main id="main" className="pt-[70px] min-h-screen">
       <Seo
         title={prod.nombre}
         description={prod.descripcion ? prod.descripcion.slice(0, 160) : `${prod.nombre} — Íntima Exclusive.`}
@@ -119,12 +119,12 @@ export default function Producto() {
         }}
       />
       <div className="bg-cream-200 border-b border-gold-300 px-8 py-4">
-        <p className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400">
-          <span onClick={() => nav('/')} className="text-wine-600 cursor-pointer hover:underline">Inicio</span>
+        <nav aria-label="Breadcrumb" className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400">
+          <Link to="/" className="text-wine-600 hover:underline focus-visible:outline-2 focus-visible:outline-wine-600">Inicio</Link>
           {' / '}
-          <span onClick={() => nav(`/categoria/${prod.categoria_id}`)} className="text-wine-600 cursor-pointer hover:underline capitalize">{prod.categoria_id}</span>
-          {' / '}{prod.nombre}
-        </p>
+          <Link to={`/categoria/${prod.categoria_id}`} className="text-wine-600 hover:underline capitalize focus-visible:outline-2 focus-visible:outline-wine-600">{prod.categoria_id}</Link>
+          {' / '}<span aria-current="page">{prod.nombre}</span>
+        </nav>
       </div>
       <div className="max-w-5xl mx-auto px-8 py-10 grid grid-cols-1 lg:grid-cols-[72px_1fr_1fr] gap-6 items-start">
         <div className="flex lg:flex-col flex-row gap-2 order-2 lg:order-1">

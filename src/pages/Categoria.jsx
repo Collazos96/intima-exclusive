@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getProductosByCategoria, getCategorias } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
@@ -29,17 +29,17 @@ export default function Categoria() {
   if (!cat) return <div className="pt-24 text-center text-taupe-600">Categoría no encontrada</div>
 
   return (
-    <main className="pt-[70px] min-h-screen">
+    <main id="main" className="pt-[70px] min-h-screen">
       <Seo
         title={`${cat.nombre} — Lencería ${cat.nombre.toLowerCase()}`}
         description={`${cat.nombre}: ${cat.sub}. Envío discreto a toda Colombia, cambios hasta 30 días.`}
         path={`/categoria/${id}`}
       />
       <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-8">
-        <p className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">
-          <span onClick={() => nav('/')} className="text-wine-600 cursor-pointer hover:underline">Inicio</span>
-          {' / '}{cat.nombre}
-        </p>
+        <nav aria-label="Breadcrumb" className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">
+          <Link to="/" className="text-wine-600 hover:underline focus-visible:outline-2 focus-visible:outline-wine-600">Inicio</Link>
+          {' / '}<span aria-current="page">{cat.nombre}</span>
+        </nav>
         <h1 className="font-serif text-[clamp(1.8rem,4vw,3rem)] tracking-widest uppercase text-wine-800">
           <em className="text-wine-600">{cat.nombre}</em>
         </h1>
