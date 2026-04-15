@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import { getProducto, registrarVisita } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
 import { useCart } from '../lib/cartStore'
+import GuiaTallasModal from '../components/GuiaTallasModal'
+import Seo from '../components/Seo'
 
 export default function Producto() {
   const { id } = useParams()
@@ -15,6 +17,7 @@ export default function Producto() {
   const [colorSel, setColorSel] = useState(null)
   const [tallaSel, setTallaSel] = useState(null)
   const [tab, setTab] = useState('desc')
+  const [guiaAbierta, setGuiaAbierta] = useState(false)
 
   const { data: prod, isLoading, isError } = useQuery({
     queryKey: qk.producto(id),
@@ -83,8 +86,38 @@ export default function Producto() {
     window.open('https://wa.me/573028556022?text=' + encodeURIComponent(msg), '_blank')
   }
 
+  const stockTotal = prod.colores.reduce(
+    (sum, c) => sum + c.tallas.reduce((s, t) => s + (t.stock || 0), 0),
+    0,
+  )
+
   return (
     <main className="pt-[70px] min-h-screen">
+      <Seo
+        title={prod.nombre}
+        description={prod.descripcion ? prod.descripcion.slice(0, 160) : `${prod.nombre} — Íntima Exclusive.`}
+        image={prod.imagenes[0]}
+        path={`/producto/${prod.id}`}
+        type="product"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: prod.nombre,
+          description: prod.descripcion,
+          image: prod.imagenes,
+          brand: { '@type': 'Brand', name: 'Íntima Exclusive' },
+          category: prod.categoria_id,
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'COP',
+            price: prod.precio,
+            availability: stockTotal > 0
+              ? 'https://schema.org/InStock'
+              : 'https://schema.org/OutOfStock',
+            url: `https://intimaexclusive.com/producto/${prod.id}`,
+          },
+        }}
+      />
       <div className="bg-cream-200 border-b border-gold-300 px-8 py-4">
         <p className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400">
           <span onClick={() => nav('/')} className="text-wine-600 cursor-pointer hover:underline">Inicio</span>
@@ -153,7 +186,7 @@ export default function Producto() {
                 Quedan pocas unidades de esta talla.
             </p>
             )}
-          <button onClick={() => nav('/guia-tallas')} className="font-sans text-[0.7rem] text-wine-600 underline mb-5 block">
+          <button onClick={() => setGuiaAbierta(true)} className="font-sans text-[0.7rem] text-wine-600 underline mb-5 block">
             Guía de tallas →
           </button>
           <button onClick={agregarAlCarrito} className="w-full bg-wine-600 text-cream-200 py-4 font-sans text-[0.75rem] tracking-widest uppercase hover:bg-wine-800 transition-colors mb-3">
@@ -162,6 +195,17 @@ export default function Producto() {
           <button onClick={pedirAhora} className="w-full bg-whatsapp-500 text-white py-3.5 font-sans text-[0.72rem] tracking-widest uppercase hover:opacity-90 transition-opacity">
             📲 Pedir solo este por WhatsApp
           </button>
+          <ul className="grid grid-cols-3 gap-2 mt-4 font-sans text-[0.65rem] text-taupe-600">
+            <li className="flex flex-col items-center text-center gap-1 p-2 bg-cream-100 border border-gold-300">
+              <span aria-hidden="true">🤫</span><span>Empaque discreto</span>
+            </li>
+            <li className="flex flex-col items-center text-center gap-1 p-2 bg-cream-100 border border-gold-300">
+              <span aria-hidden="true">🔄</span><span>Cambios 30 días</span>
+            </li>
+            <li className="flex flex-col items-center text-center gap-1 p-2 bg-cream-100 border border-gold-300">
+              <span aria-hidden="true">🚚</span><span>Envío nacional</span>
+            </li>
+          </ul>
           <div className="mt-7">
             <div className="flex border-b border-gold-300">
               {[['desc','Descripción'],['care','Cuidados'],['tallas','Guía de tallas']].map(([k,l]) => (
@@ -197,6 +241,7 @@ export default function Producto() {
           </div>
         </div>
       </div>
+      <GuiaTallasModal open={guiaAbierta} onClose={() => setGuiaAbierta(false)} />
     </main>
   )
 }

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getCategorias, getProductos } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
 import ProductCard from '../components/ProductCard'
+import Seo from '../components/Seo'
 
 const iconos = { sets:'🌸', corsets:'🪢', lenceria:'✨', bodys:'🎀', accesorios:'💎' }
 
@@ -26,6 +27,19 @@ export default function Home() {
 
   return (
     <main>
+      <Seo
+        path="/"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Store',
+          name: 'Íntima Exclusive',
+          description: 'Lencería íntima premium hecha en Colombia',
+          url: 'https://intimaexclusive.com',
+          logo: 'https://images.intimaexclusive.com/LOGO-INTIMA.jpg',
+          areaServed: { '@type': 'Country', name: 'Colombia' },
+          sameAs: ['https://www.instagram.com/intima_exclusive'],
+        }}
+      />
       {/* HERO */}
       <section className="min-h-screen flex items-center justify-center text-center relative bg-cream-200 px-8 pt-20 pb-16 overflow-hidden">
         <div className="absolute w-[680px] h-[680px] rounded-full border border-gold-300 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-35 pointer-events-none"/>
@@ -110,6 +124,29 @@ export default function Home() {
               <span className="block font-serif italic text-wine-600 text-2xl mb-2">{n}</span>
               <h4 className="font-sans text-[0.72rem] tracking-widest uppercase text-wine-900 mb-2">{t}</h4>
               <p className="font-sans text-[0.76rem] text-taupe-600 leading-relaxed">{d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CONFIANZA */}
+      <section className="py-16 px-8 bg-cream-200 text-center border-y border-gold-300">
+        <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Tu tranquilidad</span>
+        <h2 className="font-serif text-[clamp(1.3rem,2.6vw,1.9rem)] text-wine-900 mb-1">
+          Compra con <em className="text-wine-600">confianza</em>
+        </h2>
+        <div className="w-12 h-px bg-gold-500 mx-auto my-5"/>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+          {[
+            ['🤫','Empaque discreto','Sin logos ni referencias visibles al contenido'],
+            ['🔒','Pago seguro','Tarjetas, PSE, Nequi o contra entrega'],
+            ['🔄','Cambios 30 días','Cambios por talla o color sin complicaciones'],
+            ['💬','Atención real','Te respondemos por WhatsApp en minutos'],
+          ].map(([icon, titulo, desc]) => (
+            <div key={titulo} className="p-5 bg-cream-50 border border-gold-300">
+              <span className="block text-2xl mb-2" aria-hidden="true">{icon}</span>
+              <h3 className="font-sans text-[0.72rem] tracking-widest uppercase text-wine-900 mb-1">{titulo}</h3>
+              <p className="font-sans text-[0.75rem] text-taupe-600 leading-relaxed">{desc}</p>
             </div>
           ))}
         </div>
