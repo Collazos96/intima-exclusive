@@ -313,6 +313,20 @@ export default {
         if (editMatch && method === 'DELETE') {
           return await handleAdminEliminarProducto(env, cors, decodeURIComponent(editMatch[1]))
         }
+
+        // Papelera: listar, restaurar y borrado permanente
+        if (method === 'GET' && path === '/api/admin/papelera') {
+          return await handleAdminListPapelera(env, cors)
+        }
+        const restaurarMatch = path.match(/^\/api\/admin\/productos\/([^/]+)\/restaurar$/)
+        if (restaurarMatch && method === 'POST') {
+          return await handleAdminRestaurarProducto(env, cors, decodeURIComponent(restaurarMatch[1]))
+        }
+        const permanenteMatch = path.match(/^\/api\/admin\/productos\/([^/]+)\/permanente$/)
+        if (permanenteMatch && method === 'DELETE') {
+          return await handleAdminBorrarPermanente(env, cors, decodeURIComponent(permanenteMatch[1]))
+        }
+
         const stockMatch = path.match(/^\/api\/admin\/stock\/([^/]+)\/([^/]+)$/)
         if (stockMatch && method === 'PUT') {
           return await handleAdminStock(request, env, cors, decodeURIComponent(stockMatch[1]), decodeURIComponent(stockMatch[2]))
@@ -358,6 +372,7 @@ async function handleProductos(env, cors) {
     FROM productos p
     LEFT JOIN (SELECT producto_id, url, orden FROM imagenes ORDER BY orden) i
       ON i.producto_id = p.id
+    WHERE p.deleted_at IS NULL
     GROUP BY p.id
   `).all()
   const productos = results.map((p) => ({
@@ -370,7 +385,9 @@ async function handleProductos(env, cors) {
 
 async function handleProducto(env, cors, id) {
   if (!ID_RE.test(id)) return json({ error: 'id inválido' }, 400, cors)
-  const producto = await env.DB.prepare('SELECT * FROM productos WHERE id = ?').bind(id).first()
+  const producto = await env.DB.prepare(
+    'SELECT * FROM productos WHERE id = ? AND deleted_at IS NULL'
+  ).bind(id).first()
   if (!producto) return json({ error: 'No encontrado' }, 404, cors)
 
   const [imagenes, colores] = await Promise.all([
@@ -402,17 +419,19 @@ async function handleProducto(env, cors, id) {
 async function handleCategoria(env, cors, id) {
   if (!CATEGORIA_ID_RE.test(id)) return json({ error: 'id inválido' }, 400, cors)
   const { results } = await env.DB.prepare(`
-    SELECT p.*, GROUP_CONCAT(i.url, '|') AS imagenes_concat
+    SELECT
+      p.*,
+      (SELECT GROUP_CONCAT(url, '|') FROM (SELECT url FROM imagenes WHERE producto_id = p.id ORDER BY orden)) AS imagenes_concat,
+      (SELECT GROUP_CONCAT(DISTINCT nombre) FROM colores WHERE producto_id = p.id) AS colores_concat
     FROM productos p
-    LEFT JOIN (SELECT producto_id, url, orden FROM imagenes ORDER BY orden) i
-      ON i.producto_id = p.id
-    WHERE p.categoria_id = ?
-    GROUP BY p.id
+    WHERE p.categoria_id = ? AND p.deleted_at IS NULL
   `).bind(id).all()
   const productos = results.map((p) => ({
     ...p,
     imagenes: p.imagenes_concat ? p.imagenes_concat.split('|') : [],
+    colores: p.colores_concat ? p.colores_concat.split(',') : [],
     imagenes_concat: undefined,
+    colores_concat: undefined,
   }))
   return ok(productos, cors)
 }
@@ -438,7 +457,9 @@ async function handleVisita(request, env, cors, id) {
 
 // ===== Handlers admin =====
 async function handleAdminListProductos(env, cors) {
-  const { results } = await env.DB.prepare('SELECT * FROM productos').all()
+  const { results } = await env.DB.prepare(
+    'SELECT * FROM productos WHERE deleted_at IS NULL'
+  ).all()
   const ids = results.map((p) => p.id)
   if (!ids.length) return ok([], cors)
   const ph = ids.map(() => '?').join(',')
@@ -575,10 +596,41 @@ async function handleAdminEditarProducto(request, env, cors, id) {
   return ok({ ok: true }, cors)
 }
 
+// Soft-delete: marca deleted_at. El producto desaparece del front público
+// pero se conserva la data y las imágenes para poder restaurar.
 async function handleAdminEliminarProducto(env, cors, id) {
   if (!ID_RE.test(id)) return bad('id inválido', cors)
-  const existe = await env.DB.prepare('SELECT id FROM productos WHERE id = ?').bind(id).first()
-  if (!existe) return json({ error: 'No encontrado' }, 404, cors)
+  const res = await env.DB.prepare(
+    'UPDATE productos SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL'
+  ).bind(new Date().toISOString(), id).run()
+  if (res.meta.changes === 0) return json({ error: 'No encontrado' }, 404, cors)
+  return ok({ ok: true }, cors)
+}
+
+async function handleAdminListPapelera(env, cors) {
+  const { results } = await env.DB.prepare(
+    'SELECT id, nombre, precio, categoria_id, deleted_at FROM productos WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC'
+  ).all()
+  return ok(results, cors)
+}
+
+async function handleAdminRestaurarProducto(env, cors, id) {
+  if (!ID_RE.test(id)) return bad('id inválido', cors)
+  const res = await env.DB.prepare(
+    'UPDATE productos SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL'
+  ).bind(id).run()
+  if (res.meta.changes === 0) return json({ error: 'No encontrado en papelera' }, 404, cors)
+  return ok({ ok: true }, cors)
+}
+
+// Hard delete: borra todas las filas y los objetos en R2. Solo se ejecuta
+// sobre productos que ya están en la papelera.
+async function handleAdminBorrarPermanente(env, cors, id) {
+  if (!ID_RE.test(id)) return bad('id inválido', cors)
+  const existe = await env.DB.prepare(
+    'SELECT id FROM productos WHERE id = ? AND deleted_at IS NOT NULL'
+  ).bind(id).first()
+  if (!existe) return json({ error: 'El producto debe estar en papelera primero' }, 409, cors)
 
   const imagenes = await env.DB.prepare('SELECT url FROM imagenes WHERE producto_id = ?').bind(id).all()
 
@@ -591,7 +643,6 @@ async function handleAdminEliminarProducto(env, cors, id) {
     env.DB.prepare('DELETE FROM productos WHERE id = ?').bind(id),
   ])
 
-  // Best-effort: borrar los objetos de R2 después de la transacción DB.
   for (const img of imagenes.results) {
     const nombreArchivo = img.url.split('/').pop()
     if (nombreArchivo) {
@@ -698,7 +749,7 @@ async function handleRelacionados(env, cors, productoId) {
     FROM productos p
     LEFT JOIN (SELECT producto_id, url, orden FROM imagenes ORDER BY orden) i
       ON i.producto_id = p.id
-    WHERE p.categoria_id = ? AND p.id != ?
+    WHERE p.categoria_id = ? AND p.id != ? AND p.deleted_at IS NULL
     GROUP BY p.id
     ORDER BY p.nuevo DESC, RANDOM()
     LIMIT 4
@@ -839,7 +890,7 @@ async function handleSitemap(env) {
   const today = new Date().toISOString().split('T')[0]
   const [cats, prods] = await Promise.all([
     env.DB.prepare('SELECT id FROM categorias').all(),
-    env.DB.prepare('SELECT id FROM productos').all(),
+    env.DB.prepare('SELECT id FROM productos WHERE deleted_at IS NULL').all(),
   ])
 
   const urls = [
