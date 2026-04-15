@@ -1,338 +1,563 @@
-const corsHeaders = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+// ===== Config =====
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://intimaexclusive.com',
+  'https://www.intimaexclusive.com',
+]
+const IMAGES_PUBLIC_BASE = 'https://images.intimaexclusive.com'
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5 MB
+const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp'])
+
+// Magic bytes para validar que el archivo es realmente una imagen permitida
+const MAGIC_SIGNATURES = [
+  { mime: 'image/jpeg', bytes: [0xff, 0xd8, 0xff] },
+  { mime: 'image/png', bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] },
+  { mime: 'image/webp', bytes: [0x52, 0x49, 0x46, 0x46], tail: { offset: 8, bytes: [0x57, 0x45, 0x42, 0x50] } },
+]
+
+// ===== CORS =====
+function getAllowedOrigins(env) {
+  if (env.ALLOWED_ORIGINS) {
+    return env.ALLOWED_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+  }
+  return DEFAULT_ALLOWED_ORIGINS
 }
 
-function unauthorized() {
-  return new Response(JSON.stringify({ error: 'No autorizado' }), {
-    status: 401,
-    headers: corsHeaders,
-  })
+function buildCorsHeaders(request, env) {
+  const origin = request.headers.get('Origin')
+  const allowed = getAllowedOrigins(env)
+  const isDev = env.ENVIRONMENT !== 'production'
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin',
+  }
+  if (origin && (allowed.includes(origin) || (isDev && /^https?:\/\/localhost(:\d+)?$/.test(origin)))) {
+    headers['Access-Control-Allow-Origin'] = origin
+  }
+  return headers
 }
+
+// ===== Helpers =====
+function json(data, status, cors) {
+  return new Response(JSON.stringify(data), { status, headers: cors })
+}
+const ok = (data, cors) => json(data, 200, cors)
+const bad = (msg, cors) => json({ error: msg }, 400, cors)
+const unauthorized = (cors) => json({ error: 'No autorizado' }, 401, cors)
+const tooMany = (cors, retryAfter) => {
+  const headers = { ...cors, 'Retry-After': String(retryAfter) }
+  return new Response(JSON.stringify({ error: 'Demasiadas solicitudes' }), { status: 429, headers })
+}
+const serverError = (cors) => json({ error: 'Error interno' }, 500, cors)
+const notFound = (cors) => json({ error: 'Ruta no encontrada' }, 404, cors)
 
 function isAdmin(request, env) {
   const auth = request.headers.get('Authorization')
-  return auth === `Bearer ${env.ADMIN_TOKEN}`
+  if (!auth || !auth.startsWith('Bearer ') || !env.ADMIN_TOKEN) return false
+  return timingSafeEqual(auth.slice(7), env.ADMIN_TOKEN)
 }
 
+function timingSafeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false
+  let res = 0
+  for (let i = 0; i < a.length; i++) res |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return res === 0
+}
+
+function getClientIp(request) {
+  return request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown'
+}
+
+// ===== Rate limiting (D1) =====
+// Ventana deslizante simple: cuenta hits por (key, ventana) y bloquea si > max.
+async function rateLimit(env, key, { windowSec, max }) {
+  const now = Math.floor(Date.now() / 1000)
+  const bucket = Math.floor(now / windowSec)
+  const id = `${key}:${bucket}`
+  try {
+    const row = await env.DB.prepare(
+      'SELECT count FROM rate_limits WHERE id = ?'
+    ).bind(id).first()
+    const count = (row?.count ?? 0) + 1
+    if (count === 1) {
+      await env.DB.prepare(
+        'INSERT INTO rate_limits (id, count, expires_at) VALUES (?, 1, ?) ON CONFLICT(id) DO UPDATE SET count = count + 1'
+      ).bind(id, now + windowSec * 2).run()
+    } else {
+      await env.DB.prepare('UPDATE rate_limits SET count = count + 1 WHERE id = ?').bind(id).run()
+    }
+    if (count > max) return { ok: false, retryAfter: (bucket + 1) * windowSec - now }
+    return { ok: true }
+  } catch (err) {
+    // Si la tabla no existe o hay error, no bloqueamos (fail-open) pero loggeamos.
+    console.error('rateLimit error', err)
+    return { ok: true }
+  }
+}
+
+// ===== Validación =====
+const ID_RE = /^[a-z0-9][a-z0-9-_]{0,63}$/i
+const TALLA_RE = /^[A-Za-z0-9.-]{1,8}$/
+const CATEGORIA_ID_RE = /^[a-z0-9][a-z0-9-_]{0,63}$/i
+const URL_IMAGEN_RE = new RegExp(`^${IMAGES_PUBLIC_BASE.replace(/\./g, '\\.')}/[A-Za-z0-9._-]+$`)
+
+function validateProducto(body, { requireId }) {
+  if (!body || typeof body !== 'object') return 'Body inválido'
+  const { id, nombre, precio, categoria_id, descripcion, imagenes, colores, nuevo } = body
+
+  if (requireId) {
+    if (typeof id !== 'string' || !ID_RE.test(id)) return 'id inválido'
+  }
+  if (typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.length > 120) return 'nombre inválido'
+  if (typeof precio !== 'number' || !Number.isFinite(precio) || precio < 0 || precio > 1e8) return 'precio inválido'
+  if (typeof categoria_id !== 'string' || !CATEGORIA_ID_RE.test(categoria_id)) return 'categoria_id inválido'
+  if (descripcion != null && (typeof descripcion !== 'string' || descripcion.length > 5000)) return 'descripcion inválida'
+  if (nuevo != null && typeof nuevo !== 'boolean' && nuevo !== 0 && nuevo !== 1) return 'nuevo inválido'
+
+  if (!Array.isArray(imagenes) || imagenes.length === 0 || imagenes.length > 20) return 'imagenes inválidas'
+  for (const url of imagenes) {
+    if (typeof url !== 'string' || !URL_IMAGEN_RE.test(url)) return 'URL de imagen no permitida'
+  }
+
+  if (!Array.isArray(colores) || colores.length === 0 || colores.length > 30) return 'colores inválidos'
+  for (const c of colores) {
+    if (!c || typeof c.nombre !== 'string' || c.nombre.trim().length === 0 || c.nombre.length > 40) return 'nombre de color inválido'
+    if (!Array.isArray(c.tallas) || c.tallas.length === 0 || c.tallas.length > 20) return 'tallas inválidas'
+    for (const t of c.tallas) {
+      const talla = typeof t === 'string' ? t : t?.talla
+      const stock = typeof t === 'object' ? (t?.stock ?? 0) : 0
+      if (typeof talla !== 'string' || !TALLA_RE.test(talla)) return 'talla inválida'
+      if (!Number.isInteger(stock) || stock < 0 || stock > 1_000_000) return 'stock inválido'
+    }
+  }
+  return null
+}
+
+function validateStock(body) {
+  if (!body || typeof body !== 'object') return 'Body inválido'
+  const { stock } = body
+  if (!Number.isInteger(stock) || stock < 0 || stock > 1_000_000) return 'stock inválido'
+  return null
+}
+
+function sniffMime(bytes) {
+  for (const sig of MAGIC_SIGNATURES) {
+    if (bytes.length < sig.bytes.length) continue
+    let head = true
+    for (let i = 0; i < sig.bytes.length; i++) if (bytes[i] !== sig.bytes[i]) { head = false; break }
+    if (!head) continue
+    if (sig.tail) {
+      const { offset, bytes: tb } = sig.tail
+      if (bytes.length < offset + tb.length) continue
+      let tail = true
+      for (let i = 0; i < tb.length; i++) if (bytes[offset + i] !== tb[i]) { tail = false; break }
+      if (!tail) continue
+    }
+    return sig.mime
+  }
+  return null
+}
+
+// ===== Router =====
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url)
-    const path = url.pathname
+    const cors = buildCorsHeaders(request, env)
 
     if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders })
+      return new Response(null, { status: 204, headers: cors })
+    }
+    if (!cors['Access-Control-Allow-Origin']) {
+      // Origen no permitido: para rutas browser rechazamos. Permitimos same-origin/healthcheck sin Origin header.
+      const origin = request.headers.get('Origin')
+      if (origin) return json({ error: 'Origen no permitido' }, 403, cors)
     }
 
-    // ==================
-    // RUTAS PUBLICAS
-    // ==================
+    try {
+      const url = new URL(request.url)
+      const path = url.pathname
+      const method = request.method
 
-    if (path === '/api/categorias') {
-      const { results } = await env.DB.prepare('SELECT * FROM categorias').all()
-      return new Response(JSON.stringify(results), { headers: corsHeaders })
-    }
-
-    if (path === '/api/productos') {
-      const { results } = await env.DB.prepare('SELECT * FROM productos').all()
-      const productosConImagenes = await Promise.all(
-        results.map(async (p) => {
-          const imagenes = await env.DB.prepare(
-            'SELECT url FROM imagenes WHERE producto_id = ? ORDER BY orden'
-          ).bind(p.id).all()
-          return { ...p, imagenes: imagenes.results.map(i => i.url) }
-        })
-      )
-      return new Response(JSON.stringify(productosConImagenes), { headers: corsHeaders })
-    }
-
-    if (path.startsWith('/api/productos/') && !path.includes('/admin/')) {
-      const id = path.split('/')[3]
-      const producto = await env.DB.prepare(
-        'SELECT * FROM productos WHERE id = ?'
-      ).bind(id).first()
-      if (!producto) return new Response(JSON.stringify({ error: 'No encontrado' }), { status: 404, headers: corsHeaders })
-
-      const imagenes = await env.DB.prepare(
-        'SELECT url FROM imagenes WHERE producto_id = ? ORDER BY orden'
-      ).bind(id).all()
-      const colores = await env.DB.prepare(
-        'SELECT * FROM colores WHERE producto_id = ?'
-      ).bind(id).all()
-
-      const coloresConTallas = await Promise.all(
-        colores.results.map(async (c) => {
-          const tallas = await env.DB.prepare(
-            'SELECT talla, stock FROM tallas WHERE color_id = ?'
-          ).bind(c.id).all()
-          return { ...c, tallas: tallas.results.map(t => ({ talla: t.talla, stock: t.stock })) }
-        })
-      )
-
-      return new Response(JSON.stringify({
-        ...producto,
-        imagenes: imagenes.results.map(i => i.url),
-        colores: coloresConTallas,
-      }), { headers: corsHeaders })
-    }
-
-    if (path.startsWith('/api/categoria/')) {
-      const id = path.split('/')[3]
-      const { results } = await env.DB.prepare(
-        'SELECT * FROM productos WHERE categoria_id = ?'
-      ).bind(id).all()
-      const productosConImagenes = await Promise.all(
-        results.map(async (p) => {
-          const imagenes = await env.DB.prepare(
-            'SELECT url FROM imagenes WHERE producto_id = ? ORDER BY orden'
-          ).bind(p.id).all()
-          return { ...p, imagenes: imagenes.results.map(i => i.url) }
-        })
-      )
-      return new Response(JSON.stringify(productosConImagenes), { headers: corsHeaders })
-    }
-
-    if (path.startsWith('/api/visita/') && request.method === 'POST') {
-      const id = path.split('/')[3]
-      const ua = request.headers.get('user-agent') || ''
-      const dispositivo = /mobile/i.test(ua) ? 'movil' : 'escritorio'
-      const fecha = new Date().toISOString().split('T')[0]
-      try {
-        await env.DB.prepare(
-          'INSERT INTO visitas (producto_id, fecha, dispositivo) VALUES (?, ?, ?)'
-        ).bind(id, fecha, dispositivo).run()
-      } catch (err) {
-        console.error('Error registrando visita:', err)
+      // ========== Rutas públicas ==========
+      if (method === 'GET' && path === '/api/categorias') {
+        return await handleCategorias(env, cors)
       }
-      return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })
-    }
-
-    // ==================
-    // RUTAS ADMIN
-    // ==================
-
-    if (!isAdmin(request, env)) return unauthorized()
-
-    // GET /api/admin/productos
-    if (path === '/api/admin/productos' && request.method === 'GET') {
-      const { results } = await env.DB.prepare('SELECT * FROM productos').all()
-      const productosCompletos = await Promise.all(
-        results.map(async (p) => {
-          const imagenes = await env.DB.prepare(
-            'SELECT * FROM imagenes WHERE producto_id = ? ORDER BY orden'
-          ).bind(p.id).all()
-          const colores = await env.DB.prepare(
-            'SELECT * FROM colores WHERE producto_id = ?'
-          ).bind(p.id).all()
-          const coloresConTallas = await Promise.all(
-            colores.results.map(async (c) => {
-              const tallas = await env.DB.prepare(
-                'SELECT talla, stock FROM tallas WHERE color_id = ?'
-              ).bind(c.id).all()
-              return { ...c, tallas: tallas.results }
-            })
-          )
-          return { ...p, imagenes: imagenes.results, colores: coloresConTallas }
-        })
-      )
-      return new Response(JSON.stringify(productosCompletos), { headers: corsHeaders })
-    }
-
-    // POST /api/admin/productos
-    if (path === '/api/admin/productos' && request.method === 'POST') {
-      const body = await request.json()
-      const { id, nombre, precio, categoria_id, nuevo, descripcion, imagenes, colores } = body
-
-      await env.DB.prepare(
-        'INSERT INTO productos (id, nombre, precio, categoria_id, nuevo, descripcion) VALUES (?, ?, ?, ?, ?, ?)'
-      ).bind(id, nombre, precio, categoria_id, nuevo ? 1 : 0, descripcion).run()
-
-      for (let i = 0; i < imagenes.length; i++) {
-        await env.DB.prepare(
-          'INSERT INTO imagenes (producto_id, url, orden) VALUES (?, ?, ?)'
-        ).bind(id, imagenes[i], i).run()
+      if (method === 'GET' && path === '/api/productos') {
+        return await handleProductos(env, cors)
+      }
+      const prodMatch = path.match(/^\/api\/productos\/([^/]+)$/)
+      if (method === 'GET' && prodMatch) {
+        return await handleProducto(env, cors, decodeURIComponent(prodMatch[1]))
+      }
+      const catMatch = path.match(/^\/api\/categoria\/([^/]+)$/)
+      if (method === 'GET' && catMatch) {
+        return await handleCategoria(env, cors, decodeURIComponent(catMatch[1]))
+      }
+      const visitaMatch = path.match(/^\/api\/visita\/([^/]+)$/)
+      if (method === 'POST' && visitaMatch) {
+        return await handleVisita(request, env, cors, decodeURIComponent(visitaMatch[1]))
       }
 
-      for (const color of colores) {
-        const colorResult = await env.DB.prepare(
-          'INSERT INTO colores (producto_id, nombre) VALUES (?, ?)'
-        ).bind(id, color.nombre).run()
-        const colorId = colorResult.meta.last_row_id
-        for (const t of color.tallas) {
-          const talla = typeof t === 'string' ? t : t.talla
-          const stock = typeof t === 'object' ? (t.stock ?? 10) : 10
-          await env.DB.prepare(
-            'INSERT INTO tallas (color_id, talla, stock) VALUES (?, ?, ?)'
-          ).bind(colorId, talla, stock).run()
+      // ========== Rutas admin ==========
+      if (path.startsWith('/api/admin/')) {
+        const ip = getClientIp(request)
+        const rl = await rateLimit(env, `admin-auth:${ip}`, { windowSec: 60, max: 30 })
+        if (!rl.ok) return tooMany(cors, rl.retryAfter)
+        if (!isAdmin(request, env)) {
+          await rateLimit(env, `admin-fail:${ip}`, { windowSec: 300, max: 10 })
+          return unauthorized(cors)
+        }
+
+        if (method === 'GET' && path === '/api/admin/productos') {
+          return await handleAdminListProductos(env, cors)
+        }
+        if (method === 'POST' && path === '/api/admin/productos') {
+          return await handleAdminCrearProducto(request, env, cors)
+        }
+        const editMatch = path.match(/^\/api\/admin\/productos\/([^/]+)$/)
+        if (editMatch && method === 'PUT') {
+          return await handleAdminEditarProducto(request, env, cors, decodeURIComponent(editMatch[1]))
+        }
+        if (editMatch && method === 'DELETE') {
+          return await handleAdminEliminarProducto(env, cors, decodeURIComponent(editMatch[1]))
+        }
+        const stockMatch = path.match(/^\/api\/admin\/stock\/([^/]+)\/([^/]+)$/)
+        if (stockMatch && method === 'PUT') {
+          return await handleAdminStock(request, env, cors, decodeURIComponent(stockMatch[1]), decodeURIComponent(stockMatch[2]))
+        }
+        if (method === 'GET' && path === '/api/admin/analytics') {
+          return await handleAnalytics(env, cors)
+        }
+        if (method === 'POST' && path === '/api/admin/imagenes/upload') {
+          return await handleUpload(request, env, cors)
         }
       }
 
-      return new Response(JSON.stringify({ ok: true, id }), { headers: corsHeaders })
+      return notFound(cors)
+    } catch (err) {
+      console.error('Unhandled error', err)
+      return serverError(cors)
     }
+  },
+}
 
-    // PUT /api/admin/productos/:id
-    if (path.startsWith('/api/admin/productos/') && request.method === 'PUT') {
-      const id = path.split('/')[4]
-      const body = await request.json()
-      const { nombre, precio, categoria_id, nuevo, descripcion, imagenes, colores } = body
+// ===== Handlers públicos =====
+async function handleCategorias(env, cors) {
+  const { results } = await env.DB.prepare('SELECT * FROM categorias').all()
+  return ok(results, cors)
+}
 
-      await env.DB.prepare(
-        'UPDATE productos SET nombre = ?, precio = ?, categoria_id = ?, nuevo = ?, descripcion = ? WHERE id = ?'
-      ).bind(nombre, precio, categoria_id, nuevo ? 1 : 0, descripcion, id).run()
+async function handleProductos(env, cors) {
+  // Una sola query con GROUP_CONCAT evita N+1
+  const { results } = await env.DB.prepare(`
+    SELECT p.*, GROUP_CONCAT(i.url, '|') AS imagenes_concat
+    FROM productos p
+    LEFT JOIN (SELECT producto_id, url, orden FROM imagenes ORDER BY orden) i
+      ON i.producto_id = p.id
+    GROUP BY p.id
+  `).all()
+  const productos = results.map((p) => ({
+    ...p,
+    imagenes: p.imagenes_concat ? p.imagenes_concat.split('|') : [],
+    imagenes_concat: undefined,
+  }))
+  return ok(productos, cors)
+}
 
-      await env.DB.prepare('DELETE FROM imagenes WHERE producto_id = ?').bind(id).run()
-      for (let i = 0; i < imagenes.length; i++) {
-        await env.DB.prepare(
-          'INSERT INTO imagenes (producto_id, url, orden) VALUES (?, ?, ?)'
-        ).bind(id, imagenes[i], i).run()
-      }
+async function handleProducto(env, cors, id) {
+  if (!ID_RE.test(id)) return json({ error: 'id inválido' }, 400, cors)
+  const producto = await env.DB.prepare('SELECT * FROM productos WHERE id = ?').bind(id).first()
+  if (!producto) return json({ error: 'No encontrado' }, 404, cors)
 
-      const coloresExistentes = await env.DB.prepare(
-        'SELECT id FROM colores WHERE producto_id = ?'
-      ).bind(id).all()
-      for (const c of coloresExistentes.results) {
-        await env.DB.prepare('DELETE FROM tallas WHERE color_id = ?').bind(c.id).run()
-      }
-      await env.DB.prepare('DELETE FROM colores WHERE producto_id = ?').bind(id).run()
+  const [imagenes, colores] = await Promise.all([
+    env.DB.prepare('SELECT url FROM imagenes WHERE producto_id = ? ORDER BY orden').bind(id).all(),
+    env.DB.prepare('SELECT * FROM colores WHERE producto_id = ?').bind(id).all(),
+  ])
 
-      for (const color of colores) {
-        const colorResult = await env.DB.prepare(
-          'INSERT INTO colores (producto_id, nombre) VALUES (?, ?)'
-        ).bind(id, color.nombre).run()
-        const colorId = colorResult.meta.last_row_id
-        for (const t of color.tallas) {
-          const talla = typeof t === 'string' ? t : t.talla
-          const stock = typeof t === 'object' ? (t.stock ?? 10) : 10
-          await env.DB.prepare(
-            'INSERT INTO tallas (color_id, talla, stock) VALUES (?, ?, ?)'
-          ).bind(colorId, talla, stock).run()
-        }
-      }
-
-      return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })
-    }
-
-    // DELETE /api/admin/productos/:id
-    if (path.startsWith('/api/admin/productos/') && request.method === 'DELETE') {
-      const id = path.split('/')[4]
-
-      const imagenes = await env.DB.prepare(
-        'SELECT url FROM imagenes WHERE producto_id = ?'
-      ).bind(id).all()
-      for (const img of imagenes.results) {
-        const nombreArchivo = img.url.split('/').pop()
-        try {
-          await env.IMAGES.delete(nombreArchivo)
-        } catch (err) {
-          console.error('Error eliminando imagen de R2:', nombreArchivo, err)
-        }
-      }
-
-      const colores = await env.DB.prepare(
-        'SELECT id FROM colores WHERE producto_id = ?'
-      ).bind(id).all()
-      for (const c of colores.results) {
-        await env.DB.prepare('DELETE FROM tallas WHERE color_id = ?').bind(c.id).run()
-      }
-      await env.DB.prepare('DELETE FROM colores WHERE producto_id = ?').bind(id).run()
-      await env.DB.prepare('DELETE FROM imagenes WHERE producto_id = ?').bind(id).run()
-      await env.DB.prepare('DELETE FROM productos WHERE id = ?').bind(id).run()
-
-      return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })
-    }
-
-    // PUT /api/admin/stock/:colorId/:talla
-    if (path.startsWith('/api/admin/stock/') && request.method === 'PUT') {
-      const partes = path.split('/')
-      const colorId = partes[4]
-      const talla = partes[5]
-      const body = await request.json()
-      const { stock } = body
-
-      await env.DB.prepare(
-        'UPDATE tallas SET stock = ? WHERE color_id = ? AND talla = ?'
-      ).bind(stock, colorId, talla).run()
-
-      return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })
-    }
-
-    // GET /api/admin/analytics
-    if (path === '/api/admin/analytics' && request.method === 'GET') {
-      const totalVisitas = await env.DB.prepare(
-        'SELECT COUNT(*) as total FROM visitas'
-      ).first()
-
-      const visitasHoy = await env.DB.prepare(
-        'SELECT COUNT(*) as total FROM visitas WHERE fecha = ?'
-      ).bind(new Date().toISOString().split('T')[0]).first()
-
-      const productosMasVistos = await env.DB.prepare(`
-        SELECT p.id, p.nombre, p.categoria_id, COUNT(v.id) as visitas
-        FROM productos p
-        LEFT JOIN visitas v ON p.id = v.producto_id
-        GROUP BY p.id
-        ORDER BY visitas DESC
-        LIMIT 10
-      `).all()
-
-      const visitasPorDia = await env.DB.prepare(`
-        SELECT fecha, COUNT(*) as total
-        FROM visitas
-        WHERE fecha >= date('now', '-30 days')
-        GROUP BY fecha
-        ORDER BY fecha ASC
-      `).all()
-
-      const visitasPorDispositivo = await env.DB.prepare(`
-        SELECT dispositivo, COUNT(*) as total
-        FROM visitas
-        GROUP BY dispositivo
-      `).all()
-
-      return new Response(JSON.stringify({
-        totalVisitas: totalVisitas.total,
-        visitasHoy: visitasHoy.total,
-        productosMasVistos: productosMasVistos.results,
-        visitasPorDia: visitasPorDia.results,
-        visitasPorDispositivo: visitasPorDispositivo.results,
-      }), { headers: corsHeaders })
-    }
-
-    // POST /api/admin/imagenes/upload
-    if (path === '/api/admin/imagenes/upload' && request.method === 'POST') {
-      const formData = await request.formData()
-      const archivo = formData.get('file')
-
-      if (!archivo) {
-        return new Response(JSON.stringify({ error: 'No se recibio ningun archivo' }), {
-          status: 400,
-          headers: corsHeaders,
-        })
-      }
-
-      const extension = archivo.name.split('.').pop().toLowerCase()
-      const permitidas = ['jpg', 'jpeg', 'png', 'webp']
-      if (!permitidas.includes(extension)) {
-        return new Response(JSON.stringify({ error: 'Formato no permitido. Usa JPG, PNG o WEBP' }), {
-          status: 400,
-          headers: corsHeaders,
-        })
-      }
-
-      const nombreArchivo = `${Date.now()}-${archivo.name.replace(/\s+/g, '-')}`
-      await env.IMAGES.put(nombreArchivo, archivo.stream(), {
-        httpMetadata: { contentType: archivo.type },
-      })
-
-      const urlPublica = `https://images.intimaexclusive.com/${nombreArchivo}`
-      return new Response(JSON.stringify({ ok: true, url: urlPublica }), { headers: corsHeaders })
-    }
-
-    return new Response(JSON.stringify({ error: 'Ruta no encontrada' }), {
-      status: 404,
-      headers: corsHeaders,
-    })
+  const colorIds = colores.results.map((c) => c.id)
+  let tallasRows = { results: [] }
+  if (colorIds.length) {
+    const placeholders = colorIds.map(() => '?').join(',')
+    tallasRows = await env.DB.prepare(
+      `SELECT color_id, talla, stock FROM tallas WHERE color_id IN (${placeholders})`
+    ).bind(...colorIds).all()
   }
+  const tallasPorColor = new Map()
+  for (const t of tallasRows.results) {
+    if (!tallasPorColor.has(t.color_id)) tallasPorColor.set(t.color_id, [])
+    tallasPorColor.get(t.color_id).push({ talla: t.talla, stock: t.stock })
+  }
+
+  return ok({
+    ...producto,
+    imagenes: imagenes.results.map((i) => i.url),
+    colores: colores.results.map((c) => ({ ...c, tallas: tallasPorColor.get(c.id) || [] })),
+  }, cors)
+}
+
+async function handleCategoria(env, cors, id) {
+  if (!CATEGORIA_ID_RE.test(id)) return json({ error: 'id inválido' }, 400, cors)
+  const { results } = await env.DB.prepare(`
+    SELECT p.*, GROUP_CONCAT(i.url, '|') AS imagenes_concat
+    FROM productos p
+    LEFT JOIN (SELECT producto_id, url, orden FROM imagenes ORDER BY orden) i
+      ON i.producto_id = p.id
+    WHERE p.categoria_id = ?
+    GROUP BY p.id
+  `).bind(id).all()
+  const productos = results.map((p) => ({
+    ...p,
+    imagenes: p.imagenes_concat ? p.imagenes_concat.split('|') : [],
+    imagenes_concat: undefined,
+  }))
+  return ok(productos, cors)
+}
+
+async function handleVisita(request, env, cors, id) {
+  if (!ID_RE.test(id)) return bad('id inválido', cors)
+  const ip = getClientIp(request)
+  const rl = await rateLimit(env, `visita:${ip}`, { windowSec: 60, max: 60 })
+  if (!rl.ok) return tooMany(cors, rl.retryAfter)
+
+  const ua = request.headers.get('user-agent') || ''
+  const dispositivo = /mobile/i.test(ua) ? 'movil' : 'escritorio'
+  const fecha = new Date().toISOString().split('T')[0]
+  try {
+    await env.DB.prepare(
+      'INSERT INTO visitas (producto_id, fecha, dispositivo) VALUES (?, ?, ?)'
+    ).bind(id, fecha, dispositivo).run()
+  } catch (err) {
+    console.error('Error registrando visita', err)
+  }
+  return ok({ ok: true }, cors)
+}
+
+// ===== Handlers admin =====
+async function handleAdminListProductos(env, cors) {
+  const { results } = await env.DB.prepare('SELECT * FROM productos').all()
+  const ids = results.map((p) => p.id)
+  if (!ids.length) return ok([], cors)
+  const ph = ids.map(() => '?').join(',')
+
+  const [imgs, cols] = await Promise.all([
+    env.DB.prepare(`SELECT * FROM imagenes WHERE producto_id IN (${ph}) ORDER BY orden`).bind(...ids).all(),
+    env.DB.prepare(`SELECT * FROM colores WHERE producto_id IN (${ph})`).bind(...ids).all(),
+  ])
+
+  const colorIds = cols.results.map((c) => c.id)
+  let tallas = { results: [] }
+  if (colorIds.length) {
+    const tph = colorIds.map(() => '?').join(',')
+    tallas = await env.DB.prepare(
+      `SELECT * FROM tallas WHERE color_id IN (${tph})`
+    ).bind(...colorIds).all()
+  }
+
+  const imgsByProd = new Map()
+  for (const i of imgs.results) {
+    if (!imgsByProd.has(i.producto_id)) imgsByProd.set(i.producto_id, [])
+    imgsByProd.get(i.producto_id).push(i)
+  }
+  const tallasByColor = new Map()
+  for (const t of tallas.results) {
+    if (!tallasByColor.has(t.color_id)) tallasByColor.set(t.color_id, [])
+    tallasByColor.get(t.color_id).push(t)
+  }
+  const colsByProd = new Map()
+  for (const c of cols.results) {
+    if (!colsByProd.has(c.producto_id)) colsByProd.set(c.producto_id, [])
+    colsByProd.get(c.producto_id).push({ ...c, tallas: tallasByColor.get(c.id) || [] })
+  }
+
+  return ok(results.map((p) => ({
+    ...p,
+    imagenes: imgsByProd.get(p.id) || [],
+    colores: colsByProd.get(p.id) || [],
+  })), cors)
+}
+
+async function handleAdminCrearProducto(request, env, cors) {
+  const body = await safeJson(request)
+  const err = validateProducto(body, { requireId: true })
+  if (err) return bad(err, cors)
+
+  const existe = await env.DB.prepare('SELECT id FROM productos WHERE id = ?').bind(body.id).first()
+  if (existe) return json({ error: 'id ya existe' }, 409, cors)
+
+  const stmts = [
+    env.DB.prepare(
+      'INSERT INTO productos (id, nombre, precio, categoria_id, nuevo, descripcion) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(body.id, body.nombre.trim(), body.precio, body.categoria_id, body.nuevo ? 1 : 0, body.descripcion ?? null),
+    ...body.imagenes.map((url, i) =>
+      env.DB.prepare('INSERT INTO imagenes (producto_id, url, orden) VALUES (?, ?, ?)').bind(body.id, url, i)
+    ),
+  ]
+
+  // Colores y tallas: dos pasadas para usar last_row_id (batch garantiza atomicidad por pasada)
+  await env.DB.batch(stmts)
+
+  for (const color of body.colores) {
+    const res = await env.DB.prepare(
+      'INSERT INTO colores (producto_id, nombre) VALUES (?, ?)'
+    ).bind(body.id, color.nombre.trim()).run()
+    const colorId = res.meta.last_row_id
+    const tallaStmts = color.tallas.map((t) => {
+      const talla = typeof t === 'string' ? t : t.talla
+      const stock = typeof t === 'object' ? (t.stock ?? 0) : 0
+      return env.DB.prepare(
+        'INSERT INTO tallas (color_id, talla, stock) VALUES (?, ?, ?)'
+      ).bind(colorId, talla, stock)
+    })
+    if (tallaStmts.length) await env.DB.batch(tallaStmts)
+  }
+
+  return ok({ ok: true, id: body.id }, cors)
+}
+
+async function handleAdminEditarProducto(request, env, cors, id) {
+  if (!ID_RE.test(id)) return bad('id inválido', cors)
+  const body = await safeJson(request)
+  const err = validateProducto({ ...body, id }, { requireId: false })
+  if (err) return bad(err, cors)
+
+  const existe = await env.DB.prepare('SELECT id FROM productos WHERE id = ?').bind(id).first()
+  if (!existe) return json({ error: 'No encontrado' }, 404, cors)
+
+  // Limpiar dependientes, actualizar producto y reinsertar imágenes — todo en un batch atómico.
+  const cleanupStmts = [
+    env.DB.prepare('UPDATE productos SET nombre = ?, precio = ?, categoria_id = ?, nuevo = ?, descripcion = ? WHERE id = ?')
+      .bind(body.nombre.trim(), body.precio, body.categoria_id, body.nuevo ? 1 : 0, body.descripcion ?? null, id),
+    env.DB.prepare('DELETE FROM tallas WHERE color_id IN (SELECT id FROM colores WHERE producto_id = ?)').bind(id),
+    env.DB.prepare('DELETE FROM colores WHERE producto_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM imagenes WHERE producto_id = ?').bind(id),
+    ...body.imagenes.map((url, i) =>
+      env.DB.prepare('INSERT INTO imagenes (producto_id, url, orden) VALUES (?, ?, ?)').bind(id, url, i)
+    ),
+  ]
+  await env.DB.batch(cleanupStmts)
+
+  for (const color of body.colores) {
+    const res = await env.DB.prepare(
+      'INSERT INTO colores (producto_id, nombre) VALUES (?, ?)'
+    ).bind(id, color.nombre.trim()).run()
+    const colorId = res.meta.last_row_id
+    const tallaStmts = color.tallas.map((t) => {
+      const talla = typeof t === 'string' ? t : t.talla
+      const stock = typeof t === 'object' ? (t.stock ?? 0) : 0
+      return env.DB.prepare(
+        'INSERT INTO tallas (color_id, talla, stock) VALUES (?, ?, ?)'
+      ).bind(colorId, talla, stock)
+    })
+    if (tallaStmts.length) await env.DB.batch(tallaStmts)
+  }
+
+  return ok({ ok: true }, cors)
+}
+
+async function handleAdminEliminarProducto(env, cors, id) {
+  if (!ID_RE.test(id)) return bad('id inválido', cors)
+  const existe = await env.DB.prepare('SELECT id FROM productos WHERE id = ?').bind(id).first()
+  if (!existe) return json({ error: 'No encontrado' }, 404, cors)
+
+  const imagenes = await env.DB.prepare('SELECT url FROM imagenes WHERE producto_id = ?').bind(id).all()
+
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM tallas WHERE color_id IN (SELECT id FROM colores WHERE producto_id = ?)').bind(id),
+    env.DB.prepare('DELETE FROM colores WHERE producto_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM imagenes WHERE producto_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM productos WHERE id = ?').bind(id),
+  ])
+
+  // Best-effort: borrar los objetos de R2 después de la transacción DB.
+  for (const img of imagenes.results) {
+    const nombreArchivo = img.url.split('/').pop()
+    if (nombreArchivo) {
+      try { await env.IMAGES.delete(nombreArchivo) } catch (err) { console.error('R2 delete', err) }
+    }
+  }
+
+  return ok({ ok: true }, cors)
+}
+
+async function handleAdminStock(request, env, cors, colorIdStr, talla) {
+  const colorId = Number(colorIdStr)
+  if (!Number.isInteger(colorId) || colorId <= 0) return bad('color_id inválido', cors)
+  if (!TALLA_RE.test(talla)) return bad('talla inválida', cors)
+  const body = await safeJson(request)
+  const err = validateStock(body)
+  if (err) return bad(err, cors)
+
+  const res = await env.DB.prepare(
+    'UPDATE tallas SET stock = ? WHERE color_id = ? AND talla = ?'
+  ).bind(body.stock, colorId, talla).run()
+
+  if (res.meta.changes === 0) return json({ error: 'No encontrado' }, 404, cors)
+  return ok({ ok: true }, cors)
+}
+
+async function handleAnalytics(env, cors) {
+  const [totalVisitas, visitasHoy, productosMasVistos, visitasPorDia, visitasPorDispositivo] = await Promise.all([
+    env.DB.prepare('SELECT COUNT(*) as total FROM visitas').first(),
+    env.DB.prepare('SELECT COUNT(*) as total FROM visitas WHERE fecha = ?').bind(new Date().toISOString().split('T')[0]).first(),
+    env.DB.prepare(`
+      SELECT p.id, p.nombre, p.categoria_id, COUNT(v.id) as visitas
+      FROM productos p
+      LEFT JOIN visitas v ON p.id = v.producto_id
+      GROUP BY p.id
+      ORDER BY visitas DESC
+      LIMIT 10
+    `).all(),
+    env.DB.prepare(`
+      SELECT fecha, COUNT(*) as total FROM visitas
+      WHERE fecha >= date('now', '-30 days')
+      GROUP BY fecha ORDER BY fecha ASC
+    `).all(),
+    env.DB.prepare('SELECT dispositivo, COUNT(*) as total FROM visitas GROUP BY dispositivo').all(),
+  ])
+  return ok({
+    totalVisitas: totalVisitas.total,
+    visitasHoy: visitasHoy.total,
+    productosMasVistos: productosMasVistos.results,
+    visitasPorDia: visitasPorDia.results,
+    visitasPorDispositivo: visitasPorDispositivo.results,
+  }, cors)
+}
+
+async function handleUpload(request, env, cors) {
+  const contentLength = Number(request.headers.get('Content-Length') || 0)
+  if (contentLength && contentLength > MAX_IMAGE_BYTES + 4096) {
+    return json({ error: 'Archivo demasiado grande' }, 413, cors)
+  }
+
+  let formData
+  try { formData = await request.formData() }
+  catch { return bad('multipart inválido', cors) }
+
+  const archivo = formData.get('file')
+  if (!archivo || typeof archivo === 'string') return bad('Archivo requerido', cors)
+  if (archivo.size > MAX_IMAGE_BYTES) return json({ error: 'Archivo demasiado grande (máx 5 MB)' }, 413, cors)
+  if (!ALLOWED_MIME.has(archivo.type)) return bad('Tipo MIME no permitido', cors)
+
+  const buf = new Uint8Array(await archivo.arrayBuffer())
+  const realMime = sniffMime(buf)
+  if (!realMime || !ALLOWED_MIME.has(realMime) || realMime !== archivo.type) {
+    return bad('El contenido del archivo no coincide con una imagen permitida', cors)
+  }
+
+  const ext = realMime === 'image/jpeg' ? 'jpg' : realMime === 'image/png' ? 'png' : 'webp'
+  // Nombre aleatorio: evita colisiones y no expone nombres del cliente.
+  const rand = crypto.randomUUID().replace(/-/g, '')
+  const nombreArchivo = `${Date.now()}-${rand}.${ext}`
+
+  await env.IMAGES.put(nombreArchivo, buf, {
+    httpMetadata: { contentType: realMime },
+  })
+
+  const urlPublica = `${IMAGES_PUBLIC_BASE}/${nombreArchivo}`
+  return ok({ ok: true, url: urlPublica }, cors)
+}
+
+async function safeJson(request) {
+  try { return await request.json() } catch { return null }
 }
