@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/
 
-Sitemap: https://intima-exclusive-api.juanfecolla.workers.dev/sitemap.xml
+Sitemap: https://api.intimaexclusive.com/sitemap.xml

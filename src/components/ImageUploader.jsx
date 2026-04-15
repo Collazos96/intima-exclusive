@@ -1,7 +1,7 @@
 import { useState, useId } from 'react'
 import { compressToWebp } from '../lib/imageCompress'
 
-const API = import.meta.env.VITE_API_URL || 'https://intima-exclusive-api.juanfecolla.workers.dev'
+const API = import.meta.env.VITE_API_URL || 'https://api.intimaexclusive.com'
 
 export default function ImageUploader({ onUpload }) {
   const uid = useId()
