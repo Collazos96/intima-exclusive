@@ -1,1 +1,32 @@
 @import "tailwindcss";
+
+/* ==========================================
+   Sistema de diseño — Intima Exclusive
+   Tailwind v4 @theme: cada token expone utilidades
+   (bg-*, text-*, border-*, from-*, to-*, etc.)
+   ========================================== */
+@theme {
+  /* Paleta principal — vino */
+  --color-wine-50:  #FDF6F7;
+  --color-wine-100: #F8E6EA;
+  --color-wine-500: #A03048;
+  --color-wine-600: #7B1A2E;
+  --color-wine-800: #4E0F1C;
+  --color-wine-900: #3A1A20;
+
+  /* Acento — dorado */
+  --color-gold-300: #D9C4A8;
+  --color-gold-500: #C4A882;
+
+  /* Crema — fondos claros */
+  --color-cream-50:  #FFFDF9;
+  --color-cream-100: #FAF5EE;
+  --color-cream-200: #F5EDE0;
+
+  /* Gris cálido / muted */
+  --color-taupe-400: #B09090;
+  --color-taupe-600: #7A5A60;
+
+  /* WhatsApp brand */
+  --color-whatsapp-500: #25D366;
+}

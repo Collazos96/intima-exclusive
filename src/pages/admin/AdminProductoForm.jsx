@@ -150,27 +150,27 @@ export default function AdminProductoForm() {
   }
 
   if (loadingData) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAF5EE]">
-      <p className="font-serif italic text-[#C4A882]">Cargando producto...</p>
+    <div className="min-h-screen flex items-center justify-center bg-cream-100">
+      <p className="font-serif italic text-gold-500">Cargando producto...</p>
     </div>
   )
 
   return (
-    <main className="min-h-screen bg-[#FAF5EE] pt-[70px]">
+    <main className="min-h-screen bg-cream-100 pt-[70px]">
       <div className="max-w-3xl mx-auto px-8 py-10">
 
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-serif text-2xl text-[#4E0F1C]">
+            <h1 className="font-serif text-2xl text-wine-800">
               {esEdicion ? 'Editar producto' : 'Nuevo producto'}
             </h1>
-            <p className="font-sans text-[0.75rem] text-[#7A5A60] tracking-wide mt-1">
+            <p className="font-sans text-[0.75rem] text-taupe-600 tracking-wide mt-1">
               {esEdicion ? `Editando: ${form.nombre}` : 'Completa los campos para agregar un producto'}
             </p>
           </div>
           <button
             onClick={() => nav('/admin')}
-            className="border border-[#D9C4A8] text-[#7A5A60] px-5 py-2 font-sans text-[0.68rem] tracking-widest uppercase hover:border-[#7B1A2E] hover:text-[#7B1A2E] transition-colors">
+            className="border border-gold-300 text-taupe-600 px-5 py-2 font-sans text-[0.68rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
             Volver
           </button>
         </div>
@@ -188,53 +188,53 @@ export default function AdminProductoForm() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
-          <div className="bg-white border border-[#D9C4A8] p-6">
-            <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-[#7A5A60] mb-5 pb-3 border-b border-[#F5EDE0]">
+          <div className="bg-white border border-gold-300 p-6">
+            <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-5 pb-3 border-b border-cream-200">
               Datos basicos
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {!esEdicion && (
                 <div>
-                  <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-[#7A5A60] mb-2">ID del producto</label>
+                  <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">ID del producto</label>
                   <input
                     type="text"
                     value={form.id}
                     onChange={e => handleCampo('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                    className="w-full border border-[#D9C4A8] px-3 py-2.5 font-sans text-sm text-[#3A1A20] outline-none focus:border-[#7B1A2E]"
+                    className="w-full border border-gold-300 px-3 py-2.5 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
                     placeholder="ej: set-carmina"
                     required
                   />
-                  <p className="font-sans text-[0.6rem] text-[#B09090] mt-1">Solo letras minusculas y guiones. No se puede cambiar despues.</p>
+                  <p className="font-sans text-[0.6rem] text-taupe-400 mt-1">Solo letras minusculas y guiones. No se puede cambiar despues.</p>
                 </div>
               )}
               <div>
-                <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-[#7A5A60] mb-2">Nombre</label>
+                <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">Nombre</label>
                 <input
                   type="text"
                   value={form.nombre}
                   onChange={e => handleCampo('nombre', e.target.value)}
-                  className="w-full border border-[#D9C4A8] px-3 py-2.5 font-sans text-sm text-[#3A1A20] outline-none focus:border-[#7B1A2E]"
+                  className="w-full border border-gold-300 px-3 py-2.5 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
                   placeholder="ej: Set Carmina"
                   required
                 />
               </div>
               <div>
-                <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-[#7A5A60] mb-2">Precio (COP)</label>
+                <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">Precio (COP)</label>
                 <input
                   type="number"
                   value={form.precio}
                   onChange={e => handleCampo('precio', e.target.value)}
-                  className="w-full border border-[#D9C4A8] px-3 py-2.5 font-sans text-sm text-[#3A1A20] outline-none focus:border-[#7B1A2E]"
+                  className="w-full border border-gold-300 px-3 py-2.5 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
                   placeholder="ej: 189000"
                   required
                 />
               </div>
               <div>
-                <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-[#7A5A60] mb-2">Categoria</label>
+                <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">Categoria</label>
                 <select
                   value={form.categoria_id}
                   onChange={e => handleCampo('categoria_id', e.target.value)}
-                  className="w-full border border-[#D9C4A8] px-3 py-2.5 font-sans text-sm text-[#3A1A20] outline-none focus:border-[#7B1A2E] bg-white">
+                  className="w-full border border-gold-300 px-3 py-2.5 font-sans text-sm text-wine-900 outline-none focus:border-wine-600 bg-white">
                   {categorias.map(c => (
                     <option key={c.id} value={c.id}>{c.nombre}</option>
                   ))}
@@ -246,20 +246,20 @@ export default function AdminProductoForm() {
                   id="nuevo"
                   checked={form.nuevo}
                   onChange={e => handleCampo('nuevo', e.target.checked)}
-                  className="w-4 h-4 accent-[#7B1A2E]"
+                  className="w-4 h-4 accent-wine-600"
                 />
-                <label htmlFor="nuevo" className="font-sans text-[0.72rem] tracking-widest uppercase text-[#7A5A60] cursor-pointer">
+                <label htmlFor="nuevo" className="font-sans text-[0.72rem] tracking-widest uppercase text-taupe-600 cursor-pointer">
                   Marcar como nuevo
                 </label>
               </div>
             </div>
             <div className="mt-5">
-              <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-[#7A5A60] mb-2">Descripcion</label>
+              <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">Descripcion</label>
               <textarea
                 value={form.descripcion}
                 onChange={e => handleCampo('descripcion', e.target.value)}
                 rows={4}
-                className="w-full border border-[#D9C4A8] px-3 py-2.5 font-sans text-sm text-[#3A1A20] outline-none focus:border-[#7B1A2E] resize-none"
+                className="w-full border border-gold-300 px-3 py-2.5 font-sans text-sm text-wine-900 outline-none focus:border-wine-600 resize-none"
                 placeholder="Describe el producto..."
                 required
               />
@@ -267,32 +267,32 @@ export default function AdminProductoForm() {
           </div>
 
           {/* IMAGENES */}
-          <div className="bg-white border border-[#D9C4A8] p-6">
-            <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-[#7A5A60] mb-5 pb-3 border-b border-[#F5EDE0]">
+          <div className="bg-white border border-gold-300 p-6">
+            <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-5 pb-3 border-b border-cream-200">
               Imagenes
             </h2>
-            <p className="font-sans text-[0.72rem] text-[#B09090] mb-4">
+            <p className="font-sans text-[0.72rem] text-taupe-400 mb-4">
               Sube imagenes directamente o ingresa una URL de Cloudflare R2.
             </p>
             <div className="mb-5">
-              <p className="font-sans text-[0.65rem] tracking-widest uppercase text-[#7A5A60] mb-3">Subir nueva imagen</p>
+              <p className="font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-3">Subir nueva imagen</p>
               <ImageUploader onUpload={handleImagenSubida}/>
             </div>
             <div className="space-y-3">
-              <p className="font-sans text-[0.65rem] tracking-widest uppercase text-[#7A5A60] mb-2">Imagenes agregadas</p>
+              <p className="font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">Imagenes agregadas</p>
               {form.imagenes.filter(i => i.trim()).length === 0 ? (
-                <p className="font-sans text-[0.72rem] text-[#B09090] italic">No hay imagenes agregadas aun.</p>
+                <p className="font-sans text-[0.72rem] text-taupe-400 italic">No hay imagenes agregadas aun.</p>
               ) : (
                 form.imagenes.map((img, i) => (
                   img.trim() ? (
-                    <div key={i} className="flex gap-3 items-center border border-[#F5EDE0] p-2">
-                      <span className="font-sans text-[0.62rem] text-[#B09090] w-5">{i + 1}</span>
-                      <img src={img} alt="" className="w-12 h-12 object-cover border border-[#D9C4A8]" onError={e => e.target.style.display='none'}/>
+                    <div key={i} className="flex gap-3 items-center border border-cream-200 p-2">
+                      <span className="font-sans text-[0.62rem] text-taupe-400 w-5">{i + 1}</span>
+                      <img src={img} alt="" className="w-12 h-12 object-cover border border-gold-300" onError={e => e.target.style.display='none'}/>
                       <input
                         type="url"
                         value={img}
                         onChange={e => handleImagen(i, e.target.value)}
-                        className="flex-1 border border-[#D9C4A8] px-3 py-2 font-sans text-[0.72rem] text-[#3A1A20] outline-none focus:border-[#7B1A2E]"
+                        className="flex-1 border border-gold-300 px-3 py-2 font-sans text-[0.72rem] text-wine-900 outline-none focus:border-wine-600"
                       />
                       <button
                         type="button"
@@ -308,25 +308,25 @@ export default function AdminProductoForm() {
             <button
               type="button"
               onClick={agregarImagen}
-              className="mt-4 border border-[#D9C4A8] text-[#7A5A60] px-4 py-2 font-sans text-[0.65rem] tracking-widest uppercase hover:border-[#7B1A2E] hover:text-[#7B1A2E] transition-colors">
+              className="mt-4 border border-gold-300 text-taupe-600 px-4 py-2 font-sans text-[0.65rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
               + Agregar URL manualmente
             </button>
           </div>
 
           {/* COLORES Y TALLAS */}
-          <div className="bg-white border border-[#D9C4A8] p-6">
-            <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-[#7A5A60] mb-5 pb-3 border-b border-[#F5EDE0]">
+          <div className="bg-white border border-gold-300 p-6">
+            <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-5 pb-3 border-b border-cream-200">
               Colores y tallas
             </h2>
             <div className="space-y-5">
               {form.colores.map((color, ci) => (
-                <div key={ci} className="border border-[#F5EDE0] p-4">
+                <div key={ci} className="border border-cream-200 p-4">
                   <div className="flex gap-3 items-center mb-4">
                     <input
                       type="text"
                       value={color.nombre}
                       onChange={e => handleColorNombre(ci, e.target.value)}
-                      className="flex-1 border border-[#D9C4A8] px-3 py-2 font-sans text-sm text-[#3A1A20] outline-none focus:border-[#7B1A2E]"
+                      className="flex-1 border border-gold-300 px-3 py-2 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
                       placeholder="Nombre del color (ej: Rojo)"
                     />
                     <button
@@ -337,7 +337,7 @@ export default function AdminProductoForm() {
                     </button>
                   </div>
                   <div>
-                    <p className="font-sans text-[0.62rem] tracking-widest uppercase text-[#B09090] mb-2">Tallas disponibles</p>
+                    <p className="font-sans text-[0.62rem] tracking-widest uppercase text-taupe-400 mb-2">Tallas disponibles</p>
                     <div className="flex gap-2 flex-wrap">
                       {TALLAS_DISPONIBLES.map(t => (
                         <button
@@ -346,8 +346,8 @@ export default function AdminProductoForm() {
                           onClick={() => toggleTalla(ci, t)}
                           className={`w-11 h-11 font-sans text-[0.75rem] border-2 transition-all ${
                             color.tallas.includes(t)
-                              ? 'border-[#7B1A2E] bg-[#7B1A2E] text-[#F5EDE0]'
-                              : 'border-[#D9C4A8] text-[#7A5A60] hover:border-[#7B1A2E]'
+                              ? 'border-wine-600 bg-wine-600 text-cream-200'
+                              : 'border-gold-300 text-taupe-600 hover:border-wine-600'
                           }`}>
                           {t}
                         </button>
@@ -360,7 +360,7 @@ export default function AdminProductoForm() {
             <button
               type="button"
               onClick={agregarColor}
-              className="mt-4 border border-[#D9C4A8] text-[#7A5A60] px-4 py-2 font-sans text-[0.65rem] tracking-widest uppercase hover:border-[#7B1A2E] hover:text-[#7B1A2E] transition-colors">
+              className="mt-4 border border-gold-300 text-taupe-600 px-4 py-2 font-sans text-[0.65rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
               + Agregar color
             </button>
           </div>
@@ -369,13 +369,13 @@ export default function AdminProductoForm() {
             <button
               type="button"
               onClick={() => nav('/admin')}
-              className="border border-[#D9C4A8] text-[#7A5A60] px-8 py-3 font-sans text-[0.68rem] tracking-widest uppercase hover:border-[#7B1A2E] transition-colors">
+              className="border border-gold-300 text-taupe-600 px-8 py-3 font-sans text-[0.68rem] tracking-widest uppercase hover:border-wine-600 transition-colors">
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="bg-[#7B1A2E] text-[#F5EDE0] px-8 py-3 font-sans text-[0.68rem] tracking-widest uppercase hover:bg-[#4E0F1C] transition-colors disabled:opacity-50">
+              className="bg-wine-600 text-cream-200 px-8 py-3 font-sans text-[0.68rem] tracking-widest uppercase hover:bg-wine-800 transition-colors disabled:opacity-50">
               {loading ? 'Guardando...' : esEdicion ? 'Actualizar producto' : 'Crear producto'}
             </button>
           </div>

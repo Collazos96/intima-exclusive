@@ -1,24 +1,19 @@
 const API = import.meta.env.VITE_API_URL || 'https://intima-exclusive-api.juanfecolla.workers.dev'
 
-export async function getCategorias() {
-  const res = await fetch(`${API}/api/categorias`)
+async function fetchJson(path, options = {}) {
+  const res = await fetch(`${API}${path}`, options)
+  if (!res.ok) {
+    let detalle = ''
+    try { detalle = (await res.json())?.error || '' } catch { /* noop */ }
+    throw new Error(detalle || `Error ${res.status} al cargar ${path}`)
+  }
   return res.json()
 }
 
-export async function getProductos() {
-  const res = await fetch(`${API}/api/productos`)
-  return res.json()
-}
-
-export async function getProductosByCategoria(id) {
-  const res = await fetch(`${API}/api/categoria/${id}`)
-  return res.json()
-}
-
-export async function getProducto(id) {
-  const res = await fetch(`${API}/api/productos/${id}`)
-  return res.json()
-}
+export const getCategorias = () => fetchJson('/api/categorias')
+export const getProductos = () => fetchJson('/api/productos')
+export const getProductosByCategoria = (id) => fetchJson(`/api/categoria/${id}`)
+export const getProducto = (id) => fetchJson(`/api/productos/${id}`)
 
 export async function registrarVisita(id) {
   try {

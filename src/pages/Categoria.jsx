@@ -1,49 +1,44 @@
-import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { getProductosByCategoria, getCategorias } from '../hooks/useApi'
+import { qk } from '../lib/queryClient'
 import ProductCard from '../components/ProductCard'
 
 export default function Categoria() {
   const { id } = useParams()
   const nav = useNavigate()
-  const [cat, setCat] = useState(null)
-  const [prods, setProds] = useState([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true)
-      const [cats, productos] = await Promise.all([
-        getCategorias(),
-        getProductosByCategoria(id)
-      ])
-      setCat(cats.find(c => c.id === id))
-      setProds(productos)
-      setLoading(false)
-    }
-    load()
-  }, [id])
+  const { data: categorias = [] } = useQuery({
+    queryKey: qk.categorias,
+    queryFn: getCategorias,
+  })
+  const { data: prods = [], isLoading } = useQuery({
+    queryKey: qk.productosPorCategoria(id),
+    queryFn: () => getProductosByCategoria(id),
+    enabled: !!id,
+  })
+  const cat = categorias.find(c => c.id === id)
 
-  if (loading) return (
+  if (isLoading) return (
     <div className="pt-24 min-h-screen flex items-center justify-center">
-      <p className="font-serif italic text-[#C4A882] text-xl">Cargando...</p>
+      <p className="font-serif italic text-gold-500 text-xl">Cargando...</p>
     </div>
   )
 
-  if (!cat) return <div className="pt-24 text-center text-[#7A5A60]">Categoría no encontrada</div>
+  if (!cat) return <div className="pt-24 text-center text-taupe-600">Categoría no encontrada</div>
 
   return (
     <main className="pt-[70px] min-h-screen">
-      <div className="bg-[#F5EDE0] border-b border-[#D9C4A8] text-center py-12 px-8">
-        <p className="font-sans text-[0.68rem] tracking-widest uppercase text-[#B09090] mb-3">
-          <span onClick={() => nav('/')} className="text-[#7B1A2E] cursor-pointer hover:underline">Inicio</span>
+      <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-8">
+        <p className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">
+          <span onClick={() => nav('/')} className="text-wine-600 cursor-pointer hover:underline">Inicio</span>
           {' / '}{cat.nombre}
         </p>
-        <h1 className="font-serif text-[clamp(1.8rem,4vw,3rem)] tracking-widest uppercase text-[#4E0F1C]">
-          <em className="text-[#7B1A2E]">{cat.nombre}</em>
+        <h1 className="font-serif text-[clamp(1.8rem,4vw,3rem)] tracking-widest uppercase text-wine-800">
+          <em className="text-wine-600">{cat.nombre}</em>
         </h1>
-        <p className="font-sans text-[0.85rem] text-[#7A5A60] mt-2">{cat.sub}</p>
-        <div className="w-14 h-px bg-[#C4A882] mx-auto mt-4"/>
+        <p className="font-sans text-[0.85rem] text-taupe-600 mt-2">{cat.sub}</p>
+        <div className="w-14 h-px bg-gold-500 mx-auto mt-4"/>
       </div>
       <div className="px-8 py-12 max-w-6xl mx-auto">
         {prods.length > 0 ? (
@@ -51,11 +46,11 @@ export default function Categoria() {
             {prods.map(p => <ProductCard key={p.id} producto={p}/>)}
           </div>
         ) : (
-          <div className="text-center py-20 border border-dashed border-[#D9C4A8] max-w-md mx-auto">
-            <p className="font-serif text-[#C4A882] text-2xl mb-3">🌹</p>
-            <p className="font-sans text-[0.85rem] text-[#B09090] italic mb-6">Próximamente — Estamos preparando nuestra colección de {cat.nombre.toLowerCase()}.</p>
+          <div className="text-center py-20 border border-dashed border-gold-300 max-w-md mx-auto">
+            <p className="font-serif text-gold-500 text-2xl mb-3">🌹</p>
+            <p className="font-sans text-[0.85rem] text-taupe-400 italic mb-6">Próximamente — Estamos preparando nuestra colección de {cat.nombre.toLowerCase()}.</p>
             <button onClick={() => window.open('https://wa.me/573028556022', '_blank')}
-              className="bg-[#7B1A2E] text-[#F5EDE0] px-8 py-3 font-sans text-[0.72rem] tracking-widest uppercase hover:bg-[#4E0F1C] transition-colors">
+              className="bg-wine-600 text-cream-200 px-8 py-3 font-sans text-[0.72rem] tracking-widest uppercase hover:bg-wine-800 transition-colors">
               Preguntar disponibilidad
             </button>
           </div>
