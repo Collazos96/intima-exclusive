@@ -5,7 +5,11 @@ workers_dev = true
 
 [vars]
 ENVIRONMENT = "production"
+# Lista separada por comas de orígenes permitidos por CORS
+ALLOWED_ORIGINS = "https://intimaexclusive.com,https://www.intimaexclusive.com"
 
+# ADMIN_TOKEN se configura como secret:
+#   npx wrangler secret put ADMIN_TOKEN
 
 [[d1_databases]]
 binding = "DB"
@@ -15,3 +19,8 @@ database_id = "5834bd47-d068-411d-b551-0b94602e7f73"
 [[r2_buckets]]
 binding = "IMAGES"
 bucket_name = "intima-exclusive-images"
+
+# Entorno de desarrollo local: incluye localhost
+[env.dev.vars]
+ENVIRONMENT = "development"
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173"

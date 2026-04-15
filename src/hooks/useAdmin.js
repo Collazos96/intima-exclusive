@@ -1,4 +1,4 @@
-const API = 'https://intima-exclusive-api.juanfecolla.workers.dev'
+const API = import.meta.env.VITE_API_URL || 'https://intima-exclusive-api.juanfecolla.workers.dev'
 
 function getToken() {
   return sessionStorage.getItem('admin_token')

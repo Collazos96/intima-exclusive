@@ -1,4 +1,4 @@
-const API = 'https://intima-exclusive-api.juanfecolla.workers.dev'
+const API = import.meta.env.VITE_API_URL || 'https://intima-exclusive-api.juanfecolla.workers.dev'
 
 export async function getCategorias() {
   const res = await fetch(`${API}/api/categorias`)
