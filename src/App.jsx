@@ -14,6 +14,8 @@ import Favoritos from './pages/Favoritos'
 import Politica from './pages/Politica'
 import Faq from './pages/Faq'
 import Nosotros from './pages/Nosotros'
+import Checkout from './pages/Checkout'
+import PedidoEstado from './pages/PedidoEstado'
 
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'))
 const AdminPanel = lazy(() => import('./pages/admin/AdminPanel'))
@@ -23,6 +25,7 @@ const AdminInventario = lazy(() => import('./pages/admin/AdminInventario'))
 const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'))
 const AdminPapelera = lazy(() => import('./pages/admin/AdminPapelera'))
 const AdminLimpiezaR2 = lazy(() => import('./pages/admin/AdminLimpiezaR2'))
+const AdminPedidos = lazy(() => import('./pages/admin/AdminPedidos'))
 
 function AdminFallback() {
   return <div className="min-h-screen flex items-center justify-center">Cargando…</div>
@@ -65,6 +68,7 @@ export default function App() {
                 <Route path="reviews" element={<ProtectedRoute><AdminReviews /></ProtectedRoute>} />
                 <Route path="papelera" element={<ProtectedRoute><AdminPapelera /></ProtectedRoute>} />
                 <Route path="limpieza" element={<ProtectedRoute><AdminLimpiezaR2 /></ProtectedRoute>} />
+                <Route path="pedidos" element={<ProtectedRoute><AdminPedidos /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
@@ -86,6 +90,8 @@ export default function App() {
                 <Route path="/politica" element={<Politica />} />
                 <Route path="/faq" element={<Faq />} />
                 <Route path="/nosotros" element={<Nosotros />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/pedido/:reference" element={<PedidoEstado />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <Footer />

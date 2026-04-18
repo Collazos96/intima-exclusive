@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCart, lineKey } from '../lib/cartStore'
 
-const WHATSAPP = '573028556022'
 const formatPrecio = (p) => '$' + p.toLocaleString('es-CO')
 
 export default function CartDrawer() {
+  const nav = useNavigate()
   const { items, isOpen, close, updateCantidad, removeItem, clear, totalItems, totalPrecio } = useCart()
 
   useEffect(() => {
@@ -13,15 +14,10 @@ export default function CartDrawer() {
     return () => window.removeEventListener('keydown', onKey)
   }, [isOpen, close])
 
-  function pedirTodo() {
+  function irACheckout() {
     if (!items.length) return
-    const lineas = items
-      .map((i, idx) =>
-        `${idx + 1}. ${i.nombre}\n   • Color: ${i.color}\n   • Talla: ${i.talla}\n   • Cantidad: ${i.cantidad}\n   • Subtotal: ${formatPrecio(i.precio * i.cantidad)}`
-      )
-      .join('\n\n')
-    const msg = `Hola! Me interesa hacer el siguiente pedido 🌹\n\n${lineas}\n\nTotal: ${formatPrecio(totalPrecio())}\n¿Confirmamos disponibilidad?`
-    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank')
+    close()
+    nav('/checkout')
   }
 
   return (
@@ -118,10 +114,10 @@ export default function CartDrawer() {
               <span className="font-serif text-xl text-wine-800">{formatPrecio(totalPrecio())}</span>
             </div>
             <button
-              onClick={pedirTodo}
-              className="w-full bg-whatsapp-500 text-white py-3.5 font-sans text-[0.72rem] tracking-widest uppercase hover:opacity-90 transition-opacity mb-2"
+              onClick={irACheckout}
+              className="w-full bg-wine-600 text-cream-200 py-3.5 font-sans text-[0.72rem] tracking-widest uppercase hover:bg-wine-800 transition-colors mb-2"
             >
-              📲 Pedir por WhatsApp
+              🔒 Pagar con Wompi
             </button>
             <button
               onClick={clear}
@@ -130,7 +126,7 @@ export default function CartDrawer() {
               Vaciar selección
             </button>
             <p className="font-sans text-[0.7rem] text-taupe-400 text-center mt-2 italic">
-              Envío discreto · Cambios hasta 30 días
+              Tarjeta · PSE · Nequi · Bancolombia · Envío discreto
             </p>
           </footer>
         )}

@@ -8,6 +8,10 @@ const DEFAULT_ALLOWED_ORIGINS = [
 const SITE_BASE = 'https://intimaexclusive.com'
 const IMAGES_PUBLIC_BASE = 'https://images.intimaexclusive.com'
 
+// Envío gratis a partir de este monto (en centavos COP)
+const ENVIO_GRATIS_DESDE = 250_000_00 // 250.000 COP
+const TARIFA_ENVIO = 15_000_00        // 15.000 COP
+
 const COOKIE_AUTH = 'intima_admin'       // httpOnly, contiene JWT
 const COOKIE_HINT = 'intima_admin_hint'  // legible por JS, solo flag
 const JWT_TTL_SECONDS = 60 * 60 * 8      // 8 horas
@@ -263,6 +267,18 @@ export default {
         return await handleVisita(request, env, cors, decodeURIComponent(visitaMatch[1]))
       }
 
+      // Pedidos públicos
+      if (method === 'POST' && path === '/api/pedidos') {
+        return await handleCrearPedido(request, env, cors)
+      }
+      const pedidoMatch = path.match(/^\/api\/pedidos\/([^/]+)$/)
+      if (method === 'GET' && pedidoMatch) {
+        return await handleConsultarPedido(env, cors, decodeURIComponent(pedidoMatch[1]))
+      }
+      if (method === 'POST' && path === '/api/pedidos/webhook') {
+        return await handleWompiWebhook(request, env, cors)
+      }
+
       // Productos relacionados (misma categoria, excluye el propio)
       const relMatch = path.match(/^\/api\/productos\/([^/]+)\/relacionados$/)
       if (method === 'GET' && relMatch) {
@@ -318,6 +334,19 @@ export default {
           const res = await handleAdminEliminarProducto(env, cors, decodeURIComponent(editMatch[1]))
           if (res.status === 200) triggerPagesDeploy(env, ctx)
           return res
+        }
+
+        // Pedidos (admin)
+        if (method === 'GET' && path === '/api/admin/pedidos') {
+          return await handleAdminListPedidos(request, env, cors)
+        }
+        const adminPedidoMatch = path.match(/^\/api\/admin\/pedidos\/([^/]+)$/)
+        if (adminPedidoMatch && method === 'GET') {
+          return await handleAdminConsultarPedido(env, cors, decodeURIComponent(adminPedidoMatch[1]))
+        }
+        const adminEnvioMatch = path.match(/^\/api\/admin\/pedidos\/([^/]+)\/envio$/)
+        if (adminEnvioMatch && method === 'PUT') {
+          return await handleAdminActualizarEnvio(request, env, cors, decodeURIComponent(adminEnvioMatch[1]))
         }
 
         // Limpieza de R2: huérfanas (archivos en R2 sin referencia en DB)
@@ -1049,6 +1078,240 @@ function handleAdminLogout(request, cors) {
       ['Set-Cookie', cookieHint],
     ],
   })
+}
+
+// ===== Pedidos / Wompi =====
+async function sha256Hex(str) {
+  const buf = new TextEncoder().encode(str)
+  const hash = await crypto.subtle.digest('SHA-256', buf)
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+function generarReference() {
+  // Prefijo + timestamp + random para ser únicos y legibles
+  return `INT-${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}`
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const TEL_RE = /^[+0-9\s\-()]{7,20}$/
+
+function validarCrearPedido(body) {
+  if (!body || typeof body !== 'object') return 'Body inválido'
+  const { cliente, items } = body
+  if (!cliente || typeof cliente !== 'object') return 'Cliente requerido'
+  const { nombre, email, telefono, direccion, ciudad } = cliente
+  if (typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.length > 100) return 'Nombre inválido'
+  if (typeof email !== 'string' || !EMAIL_RE.test(email) || email.length > 120) return 'Email inválido'
+  if (typeof telefono !== 'string' || !TEL_RE.test(telefono)) return 'Teléfono inválido'
+  if (typeof direccion !== 'string' || direccion.trim().length < 5 || direccion.length > 200) return 'Dirección inválida'
+  if (typeof ciudad !== 'string' || ciudad.trim().length < 2 || ciudad.length > 80) return 'Ciudad inválida'
+
+  if (!Array.isArray(items) || items.length === 0 || items.length > 50) return 'Items inválidos'
+  for (const it of items) {
+    if (typeof it.productoId !== 'string' || !ID_RE.test(it.productoId)) return 'productoId inválido'
+    if (typeof it.color !== 'string' || it.color.length < 1 || it.color.length > 40) return 'color inválido'
+    if (typeof it.talla !== 'string' || !TALLA_RE.test(it.talla)) return 'talla inválida'
+    if (!Number.isInteger(it.cantidad) || it.cantidad < 1 || it.cantidad > 20) return 'cantidad inválida'
+  }
+  return null
+}
+
+async function handleCrearPedido(request, env, cors) {
+  const ip = getClientIp(request)
+  const rl = await rateLimit(env, `pedido:${ip}`, { windowSec: 3600, max: 20 })
+  if (!rl.ok) return tooMany(cors, rl.retryAfter)
+
+  const body = await safeJson(request)
+  const err = validarCrearPedido(body)
+  if (err) return bad(err, cors)
+
+  // Re-leer precios desde DB (nunca confiar en el precio del cliente)
+  const productoIds = [...new Set(body.items.map((i) => i.productoId))]
+  const ph = productoIds.map(() => '?').join(',')
+  const { results: productos } = await env.DB.prepare(
+    `SELECT id, nombre, precio FROM productos WHERE id IN (${ph}) AND deleted_at IS NULL`
+  ).bind(...productoIds).all()
+  const prodMap = new Map(productos.map((p) => [p.id, p]))
+
+  let subtotalCentavos = 0
+  const itemsNormalizados = []
+  for (const it of body.items) {
+    const prod = prodMap.get(it.productoId)
+    if (!prod) return json({ error: `Producto ${it.productoId} no disponible` }, 409, cors)
+    const precioCentavos = Math.round(prod.precio * 100)
+    subtotalCentavos += precioCentavos * it.cantidad
+    itemsNormalizados.push({
+      productoId: prod.id,
+      nombre: prod.nombre,
+      color: it.color,
+      talla: it.talla,
+      cantidad: it.cantidad,
+      precioUnitario: precioCentavos,
+    })
+  }
+
+  const envioCentavos = subtotalCentavos >= ENVIO_GRATIS_DESDE ? 0 : TARIFA_ENVIO
+  const totalCentavos = subtotalCentavos + envioCentavos
+
+  if (totalCentavos < 50_00) return bad('Monto mínimo $500', cors) // Wompi mínimo 1500 COP
+  if (totalCentavos > 50_000_000_00) return bad('Monto máximo excedido', cors)
+
+  const reference = generarReference()
+  const now = new Date().toISOString()
+  const cli = body.cliente
+
+  await env.DB.batch([
+    env.DB.prepare(`
+      INSERT INTO pedidos (
+        reference, status, nombre, email, telefono, documento_tipo, documento_numero,
+        direccion, ciudad, departamento, codigo_postal, notas,
+        subtotal, envio, total, creado_at, actualizado_at
+      ) VALUES (?, 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      reference,
+      cli.nombre.trim(), cli.email.trim().toLowerCase(), cli.telefono.trim(),
+      cli.documento_tipo ?? null, cli.documento_numero ?? null,
+      cli.direccion.trim(), cli.ciudad.trim(),
+      cli.departamento ?? null, cli.codigo_postal ?? null, cli.notas ?? null,
+      subtotalCentavos, envioCentavos, totalCentavos, now, now
+    ),
+    ...itemsNormalizados.map((it) =>
+      env.DB.prepare(`
+        INSERT INTO pedidos_items (pedido_ref, producto_id, nombre, color, talla, precio_unitario, cantidad)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(reference, it.productoId, it.nombre, it.color, it.talla, it.precioUnitario, it.cantidad)
+    ),
+  ])
+
+  // Firma de integridad para el widget: SHA256(ref + amount + currency + integritySecret)
+  if (!env.WOMPI_INTEGRITY_SECRET) {
+    return serverError(cors)
+  }
+  const signature = await sha256Hex(`${reference}${totalCentavos}COP${env.WOMPI_INTEGRITY_SECRET}`)
+  const publicKey = env.WOMPI_PUBLIC_KEY || ''
+
+  return ok({
+    reference,
+    publicKey,
+    amountInCents: totalCentavos,
+    currency: 'COP',
+    signature,
+    subtotal: subtotalCentavos,
+    envio: envioCentavos,
+    total: totalCentavos,
+  }, cors)
+}
+
+async function handleConsultarPedido(env, cors, reference) {
+  if (typeof reference !== 'string' || reference.length < 3 || reference.length > 64) {
+    return bad('reference inválida', cors)
+  }
+  const pedido = await env.DB.prepare(
+    `SELECT reference, status, wompi_transaction_id, wompi_payment_method,
+            nombre, email, telefono, direccion, ciudad,
+            subtotal, envio, total, estado_envio, creado_at, actualizado_at
+     FROM pedidos WHERE reference = ?`
+  ).bind(reference).first()
+  if (!pedido) return json({ error: 'Pedido no encontrado' }, 404, cors)
+
+  const { results: items } = await env.DB.prepare(
+    `SELECT producto_id, nombre, color, talla, precio_unitario, cantidad
+     FROM pedidos_items WHERE pedido_ref = ?`
+  ).bind(reference).all()
+
+  return ok({ ...pedido, items }, cors)
+}
+
+// Webhook de Wompi. Valida firma y actualiza estado.
+// Doc: https://docs.wompi.co/docs/colombia/eventos/
+async function handleWompiWebhook(request, env, cors) {
+  if (!env.WOMPI_EVENTS_SECRET) return serverError(cors)
+
+  const body = await safeJson(request)
+  if (!body || typeof body !== 'object') return bad('Body inválido', cors)
+  const { event, data, signature, timestamp } = body
+  if (event !== 'transaction.updated') {
+    // Aceptamos pero ignoramos otros eventos
+    return ok({ ok: true, ignored: event }, cors)
+  }
+  if (!data?.transaction || !signature?.properties || typeof timestamp !== 'number') {
+    return bad('Formato webhook inválido', cors)
+  }
+
+  // Reconstruir string canónico según las properties declaradas
+  const tx = data.transaction
+  const concatenated = signature.properties
+    .map((p) => {
+      // property path con dot notation; casi siempre es "transaction.X"
+      return p.split('.').reduce((obj, k) => (obj == null ? undefined : obj[k]), data)
+    })
+    .join('')
+  const expected = await sha256Hex(`${concatenated}${timestamp}${env.WOMPI_EVENTS_SECRET}`)
+
+  if (signature.checksum !== expected) {
+    console.warn('Wompi webhook: firma inválida')
+    return json({ error: 'Firma inválida' }, 401, cors)
+  }
+
+  // Actualiza el pedido (usamos reference como clave)
+  const reference = tx.reference
+  const status = tx.status // APPROVED, DECLINED, VOIDED, ERROR
+  const now = new Date().toISOString()
+
+  const res = await env.DB.prepare(`
+    UPDATE pedidos
+    SET status = ?, wompi_transaction_id = ?, wompi_payment_method = ?, actualizado_at = ?
+    WHERE reference = ?
+  `).bind(status, tx.id, tx.payment_method_type ?? null, now, reference).run()
+
+  if (res.meta.changes === 0) {
+    console.warn('Wompi webhook: pedido no encontrado', reference)
+    return json({ error: 'Pedido no encontrado' }, 404, cors)
+  }
+
+  return ok({ ok: true }, cors)
+}
+
+// Admin: listar pedidos con filtros
+async function handleAdminListPedidos(request, env, cors) {
+  const url = new URL(request.url)
+  const status = url.searchParams.get('status')
+  const estadoEnvio = url.searchParams.get('estado_envio')
+  let query = `SELECT reference, status, nombre, email, telefono, ciudad,
+                      subtotal, envio, total, estado_envio, guia_envio,
+                      wompi_payment_method, creado_at, actualizado_at
+               FROM pedidos`
+  const where = []
+  const binds = []
+  if (status) { where.push('status = ?'); binds.push(status) }
+  if (estadoEnvio) { where.push('estado_envio = ?'); binds.push(estadoEnvio) }
+  if (where.length) query += ' WHERE ' + where.join(' AND ')
+  query += ' ORDER BY creado_at DESC LIMIT 200'
+  const { results } = await env.DB.prepare(query).bind(...binds).all()
+  return ok(results, cors)
+}
+
+async function handleAdminConsultarPedido(env, cors, reference) {
+  return handleConsultarPedido(env, cors, reference)
+}
+
+async function handleAdminActualizarEnvio(request, env, cors, reference) {
+  const body = await safeJson(request)
+  if (!body || typeof body !== 'object') return bad('Body inválido', cors)
+  const { estado_envio, guia_envio } = body
+  const ESTADOS = new Set(['preparando', 'enviado', 'entregado', 'cancelado'])
+  if (!ESTADOS.has(estado_envio)) return bad('estado_envio inválido', cors)
+  if (guia_envio != null && (typeof guia_envio !== 'string' || guia_envio.length > 100)) {
+    return bad('guia_envio inválido', cors)
+  }
+  const now = new Date().toISOString()
+  const res = await env.DB.prepare(
+    `UPDATE pedidos SET estado_envio = ?, guia_envio = ?, actualizado_at = ? WHERE reference = ?`
+  ).bind(estado_envio, guia_envio ?? null, now, reference).run()
+  if (res.meta.changes === 0) return json({ error: 'No encontrado' }, 404, cors)
+  return ok({ ok: true }, cors)
 }
 
 // ===== Sitemap =====

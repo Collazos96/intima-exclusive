@@ -93,6 +93,21 @@ export async function cleanupR2(keys) {
   })
 }
 
+// Pedidos (Wompi)
+export const getAdminPedidos = (filters = {}) => {
+  const params = new URLSearchParams()
+  if (filters.status) params.set('status', filters.status)
+  if (filters.estado_envio) params.set('estado_envio', filters.estado_envio)
+  const q = params.toString()
+  return authFetch(`/api/admin/pedidos${q ? `?${q}` : ''}`)
+}
+export const getAdminPedido = (reference) => authFetch(`/api/admin/pedidos/${reference}`)
+export const actualizarEnvio = (reference, data) =>
+  authFetch(`/api/admin/pedidos/${reference}/envio`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+
 export const getAnalytics = (rango = '30d') => authFetch(`/api/admin/analytics?rango=${rango}`)
 
 export async function actualizarStock(colorId, talla, stock) {

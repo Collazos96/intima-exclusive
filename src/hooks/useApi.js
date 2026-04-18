@@ -16,6 +16,13 @@ export const getProductosByCategoria = (id) => fetchJson(`/api/categoria/${id}`)
 export const getProducto = (id) => fetchJson(`/api/productos/${id}`)
 
 export const getRelacionados = (productoId) => fetchJson(`/api/productos/${productoId}/relacionados`)
+
+export const crearPedido = (data) => fetchJson('/api/pedidos', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(data),
+})
+export const getPedido = (reference) => fetchJson(`/api/pedidos/${reference}`)
 export const getReviews = (productoId) => fetchJson(`/api/productos/${productoId}/reviews`)
 export const crearReview = (productoId, data) => fetchJson(`/api/productos/${productoId}/reviews`, {
   method: 'POST',
