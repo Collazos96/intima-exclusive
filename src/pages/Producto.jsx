@@ -92,12 +92,6 @@ export default function Producto() {
     })
   }
 
-  function pedirAhora() {
-    if (!validarSeleccion()) return
-    const msg = `Hola! Me interesa el ${prod.nombre} 🌹\n• Color: ${colorSel}\n• Talla: ${tallaSel}\n• Precio: ${formatPrecio(prod.precio)}\n¿Está disponible?`
-    window.open('https://wa.me/573028556022?text=' + encodeURIComponent(msg), '_blank')
-  }
-
   const stockTotal = prod.colores.reduce(
     (sum, c) => sum + c.tallas.reduce((s, t) => s + (t.stock || 0), 0),
     0,
@@ -271,10 +265,7 @@ export default function Producto() {
           <button onClick={agregarAlCarrito} className="w-full bg-wine-600 text-cream-200 py-4 font-sans text-[0.75rem] tracking-widest uppercase hover:bg-wine-800 transition-colors mb-3">
             Añadir a mi selección
           </button>
-          <button onClick={pedirAhora} className="w-full bg-whatsapp-500 text-white py-3.5 font-sans text-[0.72rem] tracking-widest uppercase hover:opacity-90 transition-opacity">
-            📲 Pedir solo este por WhatsApp
-          </button>
-          <div className="mt-3 flex justify-center">
+          <div className="flex justify-center">
             <WishlistButton producto={prod} variant="full" />
           </div>
           <ul className="grid grid-cols-3 gap-2 mt-4 font-sans text-[0.65rem] text-taupe-600">

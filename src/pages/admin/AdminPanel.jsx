@@ -102,6 +102,11 @@ export default function AdminPanel() {
                 className="border border-gold-300 text-taupe-600 px-6 py-2.5 font-sans text-[0.68rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
                 Limpieza R2
             </button>
+            <button
+                onClick={() => nav('/admin/pedidos')}
+                className="bg-wine-600 text-cream-200 px-6 py-2.5 font-sans text-[0.68rem] tracking-widest uppercase hover:bg-wine-800 transition-colors">
+                Pedidos
+            </button>
           </div>
         </div>
 
