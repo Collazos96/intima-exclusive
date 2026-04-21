@@ -8,9 +8,19 @@ const DEFAULT_ALLOWED_ORIGINS = [
 const SITE_BASE = 'https://intimaexclusive.com'
 const IMAGES_PUBLIC_BASE = 'https://images.intimaexclusive.com'
 
-// Envío gratis a partir de este monto (en centavos COP)
-const ENVIO_GRATIS_DESDE = 250_000_00 // 250.000 COP
-const TARIFA_ENVIO = 15_000_00        // 15.000 COP
+// Envío (defaults, sobrescribibles por env vars ENVIO_GRATIS_DESDE y TARIFA_ENVIO)
+const DEFAULT_ENVIO_GRATIS_DESDE = 250_000_00 // 250.000 COP en centavos
+const DEFAULT_TARIFA_ENVIO = 15_000_00        // 15.000 COP en centavos
+
+function getEnvioConfig(env) {
+  const umbral = env.ENVIO_GRATIS_DESDE != null && env.ENVIO_GRATIS_DESDE !== ''
+    ? Number(env.ENVIO_GRATIS_DESDE)
+    : DEFAULT_ENVIO_GRATIS_DESDE
+  const tarifa = env.TARIFA_ENVIO != null && env.TARIFA_ENVIO !== ''
+    ? Number(env.TARIFA_ENVIO)
+    : DEFAULT_TARIFA_ENVIO
+  return { umbral, tarifa }
+}
 
 const COOKIE_AUTH = 'intima_admin'       // httpOnly, contiene JWT
 const COOKIE_HINT = 'intima_admin_hint'  // legible por JS, solo flag
@@ -265,6 +275,21 @@ export default {
       const visitaMatch = path.match(/^\/api\/visita\/([^/]+)$/)
       if (method === 'POST' && visitaMatch) {
         return await handleVisita(request, env, cors, decodeURIComponent(visitaMatch[1]))
+      }
+
+      // Config pública (incluye tarifas de envío)
+      if (method === 'GET' && path === '/api/config') {
+        const { umbral, tarifa } = getEnvioConfig(env)
+        return ok({
+          envio: {
+            // Montos expuestos en COP (no centavos) para uso directo en UI
+            gratis_desde: Math.round(umbral / 100),
+            tarifa: Math.round(tarifa / 100),
+          },
+          wompi: {
+            monto_minimo: 1500,
+          },
+        }, cors)
       }
 
       // Pedidos públicos
@@ -1178,10 +1203,11 @@ async function handleCrearPedido(request, env, cors) {
     })
   }
 
-  const envioCentavos = subtotalCentavos >= ENVIO_GRATIS_DESDE ? 0 : TARIFA_ENVIO
+  const { umbral, tarifa } = getEnvioConfig(env)
+  const envioCentavos = subtotalCentavos >= umbral ? 0 : tarifa
   const totalCentavos = subtotalCentavos + envioCentavos
 
-  if (totalCentavos < 50_00) return bad('Monto mínimo $500', cors) // Wompi mínimo 1500 COP
+  if (totalCentavos < 1_500_00) return bad('Monto mínimo $1.500 COP', cors) // Wompi mínimo
   if (totalCentavos > 50_000_000_00) return bad('Monto máximo excedido', cors)
 
   const reference = generarReference()
