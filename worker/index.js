@@ -315,7 +315,7 @@ export default {
         return await handleConsultarPedido(env, cors, decodeURIComponent(pedidoMatch[1]))
       }
       if (method === 'POST' && path === '/api/pedidos/webhook') {
-        return await handleWompiWebhook(request, env, cors)
+        return await handleWompiWebhook(request, env, cors, ctx)
       }
 
       // Productos relacionados (misma categoria, excluye el propio)
@@ -1442,6 +1442,140 @@ function unsubscribeHtml({ ok, mensaje }) {
 </div></body></html>`
 }
 
+// ===== Email de confirmación de pedido =====
+function formatCopCents(c) {
+  return '$' + Math.round((c || 0) / 100).toLocaleString('es-CO') + ' COP'
+}
+
+function orderConfirmationText({ pedido, items }) {
+  const lineas = items.map((i, idx) =>
+    `${idx + 1}. ${i.nombre} — ${i.color}, talla ${i.talla} x${i.cantidad} — ${formatCopCents(i.precio_unitario * i.cantidad)}`
+  ).join('\n')
+
+  return `Recibimos tu pedido, ${pedido.nombre.split(' ')[0]}
+
+Referencia: ${pedido.reference}
+
+${lineas}
+
+Subtotal: ${formatCopCents(pedido.subtotal)}${pedido.cupon_descuento > 0 ? `
+Descuento (${pedido.cupon_codigo}): -${formatCopCents(pedido.cupon_descuento)}` : ''}
+Envío: ${pedido.envio === 0 ? 'GRATIS' : formatCopCents(pedido.envio)}
+Total: ${formatCopCents(pedido.total)}
+
+Envío a:
+${pedido.direccion}, ${pedido.ciudad}${pedido.departamento ? ', ' + pedido.departamento : ''}
+${pedido.telefono}
+
+Empezamos a preparar tu pedido. Recibirás otro correo cuando lo enviemos.
+Tiempo estimado: 1-2 días hábiles de preparación + 2-5 días de entrega.
+
+Consulta el estado en: https://intimaexclusive.com/pedido/${pedido.reference}
+
+¿Preguntas? WhatsApp +57 302 855 6022
+`
+}
+
+function orderConfirmationHtml({ pedido, items }) {
+  const firstName = pedido.nombre?.split(' ')[0] || ''
+  const itemsHtml = items.map((i) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #D9C4A8;">
+        <p style="font-family:Georgia,serif;color:#3A1A20;font-size:14px;margin:0 0 2px;">${i.nombre}</p>
+        <p style="font-family:Arial,sans-serif;color:#7A5A60;font-size:12px;margin:0;">${i.color} · Talla ${i.talla} · x${i.cantidad}</p>
+      </td>
+      <td align="right" style="padding:10px 0;border-bottom:1px solid #D9C4A8;font-family:Arial,sans-serif;color:#7B1A2E;font-weight:bold;font-size:14px;white-space:nowrap;">
+        ${formatCopCents(i.precio_unitario * i.cantidad)}
+      </td>
+    </tr>`).join('')
+
+  const estadoUrl = `https://intimaexclusive.com/pedido/${pedido.reference}`
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recibimos tu pedido — Íntima Exclusive</title>
+</head>
+<body style="margin:0;padding:0;font-family:Georgia,serif;background:#F5EDE0;color:#3A1A20;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5EDE0;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#FAF5EE;padding:40px 24px;">
+    <tr><td align="center" style="padding-bottom:32px;border-bottom:1px solid #D9C4A8;">
+      <a href="https://intimaexclusive.com" style="text-decoration:none;">
+        <p style="font-family:Georgia,serif;font-size:24px;color:#7B1A2E;margin:0 0 4px;font-weight:bold;letter-spacing:4px;text-transform:uppercase;">Íntima</p>
+        <p style="font-family:Georgia,serif;font-size:16px;color:#C4A882;margin:0;font-style:italic;letter-spacing:1px;">Exclusive</p>
+      </a>
+    </td></tr>
+    <tr><td style="height:24px;">&nbsp;</td></tr>
+    <tr><td align="center">
+      <h1 style="font-family:Georgia,serif;font-size:26px;color:#7B1A2E;font-weight:normal;margin:0 0 8px;">Recibimos tu pedido${firstName ? ', ' + firstName : ''}</h1>
+      <p style="font-family:Georgia,serif;font-size:14px;color:#7A5A60;margin:0 0 4px;">Gracias por tu compra. Empezamos a prepararla con cuidado.</p>
+      <p style="font-family:'Courier New',monospace;font-size:12px;color:#C4A882;margin:16px 0 0;">Ref: ${pedido.reference}</p>
+    </td></tr>
+    <tr><td style="height:24px;">&nbsp;</td></tr>
+    <tr><td>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FFFDF9;border:1px solid #D9C4A8;padding:20px;">
+        <tr><td>
+          <p style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#7A5A60;margin:0 0 12px;">Tu pedido</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            ${itemsHtml}
+          </table>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px;">
+            <tr><td style="font-family:Arial,sans-serif;color:#7A5A60;font-size:13px;padding:4px 0;">Subtotal</td><td align="right" style="font-family:Arial,sans-serif;color:#3A1A20;font-size:13px;padding:4px 0;">${formatCopCents(pedido.subtotal)}</td></tr>
+            ${pedido.cupon_descuento > 0 ? `
+            <tr><td style="font-family:Arial,sans-serif;color:#7A5A60;font-size:13px;padding:4px 0;">Descuento (${pedido.cupon_codigo})</td><td align="right" style="font-family:Arial,sans-serif;color:#059669;font-weight:bold;font-size:13px;padding:4px 0;">-${formatCopCents(pedido.cupon_descuento)}</td></tr>` : ''}
+            <tr><td style="font-family:Arial,sans-serif;color:#7A5A60;font-size:13px;padding:4px 0;">Envío</td><td align="right" style="font-family:Arial,sans-serif;color:${pedido.envio === 0 ? '#059669' : '#3A1A20'};font-weight:${pedido.envio === 0 ? 'bold' : 'normal'};font-size:13px;padding:4px 0;">${pedido.envio === 0 ? 'GRATIS' : formatCopCents(pedido.envio)}</td></tr>
+            <tr><td style="font-family:Georgia,serif;color:#3A1A20;font-size:16px;padding:12px 0 4px;border-top:1px solid #D9C4A8;">Total</td><td align="right" style="font-family:Georgia,serif;color:#7B1A2E;font-size:18px;font-weight:bold;padding:12px 0 4px;border-top:1px solid #D9C4A8;">${formatCopCents(pedido.total)}</td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="height:20px;">&nbsp;</td></tr>
+    <tr><td>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="padding:0 4px;">
+        <tr><td>
+          <p style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#7A5A60;margin:0 0 8px;">Dirección de envío</p>
+          <p style="font-family:Georgia,serif;font-size:14px;color:#3A1A20;margin:0 0 4px;line-height:1.5;">
+            ${pedido.nombre}<br>
+            ${pedido.direccion}<br>
+            ${pedido.ciudad}${pedido.departamento ? ', ' + pedido.departamento : ''}<br>
+            ${pedido.telefono}
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="height:24px;">&nbsp;</td></tr>
+    <tr><td align="center" style="padding:20px;background:#F5EDE0;border-left:3px solid #7B1A2E;">
+      <p style="font-family:Georgia,serif;color:#3A1A20;font-size:14px;margin:0 0 4px;line-height:1.6;">
+        <strong>Empezamos a preparar tu pedido.</strong><br>
+        Recibirás otro correo cuando salga de camino.
+      </p>
+      <p style="font-family:Arial,sans-serif;color:#7A5A60;font-size:12px;margin:8px 0 0;">
+        Preparación: 1-2 días hábiles · Entrega: 2-5 días hábiles<br>
+        Empaque completamente discreto, como siempre.
+      </p>
+    </td></tr>
+    <tr><td align="center" style="padding:28px 0 16px;">
+      <a href="${estadoUrl}" style="display:inline-block;background:#7B1A2E;color:#F5EDE0;text-decoration:none;padding:14px 32px;font-family:Arial,sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;">Ver estado del pedido</a>
+    </td></tr>
+    <tr><td>
+      <hr style="border:none;border-top:1px solid #D9C4A8;margin:24px 0;">
+    </td></tr>
+    <tr><td align="center">
+      <p style="font-family:Georgia,serif;font-size:13px;color:#7A5A60;line-height:1.5;margin:0;">
+        ¿Alguna pregunta sobre tu pedido?<br>
+        <a href="https://wa.me/573028556022?text=${encodeURIComponent(`Hola! Tengo una pregunta sobre mi pedido ${pedido.reference}`)}" style="color:#7B1A2E;text-decoration:none;font-weight:bold;">Escríbenos por WhatsApp</a>
+      </p>
+    </td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>`
+}
+
 // Admin newsletter
 async function handleAdminListSuscriptores(env, cors) {
   const { results } = await env.DB.prepare(
@@ -1829,7 +1963,7 @@ async function handleConsultarPedido(env, cors, reference) {
 
 // Webhook de Wompi. Valida firma y actualiza estado.
 // Doc: https://docs.wompi.co/docs/colombia/eventos/
-async function handleWompiWebhook(request, env, cors) {
+async function handleWompiWebhook(request, env, cors, ctx) {
   if (!env.WOMPI_EVENTS_SECRET) return serverError(cors)
 
   const body = await safeJson(request)
@@ -1882,11 +2016,11 @@ async function handleWompiWebhook(request, env, cors) {
     WHERE reference = ?
   `).bind(status, tx.id, tx.payment_method_type ?? null, now, reference).run()
 
-  // Si transiciona a APPROVED por primera vez, descuenta stock.
-  // Idempotente: si el webhook llega dos veces, la segunda vez wasApproved=true y no se re-descuenta.
+  // Si transiciona a APPROVED por primera vez, descuenta stock + envía email.
+  // Idempotente: si el webhook llega dos veces, la segunda vez wasApproved=true y no se re-ejecuta.
   if (becomeApproved) {
     const { results: items } = await env.DB.prepare(
-      'SELECT producto_id, color, talla, cantidad FROM pedidos_items WHERE pedido_ref = ?'
+      'SELECT producto_id, color, talla, cantidad, nombre, precio_unitario FROM pedidos_items WHERE pedido_ref = ?'
     ).bind(reference).all()
 
     for (const item of items) {
@@ -1904,6 +2038,21 @@ async function handleWompiWebhook(request, env, cors) {
           `⚠️ Stock insuficiente tras pago aprobado: ${item.producto_id}/${item.color}/${item.talla} (pedido ${reference}). El admin debe ajustar manualmente.`
         )
       }
+    }
+
+    // Enviar email de confirmación al cliente (fire-and-forget via waitUntil)
+    const pedidoCompleto = await env.DB.prepare('SELECT * FROM pedidos WHERE reference = ?')
+      .bind(reference).first()
+    if (pedidoCompleto?.email) {
+      const sendPromise = enviarEmail(env, {
+        to: pedidoCompleto.email,
+        subject: `Recibimos tu pedido ${reference} — Íntima Exclusive`,
+        html: orderConfirmationHtml({ pedido: pedidoCompleto, items }),
+        text: orderConfirmationText({ pedido: pedidoCompleto, items }),
+        replyTo: env.RESEND_REPLY_TO || 'info@intimaexclusive.com',
+        headers: { 'X-Entity-Ref-ID': reference },
+      }).catch((err) => console.error('Order confirmation email error:', err))
+      if (ctx?.waitUntil) ctx.waitUntil(sendPromise)
     }
   }
 
