@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { useQuery } from '@tanstack/react-query'
 import { useCart } from '../lib/cartStore'
-import { crearPedido } from '../hooks/useApi'
+import { crearPedido, getConfig } from '../hooks/useApi'
 import Seo from '../components/Seo'
 import Img from '../components/Img'
 
 const WOMPI_WIDGET_SRC = 'https://checkout.wompi.co/widget.js'
-const ENVIO_GRATIS_DESDE = 250_000
-const TARIFA_ENVIO = 15_000
+const ENVIO_GRATIS_DESDE_DEFAULT = 250_000
+const TARIFA_ENVIO_DEFAULT = 15_000
 
 const formatPrecio = (cop) => '$' + cop.toLocaleString('es-CO')
 
@@ -41,6 +42,15 @@ export default function Checkout() {
   const totalPrecio = useCart((s) => s.totalPrecio())
   const clear = useCart((s) => s.clear)
   const widgetReady = useWompiWidget()
+
+  // Config de envío desde backend (permite cambiar sin rebuild del frontend)
+  const { data: config } = useQuery({
+    queryKey: ['config'],
+    queryFn: getConfig,
+    staleTime: 5 * 60_000,
+  })
+  const ENVIO_GRATIS_DESDE = config?.envio?.gratis_desde ?? ENVIO_GRATIS_DESDE_DEFAULT
+  const TARIFA_ENVIO = config?.envio?.tarifa ?? TARIFA_ENVIO_DEFAULT
 
   const [form, setForm] = useState({
     nombre: '',
