@@ -96,6 +96,7 @@ export async function cleanupR2(keys) {
 // Pedidos (Wompi)
 export const getAdminPedidos = (filters = {}) => {
   const params = new URLSearchParams()
+  if (filters.vista) params.set('vista', filters.vista)
   if (filters.status) params.set('status', filters.status)
   if (filters.estado_envio) params.set('estado_envio', filters.estado_envio)
   const q = params.toString()

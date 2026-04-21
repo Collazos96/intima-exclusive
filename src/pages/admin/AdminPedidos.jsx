@@ -22,24 +22,27 @@ const STATUS_STYLES = {
 }
 const ENVIO_ESTADOS = ['preparando', 'enviado', 'entregado', 'cancelado']
 
+const VISTAS = [
+  { id: 'activos',     label: 'Activos' },
+  { id: 'entregados',  label: 'Entregados' },
+  { id: 'cancelados',  label: 'Cancelados' },
+  { id: 'todos',       label: 'Todos' },
+]
+
 export default function AdminPedidos() {
   const nav = useNavigate()
   const qc = useQueryClient()
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [envioFilter, setEnvioFilter] = useState('all')
+  const [vista, setVista] = useState('activos')
   const [detalleRef, setDetalleRef] = useState(null)
 
-  const { data: pedidos = [], isLoading, refetch } = useQuery({
-    queryKey: ['admin', 'pedidos', statusFilter, envioFilter],
-    queryFn: () => getAdminPedidos({
-      status: statusFilter !== 'all' ? statusFilter : undefined,
-      estado_envio: envioFilter !== 'all' ? envioFilter : undefined,
-    }),
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['admin', 'pedidos', vista],
+    queryFn: () => getAdminPedidos({ vista }),
     refetchInterval: 60_000, // refresca cada minuto
   })
 
-  const approvedCount = pedidos.filter((p) => p.status === 'APPROVED').length
-  const pendingCount = pedidos.filter((p) => p.status === 'PENDING').length
+  const pedidos = data?.pedidos || []
+  const counts = data?.counts || {}
 
   function exportar() {
     downloadCsv(
@@ -62,15 +65,15 @@ export default function AdminPedidos() {
   return (
     <main className="min-h-screen bg-cream-100 pt-[70px]">
       <div className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <div>
             <h1 className="font-serif text-2xl text-wine-800">Pedidos</h1>
             <p className="font-sans text-[0.75rem] text-taupe-600 mt-1">
-              {approvedCount} aprobados · {pendingCount} pendientes · {pedidos.length} en vista
+              {counts.activos ?? 0} activos · {counts.nuevos_hoy ?? 0} nuevos hoy · {counts.entregados_mes ?? 0} entregados este mes
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <button onClick={exportar} className="border border-gold-300 text-taupe-600 px-4 py-2 font-sans text-[0.68rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
+            <button onClick={exportar} disabled={pedidos.length === 0} className="border border-gold-300 text-taupe-600 px-4 py-2 font-sans text-[0.68rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 disabled:opacity-50 transition-colors">
               Exportar CSV
             </button>
             <button onClick={() => refetch()} className="border border-gold-300 text-taupe-600 px-4 py-2 font-sans text-[0.68rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
@@ -82,41 +85,48 @@ export default function AdminPedidos() {
           </div>
         </div>
 
-        {/* Filtros */}
-        <div className="flex gap-3 mb-5 flex-wrap font-sans text-[0.7rem]">
-          <label className="flex items-center gap-2">
-            <span className="tracking-widest uppercase text-taupe-600">Pago:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gold-300 bg-white px-3 py-1.5 text-wine-900"
-            >
-              <option value="all">Todos</option>
-              <option value="PENDING">Pendiente</option>
-              <option value="APPROVED">Aprobado</option>
-              <option value="DECLINED">Rechazado</option>
-              <option value="VOIDED">Cancelado</option>
-              <option value="ERROR">Error</option>
-            </select>
-          </label>
-          <label className="flex items-center gap-2">
-            <span className="tracking-widest uppercase text-taupe-600">Envío:</span>
-            <select
-              value={envioFilter}
-              onChange={(e) => setEnvioFilter(e.target.value)}
-              className="border border-gold-300 bg-white px-3 py-1.5 text-wine-900"
-            >
-              <option value="all">Todos</option>
-              {ENVIO_ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
-            </select>
-          </label>
+        {/* Tabs de vista */}
+        <div className="flex border-b border-gold-300 mb-5" role="tablist" aria-label="Filtro de pedidos">
+          {VISTAS.map((v) => {
+            const activo = vista === v.id
+            const count = v.id === 'activos' ? counts.activos
+                        : v.id === 'entregados' ? counts.entregados_mes
+                        : v.id === 'cancelados' ? counts.cancelados_total
+                        : undefined
+            return (
+              <button
+                key={v.id}
+                role="tab"
+                aria-selected={activo}
+                onClick={() => setVista(v.id)}
+                className={`px-4 py-2.5 font-sans text-[0.7rem] tracking-widest uppercase border-b-2 transition-colors ${activo
+                  ? 'border-wine-600 text-wine-600'
+                  : 'border-transparent text-taupe-600 hover:text-wine-600'}`}
+              >
+                {v.label}
+                {count != null && count > 0 && (
+                  <span className={`ml-2 px-1.5 py-0.5 text-[0.6rem] rounded-full ${activo ? 'bg-wine-600 text-cream-200' : 'bg-cream-200 text-taupe-600'}`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         {isLoading ? (
           <p className="font-serif italic text-gold-500 text-center py-12">Cargando…</p>
         ) : pedidos.length === 0 ? (
           <div className="bg-white border border-gold-300 p-8 text-center">
-            <p className="font-sans text-[0.85rem] text-taupe-400 italic">Sin pedidos en esta vista.</p>
+            <p className="font-serif text-gold-500 text-3xl mb-3" aria-hidden="true">
+              {vista === 'activos' ? '✨' : '📦'}
+            </p>
+            <p className="font-sans text-[0.85rem] text-taupe-600">
+              {vista === 'activos' && 'No hay pedidos activos. ¡Todo al día!'}
+              {vista === 'entregados' && 'Aún no hay pedidos entregados.'}
+              {vista === 'cancelados' && 'Sin cancelaciones.'}
+              {vista === 'todos' && 'No hay pedidos registrados.'}
+            </p>
           </div>
         ) : (
           <div className="bg-white border border-gold-300 overflow-x-auto">
