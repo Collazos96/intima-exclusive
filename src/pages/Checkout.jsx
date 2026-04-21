@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react' // useEffect ya importado
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
@@ -84,12 +84,16 @@ export default function Checkout() {
     setCuponError('')
     const code = cuponInput.trim().toUpperCase()
     if (!code) return
+    if (!form.email.trim()) {
+      setCuponError('Primero ingresa tu correo arriba.')
+      return
+    }
     setCuponValidando(true)
     try {
       const res = await validarCuponApi({
         codigo: code,
         subtotal: subtotal * 100, // centavos
-        email: form.email.trim() || null,
+        email: form.email.trim(),
       })
       if (res.valido) {
         setCuponAplicado(res)
@@ -110,6 +114,28 @@ export default function Checkout() {
     setCuponInput('')
     setCuponError('')
   }
+
+  // Si cambia el email después de aplicar cupón, re-valida (por email_requerido/primera compra)
+  useEffect(() => {
+    if (!cuponAplicado) return
+    const code = cuponAplicado.codigo
+    validarCuponApi({
+      codigo: code,
+      subtotal: subtotal * 100,
+      email: form.email.trim() || null,
+    })
+      .then((res) => {
+        if (res.valido) {
+          setCuponAplicado(res)
+          setCuponError('')
+        } else {
+          setCuponAplicado(null)
+          setCuponError(res.motivo || 'Cupón ya no es válido con este correo.')
+        }
+      })
+      .catch(() => { /* silencioso */ })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.email])
 
   function update(campo, valor) {
     setForm((f) => ({ ...f, [campo]: valor }))

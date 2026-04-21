@@ -1456,8 +1456,11 @@ async function validarCupon(env, codigo, subtotalCentavos, email) {
     }
   }
   if (cupon.email_requerido) {
-    if (typeof email !== 'string' || email.trim().toLowerCase() !== cupon.email_requerido.toLowerCase()) {
-      return { valido: false, motivo: 'Este cupón está reservado para otro correo.' }
+    if (typeof email !== 'string' || !email.trim()) {
+      return { valido: false, motivo: 'Ingresa tu correo antes de aplicar este cupón.' }
+    }
+    if (email.trim().toLowerCase() !== cupon.email_requerido.toLowerCase()) {
+      return { valido: false, motivo: `Este cupón es personal — solo funciona con ${cupon.email_requerido}.` }
     }
   }
   if (cupon.solo_primera_compra) {
