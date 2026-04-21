@@ -109,6 +109,9 @@ export const actualizarEnvio = (reference, data) =>
     body: JSON.stringify(data),
   })
 
+// Suscriptores (newsletter)
+export const getAdminSuscriptores = () => authFetch('/api/admin/suscriptores')
+
 // Cupones
 export const getAdminCupones = () => authFetch('/api/admin/cupones')
 export const crearCupon = (data) => authFetch('/api/admin/cupones', {

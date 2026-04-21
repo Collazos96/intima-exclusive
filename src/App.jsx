@@ -27,6 +27,7 @@ const AdminPapelera = lazy(() => import('./pages/admin/AdminPapelera'))
 const AdminLimpiezaR2 = lazy(() => import('./pages/admin/AdminLimpiezaR2'))
 const AdminPedidos = lazy(() => import('./pages/admin/AdminPedidos'))
 const AdminCupones = lazy(() => import('./pages/admin/AdminCupones'))
+const AdminSuscriptores = lazy(() => import('./pages/admin/AdminSuscriptores'))
 
 function AdminFallback() {
   return <div className="min-h-screen flex items-center justify-center">Cargando…</div>
@@ -71,6 +72,7 @@ export default function App() {
                 <Route path="limpieza" element={<ProtectedRoute><AdminLimpiezaR2 /></ProtectedRoute>} />
                 <Route path="pedidos" element={<ProtectedRoute><AdminPedidos /></ProtectedRoute>} />
                 <Route path="cupones" element={<ProtectedRoute><AdminCupones /></ProtectedRoute>} />
+                <Route path="suscriptores" element={<ProtectedRoute><AdminSuscriptores /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
