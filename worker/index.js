@@ -1135,11 +1135,37 @@ async function handleCrearPedido(request, env, cors) {
   ).bind(...productoIds).all()
   const prodMap = new Map(productos.map((p) => [p.id, p]))
 
+  // Validar stock disponible antes de proceder al pago
+  const { results: stockRows } = await env.DB.prepare(`
+    SELECT p.id AS producto_id, c.nombre AS color, t.talla, t.stock
+    FROM productos p
+    JOIN colores c ON c.producto_id = p.id
+    JOIN tallas t ON t.color_id = c.id
+    WHERE p.id IN (${ph})
+  `).bind(...productoIds).all()
+  const stockMap = new Map(
+    stockRows.map((r) => [`${r.producto_id}::${r.color}::${r.talla}`, r.stock])
+  )
+
   let subtotalCentavos = 0
   const itemsNormalizados = []
   for (const it of body.items) {
     const prod = prodMap.get(it.productoId)
     if (!prod) return json({ error: `Producto ${it.productoId} no disponible` }, 409, cors)
+
+    const stockKey = `${it.productoId}::${it.color}::${it.talla}`
+    const stockDisponible = stockMap.get(stockKey)
+    if (stockDisponible == null) {
+      return json({ error: `Variante no encontrada: ${prod.nombre} ${it.color} talla ${it.talla}` }, 409, cors)
+    }
+    if (stockDisponible < it.cantidad) {
+      return json({
+        error: stockDisponible === 0
+          ? `Agotado: ${prod.nombre} en ${it.color}, talla ${it.talla}. Por favor actualiza tu selección.`
+          : `Stock insuficiente: ${prod.nombre} en ${it.color}, talla ${it.talla}. Quedan ${stockDisponible}, pediste ${it.cantidad}.`,
+      }, 409, cors)
+    }
+
     const precioCentavos = Math.round(prod.precio * 100)
     subtotalCentavos += precioCentavos * it.cantidad
     itemsNormalizados.push({
@@ -1260,15 +1286,48 @@ async function handleWompiWebhook(request, env, cors) {
   const status = tx.status // APPROVED, DECLINED, VOIDED, ERROR
   const now = new Date().toISOString()
 
-  const res = await env.DB.prepare(`
+  // Lee estado previo para detectar transiciones
+  const pedidoActual = await env.DB.prepare(
+    'SELECT status FROM pedidos WHERE reference = ?'
+  ).bind(reference).first()
+
+  if (!pedidoActual) {
+    console.warn('Wompi webhook: pedido no encontrado', reference)
+    return json({ error: 'Pedido no encontrado' }, 404, cors)
+  }
+
+  const wasApproved = pedidoActual.status === 'APPROVED'
+  const becomeApproved = status === 'APPROVED' && !wasApproved
+
+  await env.DB.prepare(`
     UPDATE pedidos
     SET status = ?, wompi_transaction_id = ?, wompi_payment_method = ?, actualizado_at = ?
     WHERE reference = ?
   `).bind(status, tx.id, tx.payment_method_type ?? null, now, reference).run()
 
-  if (res.meta.changes === 0) {
-    console.warn('Wompi webhook: pedido no encontrado', reference)
-    return json({ error: 'Pedido no encontrado' }, 404, cors)
+  // Si transiciona a APPROVED por primera vez, descuenta stock.
+  // Idempotente: si el webhook llega dos veces, la segunda vez wasApproved=true y no se re-descuenta.
+  if (becomeApproved) {
+    const { results: items } = await env.DB.prepare(
+      'SELECT producto_id, color, talla, cantidad FROM pedidos_items WHERE pedido_ref = ?'
+    ).bind(reference).all()
+
+    for (const item of items) {
+      // WHERE stock >= cantidad evita ir a negativo si hubo race condition.
+      const res = await env.DB.prepare(`
+        UPDATE tallas
+        SET stock = stock - ?
+        WHERE color_id IN (SELECT id FROM colores WHERE producto_id = ? AND nombre = ?)
+          AND talla = ?
+          AND stock >= ?
+      `).bind(item.cantidad, item.producto_id, item.color, item.talla, item.cantidad).run()
+
+      if (res.meta.changes === 0) {
+        console.warn(
+          `⚠️ Stock insuficiente tras pago aprobado: ${item.producto_id}/${item.color}/${item.talla} (pedido ${reference}). El admin debe ajustar manualmente.`
+        )
+      }
+    }
   }
 
   return ok({ ok: true }, cors)
