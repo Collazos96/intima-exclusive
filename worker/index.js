@@ -6,6 +6,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'https://www.intimaexclusive.com',
 ]
 const SITE_BASE = 'https://intimaexclusive.com'
+const API_BASE = 'https://api.intimaexclusive.com'
 const IMAGES_PUBLIC_BASE = 'https://images.intimaexclusive.com'
 
 // Envío (defaults, sobrescribibles por env vars ENVIO_GRATIS_DESDE y TARIFA_ENVIO)
@@ -297,6 +298,14 @@ export default {
         return await handleValidarCupon(request, env, cors)
       }
 
+      // Newsletter
+      if (method === 'POST' && path === '/api/newsletter/suscribir') {
+        return await handleSuscribirNewsletter(request, env, cors)
+      }
+      if (method === 'GET' && path === '/unsubscribe') {
+        return await handleUnsubscribeNewsletter(request, env)
+      }
+
       // Pedidos públicos
       if (method === 'POST' && path === '/api/pedidos') {
         return await handleCrearPedido(request, env, cors)
@@ -364,6 +373,11 @@ export default {
           const res = await handleAdminEliminarProducto(env, cors, decodeURIComponent(editMatch[1]))
           if (res.status === 200) triggerPagesDeploy(env, ctx)
           return res
+        }
+
+        // Newsletter admin
+        if (method === 'GET' && path === '/api/admin/suscriptores') {
+          return await handleAdminListSuscriptores(env, cors)
         }
 
         // Cupones (admin CRUD)
@@ -1123,6 +1137,233 @@ function handleAdminLogout(request, cors) {
       ['Set-Cookie', cookieHint],
     ],
   })
+}
+
+// ===== Email via Resend =====
+async function enviarEmail(env, { to, subject, html, from }) {
+  if (!env.RESEND_API_KEY) {
+    console.warn('RESEND_API_KEY no configurado — email no enviado')
+    return { sent: false, reason: 'no-api-key' }
+  }
+  const senderDefault = env.RESEND_FROM || 'Íntima Exclusive <onboarding@resend.dev>'
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: from || senderDefault,
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        html,
+      }),
+    })
+    if (!res.ok) {
+      const errText = await res.text()
+      console.error('Resend error:', res.status, errText)
+      return { sent: false, reason: errText }
+    }
+    const data = await res.json()
+    return { sent: true, id: data.id }
+  } catch (err) {
+    console.error('Resend network error:', err)
+    return { sent: false, reason: String(err) }
+  }
+}
+
+// ===== Newsletter =====
+const SUBSCRIBER_CODE_RE = /^[A-Z0-9]{6,12}$/
+
+function generarCuponBienvenida() {
+  // 8 chars, letras + números. Ej: BVD-A7K9X2P4
+  const alfa = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let rand = ''
+  for (let i = 0; i < 8; i++) rand += alfa[Math.floor(Math.random() * alfa.length)]
+  return `BVD${rand}`
+}
+
+function welcomeEmailHtml({ nombre, codigo, porcentaje, unsubscribeUrl }) {
+  const firstName = nombre?.split(' ')[0] || ''
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¡Bienvenida a Íntima Exclusive!</title>
+</head>
+<body style="margin:0;padding:0;font-family:Georgia,serif;background:#F5EDE0;color:#3A1A20;">
+<div style="max-width:560px;margin:0 auto;padding:40px 24px;background:#FAF5EE;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <img src="https://images.intimaexclusive.com/LOGO-INTIMA.jpg" alt="Íntima Exclusive" width="72" height="72" style="border-radius:50%;border:2px solid #D9C4A8;">
+  </div>
+  <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#C4A882;text-align:center;margin:0 0 8px;">Íntima Exclusive</p>
+  <h1 style="font-size:32px;color:#7B1A2E;text-align:center;font-weight:normal;margin:0 0 16px;">¡Bienvenida${firstName ? ', ' + firstName : ''}!</h1>
+  <p style="font-size:15px;color:#7A5A60;line-height:1.6;text-align:center;margin:0 0 28px;">
+    Estamos emocionadas de tenerte aquí. Aquí empieza tu momento de elegirte cada día.
+  </p>
+  <div style="background:#FFFDF9;border:2px solid #D9C4A8;padding:28px 16px;text-align:center;margin:28px 0;">
+    <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#7A5A60;margin:0 0 12px;">Tu código de bienvenida</p>
+    <p style="font-family:'Courier New',monospace;font-size:32px;color:#7B1A2E;font-weight:bold;letter-spacing:4px;margin:8px 0;">${codigo}</p>
+    <p style="font-size:15px;color:#7A5A60;margin:12px 0 0;">
+      <strong>${porcentaje}% de descuento</strong> en tu primera compra
+    </p>
+  </div>
+  <div style="text-align:center;margin:32px 0;">
+    <a href="https://intimaexclusive.com" style="display:inline-block;background:#7B1A2E;color:#F5EDE0;text-decoration:none;padding:16px 44px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;">Empezar a comprar</a>
+  </div>
+  <p style="font-size:13px;color:#7A5A60;text-align:center;line-height:1.5;margin:24px 0;">
+    El código es único para ti y válido por <strong>30 días</strong>.<br>
+    Úsalo al momento del checkout.
+  </p>
+  <hr style="border:none;border-top:1px solid #D9C4A8;margin:32px 0;">
+  <p style="font-size:13px;color:#7A5A60;text-align:center;line-height:1.5;">
+    ¿Preguntas? Escríbenos por WhatsApp<br>
+    <a href="https://wa.me/573028556022" style="color:#7B1A2E;text-decoration:none;font-weight:bold;">+57 302 855 6022</a>
+  </p>
+  <p style="font-size:10px;color:#B09090;text-align:center;margin-top:24px;line-height:1.5;">
+    Recibiste este correo porque te suscribiste en intimaexclusive.com<br>
+    <a href="${unsubscribeUrl}" style="color:#B09090;">Cancelar suscripción</a>
+  </p>
+</div>
+</body>
+</html>`
+}
+
+async function handleSuscribirNewsletter(request, env, cors) {
+  const ip = getClientIp(request)
+  const rl = await rateLimit(env, `newsletter:${ip}`, { windowSec: 3600, max: 5 })
+  if (!rl.ok) return tooMany(cors, rl.retryAfter)
+
+  const body = await safeJson(request)
+  if (!body || typeof body !== 'object') return bad('Body inválido', cors)
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const nombre = typeof body.nombre === 'string' ? body.nombre.trim().slice(0, 80) : null
+  const fuente = typeof body.fuente === 'string' ? body.fuente.slice(0, 40) : 'home-newsletter'
+
+  if (!EMAIL_RE.test(email) || email.length > 120) return bad('Correo inválido.', cors)
+
+  // ¿Ya está suscrito y activo?
+  const existente = await env.DB.prepare(
+    'SELECT email, cupon_codigo, activo FROM suscriptores WHERE email = ?'
+  ).bind(email).first()
+
+  if (existente?.activo) {
+    return ok({
+      ok: true,
+      ya_suscrita: true,
+      mensaje: 'Ya estás en nuestra lista. ¡Revisa tu correo!',
+    }, cors)
+  }
+
+  // Generar cupón único de bienvenida
+  const porcentaje = Number(env.NEWSLETTER_WELCOME_PERCENT) || 10
+  const expiraDias = Number(env.NEWSLETTER_WELCOME_EXPIRA_DIAS) || 30
+  const expiraAt = new Date(Date.now() + expiraDias * 24 * 3600 * 1000).toISOString()
+  let cuponCodigo = generarCuponBienvenida()
+
+  // Por si colisiona (muy raro), intentar hasta 5 veces
+  for (let i = 0; i < 5; i++) {
+    const colision = await env.DB.prepare('SELECT codigo FROM cupones WHERE codigo = ?').bind(cuponCodigo).first()
+    if (!colision) break
+    cuponCodigo = generarCuponBienvenida()
+  }
+
+  const unsubscribeToken = crypto.randomUUID().replace(/-/g, '')
+  const now = new Date().toISOString()
+
+  const stmts = [
+    env.DB.prepare(`
+      INSERT INTO cupones (codigo, descripcion, tipo, valor, max_usos, expira_at, solo_primera_compra, email_requerido, activo, creado_at)
+      VALUES (?, ?, 'porcentaje', ?, 1, ?, 1, ?, 1, ?)
+    `).bind(cuponCodigo, `Bienvenida ${porcentaje}% — ${email}`, porcentaje, expiraAt, email, now),
+  ]
+
+  if (existente) {
+    // Reactivar suscriptor que se había dado de baja
+    stmts.push(
+      env.DB.prepare(`
+        UPDATE suscriptores
+        SET activo = 1, suscrito_at = ?, cupon_codigo = ?, unsubscribe_token = ?, fuente = ?
+        WHERE email = ?
+      `).bind(now, cuponCodigo, unsubscribeToken, fuente, email)
+    )
+  } else {
+    stmts.push(
+      env.DB.prepare(`
+        INSERT INTO suscriptores (email, suscrito_at, cupon_codigo, fuente, activo, unsubscribe_token)
+        VALUES (?, ?, ?, ?, 1, ?)
+      `).bind(email, now, cuponCodigo, fuente, unsubscribeToken)
+    )
+  }
+
+  await env.DB.batch(stmts)
+
+  // Disparar email (no bloquea si falla)
+  const unsubscribeUrl = `${API_BASE}/unsubscribe?token=${unsubscribeToken}`
+  const html = welcomeEmailHtml({ nombre, codigo: cuponCodigo, porcentaje, unsubscribeUrl })
+  const emailRes = await enviarEmail(env, {
+    to: email,
+    subject: `¡Bienvenida a Íntima Exclusive! Tu ${porcentaje}% está adentro`,
+    html,
+  })
+
+  return ok({
+    ok: true,
+    ya_suscrita: false,
+    email_enviado: emailRes.sent,
+    mensaje: emailRes.sent
+      ? 'Te enviamos tu código de bienvenida por correo. ¡Revisa tu bandeja!'
+      : 'Suscripción confirmada. Si no recibes el correo, escríbenos por WhatsApp y te ayudamos.',
+  }, cors)
+}
+
+async function handleUnsubscribeNewsletter(request, env) {
+  const url = new URL(request.url)
+  const token = url.searchParams.get('token') || ''
+  if (!/^[a-f0-9]{32}$/.test(token)) {
+    return new Response(unsubscribeHtml({ ok: false, mensaje: 'Enlace inválido.' }), {
+      status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    })
+  }
+  const res = await env.DB.prepare(
+    `UPDATE suscriptores SET activo = 0 WHERE unsubscribe_token = ? AND activo = 1`
+  ).bind(token).run()
+  const success = res.meta.changes > 0
+  return new Response(unsubscribeHtml({
+    ok: success,
+    mensaje: success ? '¡Listo! Ya no recibirás más correos nuestros.' : 'No encontramos una suscripción activa con ese enlace.',
+  }), {
+    status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  })
+}
+
+function unsubscribeHtml({ ok, mensaje }) {
+  return `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Cancelar suscripción</title></head>
+<body style="margin:0;font-family:Georgia,serif;background:#F5EDE0;color:#3A1A20;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+<div style="max-width:480px;text-align:center;padding:40px 24px;background:#FAF5EE;border:1px solid #D9C4A8;">
+<p style="font-size:40px;margin:0 0 16px;">${ok ? '👋' : '⚠️'}</p>
+<h1 style="font-size:24px;color:#7B1A2E;margin:0 0 12px;font-weight:normal;">${ok ? 'Hasta pronto' : 'Algo no cuadra'}</h1>
+<p style="font-size:15px;color:#7A5A60;line-height:1.6;">${mensaje}</p>
+<p style="margin-top:24px;"><a href="https://intimaexclusive.com" style="color:#7B1A2E;text-decoration:none;font-weight:bold;">Volver al inicio</a></p>
+</div></body></html>`
+}
+
+// Admin newsletter
+async function handleAdminListSuscriptores(env, cors) {
+  const { results } = await env.DB.prepare(
+    `SELECT email, suscrito_at, cupon_codigo, fuente, activo FROM suscriptores ORDER BY suscrito_at DESC LIMIT 2000`
+  ).all()
+  const total = await env.DB.prepare(
+    `SELECT COUNT(*) AS total, SUM(activo) AS activos FROM suscriptores`
+  ).first()
+  return ok({
+    suscriptores: results,
+    total: total?.total ?? 0,
+    activos: total?.activos ?? 0,
+  }, cors)
 }
 
 // ===== Cupones de descuento =====

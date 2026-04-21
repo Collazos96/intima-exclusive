@@ -29,6 +29,12 @@ export const validarCuponApi = (payload) => fetchJson('/api/cupones/validar', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(payload),
 })
+
+export const suscribirNewsletter = (payload) => fetchJson('/api/newsletter/suscribir', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload),
+})
 export const getReviews = (productoId) => fetchJson(`/api/productos/${productoId}/reviews`)
 export const crearReview = (productoId, data) => fetchJson(`/api/productos/${productoId}/reviews`, {
   method: 'POST',

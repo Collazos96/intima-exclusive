@@ -5,6 +5,7 @@ import { qk } from '../lib/queryClient'
 import ProductCard from '../components/ProductCard'
 import Seo from '../components/Seo'
 import { CategoryGridSkeleton, ProductGridSkeleton } from '../components/Skeletons'
+import NewsletterForm from '../components/NewsletterForm'
 
 const iconos = { sets:'🌸', corsets:'🪢', lenceria:'✨', bodys:'🎀', accesorios:'💎' }
 
@@ -194,10 +195,7 @@ export default function Home() {
         <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-300 mb-3">Únete</span>
         <h2 className="font-serif text-[clamp(1.3rem,3vw,2rem)] tracking-widest text-cream-200 uppercase mb-3">Sé la primera en <em className="text-gold-300">saber</em></h2>
         <p className="font-sans text-[0.85rem] text-cream-200/70 mb-8">Lanzamientos exclusivos, descuentos y contenido para mujeres que se eligen.</p>
-        <div className="flex max-w-md mx-auto flex-wrap justify-center">
-          <input type="email" placeholder="Tu correo electrónico" className="flex-1 min-w-[200px] px-4 py-3 bg-white/10 border border-cream-200/30 text-cream-200 font-sans text-sm placeholder-cream-200/40 outline-none"/>
-          <button className="bg-cream-200 text-wine-600 px-6 py-3 font-sans text-[0.7rem] tracking-widest uppercase font-bold hover:opacity-90 transition-opacity">Suscribirme</button>
-        </div>
+        <NewsletterForm />
       </section>
     </main>
   )
