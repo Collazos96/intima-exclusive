@@ -292,6 +292,11 @@ export default {
         }, cors)
       }
 
+      // Validar cupón (público)
+      if (method === 'POST' && path === '/api/cupones/validar') {
+        return await handleValidarCupon(request, env, cors)
+      }
+
       // Pedidos públicos
       if (method === 'POST' && path === '/api/pedidos') {
         return await handleCrearPedido(request, env, cors)
@@ -359,6 +364,21 @@ export default {
           const res = await handleAdminEliminarProducto(env, cors, decodeURIComponent(editMatch[1]))
           if (res.status === 200) triggerPagesDeploy(env, ctx)
           return res
+        }
+
+        // Cupones (admin CRUD)
+        if (method === 'GET' && path === '/api/admin/cupones') {
+          return await handleAdminListCupones(env, cors)
+        }
+        if (method === 'POST' && path === '/api/admin/cupones') {
+          return await handleAdminCrearCupon(request, env, cors)
+        }
+        const cuponMatch = path.match(/^\/api\/admin\/cupones\/([^/]+)$/)
+        if (cuponMatch && method === 'PUT') {
+          return await handleAdminActualizarCupon(request, env, cors, decodeURIComponent(cuponMatch[1]))
+        }
+        if (cuponMatch && method === 'DELETE') {
+          return await handleAdminEliminarCupon(env, cors, decodeURIComponent(cuponMatch[1]))
         }
 
         // Pedidos (admin)
@@ -1105,6 +1125,177 @@ function handleAdminLogout(request, cors) {
   })
 }
 
+// ===== Cupones de descuento =====
+const CUPON_CODE_RE = /^[A-Z0-9][A-Z0-9_-]{1,31}$/
+
+function normalizeCodigo(c) {
+  return typeof c === 'string' ? c.trim().toUpperCase() : ''
+}
+
+async function validarCupon(env, codigo, subtotalCentavos, email) {
+  const code = normalizeCodigo(codigo)
+  if (!code) return { valido: false, motivo: 'Ingresa un código.' }
+  if (!CUPON_CODE_RE.test(code)) return { valido: false, motivo: 'Código inválido.' }
+
+  const cupon = await env.DB.prepare('SELECT * FROM cupones WHERE codigo = ?').bind(code).first()
+  if (!cupon) return { valido: false, motivo: 'Código no existe.' }
+  if (!cupon.activo) return { valido: false, motivo: 'Cupón no disponible.' }
+
+  if (cupon.expira_at && new Date(cupon.expira_at).getTime() < Date.now()) {
+    return { valido: false, motivo: 'Cupón expirado.' }
+  }
+  if (cupon.max_usos != null && cupon.usos_actuales >= cupon.max_usos) {
+    return { valido: false, motivo: 'Cupón agotado.' }
+  }
+  if (cupon.minimo_compra > 0 && subtotalCentavos < cupon.minimo_compra) {
+    return {
+      valido: false,
+      motivo: `Compra mínima requerida: $${Math.round(cupon.minimo_compra / 100).toLocaleString('es-CO')} COP.`,
+    }
+  }
+  if (cupon.email_requerido) {
+    if (typeof email !== 'string' || email.trim().toLowerCase() !== cupon.email_requerido.toLowerCase()) {
+      return { valido: false, motivo: 'Este cupón está reservado para otro correo.' }
+    }
+  }
+  if (cupon.solo_primera_compra) {
+    if (!email) return { valido: false, motivo: 'Ingresa tu correo para validar el cupón.' }
+    const previo = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM pedidos WHERE lower(email) = lower(?) AND status = 'APPROVED'`
+    ).bind(email.trim()).first()
+    if ((previo?.n ?? 0) > 0) {
+      return { valido: false, motivo: 'Cupón solo para primera compra.' }
+    }
+  }
+
+  // Calcular descuento
+  let descuento = 0
+  if (cupon.tipo === 'porcentaje') {
+    descuento = Math.round((subtotalCentavos * cupon.valor) / 100)
+  } else {
+    descuento = cupon.valor
+  }
+  // Nunca mayor que el subtotal
+  descuento = Math.min(descuento, subtotalCentavos)
+
+  return {
+    valido: true,
+    codigo: cupon.codigo,
+    tipo: cupon.tipo,
+    valor: cupon.valor,
+    descuento,
+  }
+}
+
+async function handleValidarCupon(request, env, cors) {
+  const ip = getClientIp(request)
+  const rl = await rateLimit(env, `cupon-val:${ip}`, { windowSec: 60, max: 20 })
+  if (!rl.ok) return tooMany(cors, rl.retryAfter)
+
+  const body = await safeJson(request)
+  if (!body || typeof body !== 'object') return bad('Body inválido', cors)
+  const { codigo, subtotal, email } = body
+  if (!Number.isInteger(subtotal) || subtotal < 0) return bad('subtotal inválido', cors)
+
+  const res = await validarCupon(env, codigo, subtotal, email)
+  return ok(res, cors)
+}
+
+// Admin cupones — CRUD
+async function handleAdminListCupones(env, cors) {
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM cupones ORDER BY activo DESC, creado_at DESC LIMIT 500`
+  ).all()
+  return ok(results, cors)
+}
+
+function validarInputCupon(body) {
+  if (!body || typeof body !== 'object') return 'Body inválido'
+  const { codigo, tipo, valor } = body
+  const code = normalizeCodigo(codigo)
+  if (!CUPON_CODE_RE.test(code)) return 'Código inválido (A-Z, 0-9, _, -, 2-32 chars)'
+  if (tipo !== 'porcentaje' && tipo !== 'fijo') return 'Tipo debe ser "porcentaje" o "fijo"'
+  if (!Number.isInteger(valor) || valor <= 0) return 'Valor inválido'
+  if (tipo === 'porcentaje' && (valor < 1 || valor > 100)) return 'Porcentaje debe estar entre 1 y 100'
+  if (tipo === 'fijo' && valor > 100_000_000_00) return 'Valor fijo excede máximo'
+  if (body.minimo_compra != null && (!Number.isInteger(body.minimo_compra) || body.minimo_compra < 0)) return 'minimo_compra inválido'
+  if (body.max_usos != null && (!Number.isInteger(body.max_usos) || body.max_usos <= 0)) return 'max_usos inválido'
+  if (body.email_requerido != null && typeof body.email_requerido !== 'string') return 'email_requerido inválido'
+  if (body.expira_at != null && isNaN(new Date(body.expira_at).getTime())) return 'expira_at inválido'
+  return null
+}
+
+async function handleAdminCrearCupon(request, env, cors) {
+  const body = await safeJson(request)
+  const err = validarInputCupon(body)
+  if (err) return bad(err, cors)
+
+  const code = normalizeCodigo(body.codigo)
+  const existe = await env.DB.prepare('SELECT codigo FROM cupones WHERE codigo = ?').bind(code).first()
+  if (existe) return json({ error: 'Ya existe un cupón con ese código' }, 409, cors)
+
+  await env.DB.prepare(`
+    INSERT INTO cupones (
+      codigo, descripcion, tipo, valor, minimo_compra, max_usos, expira_at,
+      solo_primera_compra, email_requerido, activo, creado_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    code,
+    body.descripcion?.trim() || null,
+    body.tipo,
+    body.valor,
+    body.minimo_compra ?? 0,
+    body.max_usos ?? null,
+    body.expira_at ?? null,
+    body.solo_primera_compra ? 1 : 0,
+    body.email_requerido?.trim().toLowerCase() || null,
+    body.activo === false ? 0 : 1,
+    new Date().toISOString()
+  ).run()
+
+  return ok({ ok: true, codigo: code }, cors)
+}
+
+async function handleAdminActualizarCupon(request, env, cors, codigo) {
+  const code = normalizeCodigo(codigo)
+  if (!CUPON_CODE_RE.test(code)) return bad('Código inválido', cors)
+
+  const body = await safeJson(request)
+  if (!body || typeof body !== 'object') return bad('Body inválido', cors)
+
+  // Solo permitimos actualizar campos seguros (no cambiar código ni usos_actuales directo)
+  const sets = []
+  const binds = []
+  if (body.descripcion != null) { sets.push('descripcion = ?'); binds.push(body.descripcion.trim() || null) }
+  if (body.activo != null) { sets.push('activo = ?'); binds.push(body.activo ? 1 : 0) }
+  if (body.expira_at != null) {
+    if (body.expira_at !== '' && isNaN(new Date(body.expira_at).getTime())) return bad('expira_at inválido', cors)
+    sets.push('expira_at = ?'); binds.push(body.expira_at || null)
+  }
+  if (body.max_usos != null) {
+    if (body.max_usos !== '' && (!Number.isInteger(body.max_usos) || body.max_usos <= 0)) return bad('max_usos inválido', cors)
+    sets.push('max_usos = ?'); binds.push(body.max_usos || null)
+  }
+  if (body.minimo_compra != null) {
+    if (!Number.isInteger(body.minimo_compra) || body.minimo_compra < 0) return bad('minimo_compra inválido', cors)
+    sets.push('minimo_compra = ?'); binds.push(body.minimo_compra)
+  }
+  if (sets.length === 0) return bad('Nada que actualizar', cors)
+  binds.push(code)
+
+  const res = await env.DB.prepare(`UPDATE cupones SET ${sets.join(', ')} WHERE codigo = ?`).bind(...binds).run()
+  if (res.meta.changes === 0) return json({ error: 'Cupón no encontrado' }, 404, cors)
+  return ok({ ok: true }, cors)
+}
+
+async function handleAdminEliminarCupon(env, cors, codigo) {
+  const code = normalizeCodigo(codigo)
+  if (!CUPON_CODE_RE.test(code)) return bad('Código inválido', cors)
+  const res = await env.DB.prepare('DELETE FROM cupones WHERE codigo = ?').bind(code).run()
+  if (res.meta.changes === 0) return json({ error: 'Cupón no encontrado' }, 404, cors)
+  return ok({ ok: true }, cors)
+}
+
 // ===== Pedidos / Wompi =====
 async function sha256Hex(str) {
   const buf = new TextEncoder().encode(str)
@@ -1203,9 +1394,21 @@ async function handleCrearPedido(request, env, cors) {
     })
   }
 
+  // Validar cupón (si se envió)
+  let cuponAplicado = null
+  if (body.cupon_codigo) {
+    const val = await validarCupon(env, body.cupon_codigo, subtotalCentavos, body.cliente.email)
+    if (!val.valido) {
+      return json({ error: val.motivo }, 422, cors)
+    }
+    cuponAplicado = val
+  }
+  const descuentoCentavos = cuponAplicado?.descuento ?? 0
+  const subtotalConDescuento = subtotalCentavos - descuentoCentavos
+
   const { umbral, tarifa } = getEnvioConfig(env)
-  const envioCentavos = subtotalCentavos >= umbral ? 0 : tarifa
-  const totalCentavos = subtotalCentavos + envioCentavos
+  const envioCentavos = subtotalConDescuento >= umbral ? 0 : tarifa
+  const totalCentavos = subtotalConDescuento + envioCentavos
 
   if (totalCentavos < 1_500_00) return bad('Monto mínimo $1.500 COP', cors) // Wompi mínimo
   if (totalCentavos > 50_000_000_00) return bad('Monto máximo excedido', cors)
@@ -1214,20 +1417,22 @@ async function handleCrearPedido(request, env, cors) {
   const now = new Date().toISOString()
   const cli = body.cliente
 
-  await env.DB.batch([
+  const stmts = [
     env.DB.prepare(`
       INSERT INTO pedidos (
         reference, status, nombre, email, telefono, documento_tipo, documento_numero,
         direccion, ciudad, departamento, codigo_postal, notas,
-        subtotal, envio, total, creado_at, actualizado_at
-      ) VALUES (?, 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        subtotal, envio, total, cupon_codigo, cupon_descuento, creado_at, actualizado_at
+      ) VALUES (?, 'PENDING', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       reference,
       cli.nombre.trim(), cli.email.trim().toLowerCase(), cli.telefono.trim(),
       cli.documento_tipo ?? null, cli.documento_numero ?? null,
       cli.direccion.trim(), cli.ciudad.trim(),
       cli.departamento ?? null, cli.codigo_postal ?? null, cli.notas ?? null,
-      subtotalCentavos, envioCentavos, totalCentavos, now, now
+      subtotalCentavos, envioCentavos, totalCentavos,
+      cuponAplicado?.codigo ?? null, descuentoCentavos,
+      now, now
     ),
     ...itemsNormalizados.map((it) =>
       env.DB.prepare(`
@@ -1235,7 +1440,18 @@ async function handleCrearPedido(request, env, cors) {
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `).bind(reference, it.productoId, it.nombre, it.color, it.talla, it.precioUnitario, it.cantidad)
     ),
-  ])
+  ]
+  // Si hay cupón, incrementar usos_actuales con guard de max_usos (atómico)
+  if (cuponAplicado) {
+    stmts.push(
+      env.DB.prepare(`
+        UPDATE cupones
+        SET usos_actuales = usos_actuales + 1
+        WHERE codigo = ? AND (max_usos IS NULL OR usos_actuales < max_usos)
+      `).bind(cuponAplicado.codigo)
+    )
+  }
+  await env.DB.batch(stmts)
 
   // Firma de integridad para el widget: SHA256(ref + amount + currency + integritySecret)
   if (!env.WOMPI_INTEGRITY_SECRET) {

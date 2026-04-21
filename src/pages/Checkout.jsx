@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
 import { useCart } from '../lib/cartStore'
-import { crearPedido, getConfig } from '../hooks/useApi'
+import { crearPedido, getConfig, validarCuponApi } from '../hooks/useApi'
 import Seo from '../components/Seo'
 import Img from '../components/Img'
 
@@ -67,9 +67,49 @@ export default function Checkout() {
   const [enviando, setEnviando] = useState(false)
   const submittedRef = useRef(false)
 
+  // Cupón
+  const [cuponInput, setCuponInput] = useState('')
+  const [cuponAplicado, setCuponAplicado] = useState(null)
+  const [cuponValidando, setCuponValidando] = useState(false)
+  const [cuponError, setCuponError] = useState('')
+
   const subtotal = totalPrecio
-  const envio = subtotal >= ENVIO_GRATIS_DESDE ? 0 : (items.length > 0 ? TARIFA_ENVIO : 0)
-  const total = subtotal + envio
+  const descuento = cuponAplicado ? Math.round(cuponAplicado.descuento / 100) : 0
+  const subtotalConDescuento = Math.max(0, subtotal - descuento)
+  const envio = items.length === 0 ? 0
+    : subtotalConDescuento >= ENVIO_GRATIS_DESDE ? 0 : TARIFA_ENVIO
+  const total = subtotalConDescuento + envio
+
+  async function aplicarCupon() {
+    setCuponError('')
+    const code = cuponInput.trim().toUpperCase()
+    if (!code) return
+    setCuponValidando(true)
+    try {
+      const res = await validarCuponApi({
+        codigo: code,
+        subtotal: subtotal * 100, // centavos
+        email: form.email.trim() || null,
+      })
+      if (res.valido) {
+        setCuponAplicado(res)
+        toast.success(`Cupón ${res.codigo} aplicado`)
+      } else {
+        setCuponAplicado(null)
+        setCuponError(res.motivo || 'Cupón inválido.')
+      }
+    } catch (err) {
+      setCuponError(err.message || 'No se pudo validar el cupón.')
+    } finally {
+      setCuponValidando(false)
+    }
+  }
+
+  function quitarCupon() {
+    setCuponAplicado(null)
+    setCuponInput('')
+    setCuponError('')
+  }
 
   function update(campo, valor) {
     setForm((f) => ({ ...f, [campo]: valor }))
@@ -110,6 +150,7 @@ export default function Checkout() {
           talla: i.talla,
           cantidad: i.cantidad,
         })),
+        cupon_codigo: cuponAplicado?.codigo || null,
       }
 
       const res = await crearPedido(payload)
@@ -270,20 +311,68 @@ export default function Checkout() {
             ))}
           </ul>
 
+          {/* CUPÓN */}
+          <div className="mb-4 border border-gold-300 p-3 bg-cream-100">
+            <p className="font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">
+              ¿Tienes un cupón?
+            </p>
+            {cuponAplicado ? (
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-wine-900 text-[0.82rem]">{cuponAplicado.codigo}</span>
+                <button
+                  type="button"
+                  onClick={quitarCupon}
+                  className="font-sans text-[0.68rem] text-wine-600 underline hover:text-wine-800"
+                >
+                  Quitar
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={cuponInput}
+                  onChange={(e) => { setCuponInput(e.target.value.toUpperCase()); setCuponError('') }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); aplicarCupon() } }}
+                  placeholder="CÓDIGO"
+                  maxLength={32}
+                  className="flex-1 border border-gold-300 bg-cream-50 px-3 py-2 font-mono text-sm text-wine-900 focus-visible:outline-2 focus-visible:outline-wine-600"
+                />
+                <button
+                  type="button"
+                  onClick={aplicarCupon}
+                  disabled={cuponValidando || !cuponInput.trim()}
+                  className="bg-wine-600 text-cream-200 px-4 py-2 font-sans text-[0.68rem] tracking-widest uppercase hover:bg-wine-800 disabled:opacity-50 transition-colors"
+                >
+                  {cuponValidando ? '...' : 'Aplicar'}
+                </button>
+              </div>
+            )}
+            {cuponError && (
+              <p className="font-sans text-[0.7rem] text-red-600 mt-2" role="alert">{cuponError}</p>
+            )}
+          </div>
+
           <dl className="space-y-2 font-sans text-[0.85rem] mb-5">
             <div className="flex justify-between">
               <dt className="text-taupe-600">Subtotal ({totalItems})</dt>
               <dd className="text-wine-900">{formatPrecio(subtotal)}</dd>
             </div>
+            {descuento > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-taupe-600">Descuento {cuponAplicado?.codigo}</dt>
+                <dd className="text-green-700 font-bold">-{formatPrecio(descuento)}</dd>
+              </div>
+            )}
             <div className="flex justify-between">
               <dt className="text-taupe-600">Envío</dt>
               <dd className="text-wine-900">
                 {envio === 0 ? <span className="text-green-700 font-bold">GRATIS</span> : formatPrecio(envio)}
               </dd>
             </div>
-            {subtotal < ENVIO_GRATIS_DESDE && (
+            {subtotalConDescuento < ENVIO_GRATIS_DESDE && subtotalConDescuento > 0 && (
               <p className="font-sans text-[0.7rem] text-taupe-400 italic">
-                Agrega {formatPrecio(ENVIO_GRATIS_DESDE - subtotal)} más para envío gratis.
+                Agrega {formatPrecio(ENVIO_GRATIS_DESDE - subtotalConDescuento)} más para envío gratis.
               </p>
             )}
             <div className="flex justify-between pt-2 border-t border-gold-300">

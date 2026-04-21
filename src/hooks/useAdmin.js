@@ -109,6 +109,20 @@ export const actualizarEnvio = (reference, data) =>
     body: JSON.stringify(data),
   })
 
+// Cupones
+export const getAdminCupones = () => authFetch('/api/admin/cupones')
+export const crearCupon = (data) => authFetch('/api/admin/cupones', {
+  method: 'POST',
+  body: JSON.stringify(data),
+})
+export const actualizarCupon = (codigo, data) => authFetch(`/api/admin/cupones/${codigo}`, {
+  method: 'PUT',
+  body: JSON.stringify(data),
+})
+export const eliminarCupon = (codigo) => authFetch(`/api/admin/cupones/${codigo}`, {
+  method: 'DELETE',
+})
+
 export const getAnalytics = (rango = '30d') => authFetch(`/api/admin/analytics?rango=${rango}`)
 
 export async function actualizarStock(colorId, talla, stock) {
