@@ -1280,8 +1280,14 @@ function welcomeEmailHtml({ nombre, codigo, porcentaje, unsubscribeUrl }) {
 
 async function handleSuscribirNewsletter(request, env, cors) {
   const ip = getClientIp(request)
-  const rl = await rateLimit(env, `newsletter:${ip}`, { windowSec: 3600, max: 5 })
-  if (!rl.ok) return tooMany(cors, rl.retryAfter)
+  const max = Number(env.NEWSLETTER_RATE_LIMIT_MAX) || 20
+  const rl = await rateLimit(env, `newsletter:${ip}`, { windowSec: 3600, max })
+  if (!rl.ok) {
+    const mins = Math.ceil(rl.retryAfter / 60)
+    return json({
+      error: `Demasiados intentos desde tu conexión. Intenta de nuevo en ${mins} ${mins === 1 ? 'minuto' : 'minutos'}.`,
+    }, 429, cors)
+  }
 
   const body = await safeJson(request)
   if (!body || typeof body !== 'object') return bad('Body inválido', cors)
