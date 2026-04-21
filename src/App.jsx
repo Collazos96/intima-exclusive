@@ -6,6 +6,7 @@ import Footer from './components/Footer'
 import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 import CartDrawer from './components/CartDrawer'
+import ScrollToTop from './components/ScrollToTop'
 import Home from './pages/Home'
 import Categoria from './pages/Categoria'
 import Producto from './pages/Producto'
@@ -49,6 +50,7 @@ function NotFound() {
 export default function App() {
   return (
     <ErrorBoundary>
+      <ScrollToTop />
       <Toaster
         position="top-center"
         richColors
