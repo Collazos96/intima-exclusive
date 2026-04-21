@@ -1214,42 +1214,65 @@ function welcomeEmailHtml({ nombre, codigo, porcentaje, unsubscribeUrl }) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>¡Bienvenida a Íntima Exclusive!</title>
 </head>
 <body style="margin:0;padding:0;font-family:Georgia,serif;background:#F5EDE0;color:#3A1A20;">
-<div style="max-width:560px;margin:0 auto;padding:40px 24px;background:#FAF5EE;">
-  <div style="text-align:center;margin-bottom:24px;">
-    <img src="https://images.intimaexclusive.com/LOGO-INTIMA.jpg" alt="Íntima Exclusive" width="72" height="72" style="border-radius:50%;border:2px solid #D9C4A8;">
-  </div>
-  <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#C4A882;text-align:center;margin:0 0 8px;">Íntima Exclusive</p>
-  <h1 style="font-size:32px;color:#7B1A2E;text-align:center;font-weight:normal;margin:0 0 16px;">¡Bienvenida${firstName ? ', ' + firstName : ''}!</h1>
-  <p style="font-size:15px;color:#7A5A60;line-height:1.6;text-align:center;margin:0 0 28px;">
-    Estamos emocionadas de tenerte aquí. Aquí empieza tu momento de elegirte cada día.
-  </p>
-  <div style="background:#FFFDF9;border:2px solid #D9C4A8;padding:28px 16px;text-align:center;margin:28px 0;">
-    <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#7A5A60;margin:0 0 12px;">Tu código de bienvenida</p>
-    <p style="font-family:'Courier New',monospace;font-size:32px;color:#7B1A2E;font-weight:bold;letter-spacing:4px;margin:8px 0;">${codigo}</p>
-    <p style="font-size:15px;color:#7A5A60;margin:12px 0 0;">
-      <strong>${porcentaje}% de descuento</strong> en tu primera compra
-    </p>
-  </div>
-  <div style="text-align:center;margin:32px 0;">
-    <a href="https://intimaexclusive.com" style="display:inline-block;background:#7B1A2E;color:#F5EDE0;text-decoration:none;padding:16px 44px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;">Empezar a comprar</a>
-  </div>
-  <p style="font-size:13px;color:#7A5A60;text-align:center;line-height:1.5;margin:24px 0;">
-    El código es único para ti y válido por <strong>30 días</strong>.<br>
-    Úsalo al momento del checkout.
-  </p>
-  <hr style="border:none;border-top:1px solid #D9C4A8;margin:32px 0;">
-  <p style="font-size:13px;color:#7A5A60;text-align:center;line-height:1.5;">
-    ¿Preguntas? Escríbenos por WhatsApp<br>
-    <a href="https://wa.me/573028556022" style="color:#7B1A2E;text-decoration:none;font-weight:bold;">+57 302 855 6022</a>
-  </p>
-  <p style="font-size:10px;color:#B09090;text-align:center;margin-top:24px;line-height:1.5;">
-    Recibiste este correo porque te suscribiste en intimaexclusive.com<br>
-    <a href="${unsubscribeUrl}" style="color:#B09090;">Cancelar suscripción</a>
-  </p>
-</div>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5EDE0;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;background:#FAF5EE;padding:40px 24px;">
+    <tr><td align="center" style="padding-bottom:24px;">
+      <a href="https://intimaexclusive.com" style="text-decoration:none;">
+        <img src="https://images.intimaexclusive.com/LOGO-INTIMA.jpg" alt="Íntima Exclusive" width="80" height="80" style="display:block;width:80px;height:80px;border-radius:50%;border:2px solid #D9C4A8;max-width:80px;outline:none;">
+      </a>
+    </td></tr>
+    <tr><td align="center">
+      <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#C4A882;margin:0 0 8px;">Íntima Exclusive</p>
+      <h1 style="font-family:Georgia,serif;font-size:30px;color:#7B1A2E;font-weight:normal;margin:0 0 16px;">Gracias por unirte${firstName ? ', ' + firstName : ''}</h1>
+      <p style="font-family:Georgia,serif;font-size:15px;color:#7A5A60;line-height:1.6;margin:0 0 28px;">
+        Aquí va tu código personal, como te prometimos.<br>
+        Úsalo cuando quieras estrenar algo bonito.
+      </p>
+    </td></tr>
+    <tr><td>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FFFDF9;border:2px solid #D9C4A8;margin:12px 0 28px;">
+        <tr><td align="center" style="padding:28px 16px;">
+          <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#7A5A60;margin:0 0 12px;">Tu código personal</p>
+          <p style="font-family:'Courier New',Consolas,monospace;font-size:30px;color:#7B1A2E;font-weight:bold;letter-spacing:4px;margin:8px 0;">${codigo}</p>
+          <p style="font-family:Georgia,serif;font-size:15px;color:#7A5A60;margin:12px 0 0;">
+            <strong>${porcentaje}% de descuento</strong> en tu primera compra
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+    <tr><td align="center" style="padding:12px 0 24px;">
+      <a href="https://intimaexclusive.com" style="display:inline-block;background:#7B1A2E;color:#F5EDE0;text-decoration:none;padding:16px 44px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;">Ver la colección</a>
+    </td></tr>
+    <tr><td align="center">
+      <p style="font-family:Georgia,serif;font-size:13px;color:#7A5A60;line-height:1.5;margin:0 0 20px;">
+        El código es único para ti y válido por <strong>30 días</strong>.<br>
+        Úsalo al momento del checkout.
+      </p>
+      <p style="font-family:Georgia,serif;font-size:13px;color:#7A5A60;line-height:1.5;margin:0 0 12px;">
+        <strong>Tip:</strong> Agrega <a href="mailto:info@intimaexclusive.com" style="color:#7B1A2E;">info@intimaexclusive.com</a> a tus contactos para que nuestros correos lleguen siempre a tu bandeja principal.
+      </p>
+    </td></tr>
+    <tr><td>
+      <hr style="border:none;border-top:1px solid #D9C4A8;margin:28px 0;">
+    </td></tr>
+    <tr><td align="center">
+      <p style="font-family:Georgia,serif;font-size:13px;color:#7A5A60;line-height:1.5;margin:0;">
+        ¿Preguntas? Escríbenos por WhatsApp<br>
+        <a href="https://wa.me/573028556022" style="color:#7B1A2E;text-decoration:none;font-weight:bold;">+57 302 855 6022</a>
+      </p>
+      <p style="font-family:Arial,sans-serif;font-size:10px;color:#B09090;margin-top:24px;line-height:1.5;">
+        Recibiste este correo porque te suscribiste en intimaexclusive.com<br>
+        <a href="${unsubscribeUrl}" style="color:#B09090;">Cancelar suscripción</a>
+      </p>
+    </td></tr>
+  </table>
+</td></tr>
+</table>
 </body>
 </html>`
 }
