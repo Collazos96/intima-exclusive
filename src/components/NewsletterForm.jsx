@@ -5,28 +5,33 @@ import { suscribirNewsletter } from '../hooks/useApi'
 
 export default function NewsletterForm({ fuente = 'home-newsletter' }) {
   const [email, setEmail] = useState('')
-  const [nombre, setNombre] = useState('')
   const [suscrita, setSuscrita] = useState(false)
 
   const mutation = useMutation({
     mutationFn: suscribirNewsletter,
     onSuccess: (res) => {
-      toast.success(res.mensaje || '¡Revisa tu correo!')
+      toast.success(res?.mensaje || '¡Revisa tu correo!', { duration: 5000 })
       setSuscrita(true)
     },
     onError: (err) => {
-      toast.error(err.message || 'No pudimos suscribirte, intenta de nuevo.')
+      console.error('Newsletter error:', err)
+      toast.error(err?.message || 'No pudimos suscribirte. Intenta de nuevo.', { duration: 5000 })
     },
   })
 
   function onSubmit(e) {
     e.preventDefault()
-    if (!email.trim()) return
-    mutation.mutate({
-      email: email.trim(),
-      nombre: nombre.trim() || null,
-      fuente,
-    })
+    const val = email.trim()
+    if (!val) {
+      toast.error('Ingresa tu correo.')
+      return
+    }
+    // Validación básica cliente para UX inmediata
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+      toast.error('Correo inválido.')
+      return
+    }
+    mutation.mutate({ email: val, fuente })
   }
 
   if (suscrita) {
@@ -44,27 +49,17 @@ export default function NewsletterForm({ fuente = 'home-newsletter' }) {
 
   return (
     <form onSubmit={onSubmit} className="max-w-md mx-auto" aria-label="Suscripción al newsletter">
-      <div className="flex flex-col sm:flex-row gap-2 mb-2">
-        <input
-          type="text"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          placeholder="Tu nombre (opcional)"
-          maxLength={80}
-          aria-label="Tu nombre"
-          className="flex-1 px-4 py-3 bg-white/10 border border-cream-200/30 text-cream-200 font-sans text-sm placeholder-cream-200/40 outline-none focus-visible:border-cream-200"
-        />
-      </div>
       <div className="flex gap-2 flex-wrap">
         <input
           type="email"
           required
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Tu correo electrónico"
           maxLength={120}
           aria-label="Tu correo electrónico"
-          className="flex-1 min-w-[200px] px-4 py-3 bg-white/10 border border-cream-200/30 text-cream-200 font-sans text-sm placeholder-cream-200/40 outline-none focus-visible:border-cream-200"
+          className="flex-1 min-w-[200px] px-4 py-3 bg-white/10 border border-cream-200/30 text-cream-200 font-sans text-sm placeholder-cream-200/50 outline-none focus-visible:border-cream-200"
         />
         <button
           type="submit"
@@ -74,7 +69,7 @@ export default function NewsletterForm({ fuente = 'home-newsletter' }) {
           {mutation.isPending ? 'Enviando…' : 'Quiero mi 10%'}
         </button>
       </div>
-      <p className="font-sans text-[0.7rem] text-cream-200/60 mt-3">
+      <p className="font-sans text-[0.7rem] text-cream-200/70 mt-3">
         Te enviaremos un código único de <strong className="text-gold-300">10% de descuento</strong> para tu primera compra.
       </p>
     </form>
