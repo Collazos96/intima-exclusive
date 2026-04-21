@@ -5,7 +5,7 @@
  *   1. Cliente y SSR ya están construidos (npm run build:client && npm run build:ssr)
  *   2. Cargamos render() del bundle SSR
  *   3. Por cada ruta:
- *      a. Fetcheamos data necesaria (categorías, productos, reseñas)
+ *      a. Fetcheamos data necesaria (categorías, productos, reseñas) EN PARALELO
  *      b. Renderizamos a HTML
  *      c. Inyectamos html + dehydrated state en el template
  *      d. Escribimos dist/<ruta>/index.html
@@ -23,40 +23,86 @@ const CLIENT_DIST = path.join(ROOT, 'dist')
 const SSR_DIST = path.join(ROOT, 'dist-ssr')
 
 const API_URL = process.env.VITE_API_URL || 'https://api.intimaexclusive.com'
+const FETCH_TIMEOUT_MS = 15_000  // 15s por fetch — si la API no responde, sigue
 
 // ====== Rutas estáticas (no requieren data dinámica) ======
 const STATIC_ROUTES = ['/', '/guia-tallas', '/politica', '/faq', '/nosotros', '/favoritos']
 
-async function fetchJson(path, opts = {}) {
-  const res = await fetch(`${API_URL}${path}`, opts)
-  if (!res.ok) throw new Error(`Fetch ${path} -> ${res.status}`)
-  return res.json()
+async function fetchJson(pathUrl, opts = {}) {
+  const ctrl = new AbortController()
+  const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS)
+  try {
+    const res = await fetch(`${API_URL}${pathUrl}`, { ...opts, signal: ctrl.signal })
+    if (!res.ok) throw new Error(`${pathUrl} -> ${res.status}`)
+    return await res.json()
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error(`${pathUrl} -> timeout ${FETCH_TIMEOUT_MS}ms`)
+    throw err
+  } finally {
+    clearTimeout(t)
+  }
 }
 
+const t0 = Date.now()
+const ts = () => `[${((Date.now() - t0) / 1000).toFixed(1)}s]`
+
 async function main() {
-  console.log('🔨 SSG iniciando…')
-  console.log(`📡 API: ${API_URL}`)
+  console.log(`${ts()} 🔨 SSG iniciando…`)
+  console.log(`${ts()} 📡 API: ${API_URL}`)
 
   // Carga el render del bundle SSR
   const serverEntryPath = pathToFileURL(path.join(SSR_DIST, 'entry-server.js')).href
   const { render } = await import(serverEntryPath)
+  console.log(`${ts()} ✓ Bundle SSR cargado`)
 
-  // Template base
   const template = await fs.readFile(path.join(CLIENT_DIST, 'index.html'), 'utf-8')
 
-  // Fetch data global (categorías + productos)
-  console.log('📥 Cargando catálogo desde API…')
+  // Fetch data global en paralelo
+  console.log(`${ts()} 📥 Cargando categorías + productos…`)
   const [categorias, productos] = await Promise.all([
     fetchJson('/api/categorias'),
     fetchJson('/api/productos'),
   ])
-  console.log(`   ${categorias.length} categorías, ${productos.length} productos`)
+  console.log(`${ts()}    ${categorias.length} categorías, ${productos.length} productos`)
 
-  // Para cada categoría, su lista de productos filtrada
+  // Productos por categoría EN PARALELO
+  console.log(`${ts()} 📥 Productos por categoría (paralelo)…`)
+  const productosPorCategoriaArr = await Promise.all(
+    categorias.map((c) => fetchJson(`/api/categoria/${c.id}`).catch((e) => {
+      console.warn(`${ts()}    ⚠️  categoria/${c.id}: ${e.message}`)
+      return []
+    }))
+  )
   const productosPorCategoria = {}
-  for (const cat of categorias) {
-    productosPorCategoria[cat.id] = await fetchJson(`/api/categoria/${cat.id}`)
+  categorias.forEach((c, i) => { productosPorCategoria[c.id] = productosPorCategoriaArr[i] })
+
+  // Detalle + reviews + relacionados por producto EN PARALELO
+  console.log(`${ts()} 📥 Detalles de ${productos.length} productos (paralelo)…`)
+  const detallesArr = await Promise.all(
+    productos.map(async (p) => {
+      try {
+        const [detalle, reviews, relacionados] = await Promise.all([
+          fetchJson(`/api/productos/${p.id}`),
+          fetchJson(`/api/productos/${p.id}/reviews`),
+          fetchJson(`/api/productos/${p.id}/relacionados`),
+        ])
+        return { id: p.id, detalle, reviews, relacionados }
+      } catch (e) {
+        console.warn(`${ts()}    ⚠️  producto ${p.id}: ${e.message}`)
+        return null
+      }
+    })
+  )
+  const productoDetalleCache = {}
+  const reviewsByProducto = {}
+  const relacionadosByProducto = {}
+  for (const d of detallesArr) {
+    if (!d) continue
+    productoDetalleCache[d.id] = d.detalle
+    reviewsByProducto[d.id] = d.reviews
+    relacionadosByProducto[d.id] = d.relacionados
   }
+  console.log(`${ts()}    ✓ ${detallesArr.filter(Boolean).length}/${productos.length} productos con detalle`)
 
   // Construir lista de rutas a generar
   const dynamicRoutes = [
@@ -65,31 +111,13 @@ async function main() {
   ]
   const allRoutes = [...STATIC_ROUTES, ...dynamicRoutes]
 
-  console.log(`🌐 Generando ${allRoutes.length} rutas:`)
-
-  // Pre-fetchear detalle de cada producto (incluye reseñas y relacionados)
-  const productoDetalleCache = {}
-  const reviewsByProducto = {}
-  const relacionadosByProducto = {}
-  for (const p of productos) {
-    try {
-      const [detalle, reviews, relacionados] = await Promise.all([
-        fetchJson(`/api/productos/${p.id}`),
-        fetchJson(`/api/productos/${p.id}/reviews`),
-        fetchJson(`/api/productos/${p.id}/relacionados`),
-      ])
-      productoDetalleCache[p.id] = detalle
-      reviewsByProducto[p.id] = reviews
-      relacionadosByProducto[p.id] = relacionados
-    } catch (err) {
-      console.warn(`   ⚠️  Producto ${p.id}: ${err.message}`)
-    }
-  }
+  console.log(`${ts()} 🌐 Generando ${allRoutes.length} rutas…`)
 
   let count = 0
   let errors = 0
 
-  for (const route of allRoutes) {
+  // Render en paralelo (renderToString es sincrónico y rápido)
+  await Promise.all(allRoutes.map(async (route) => {
     try {
       const prefetched = {
         categorias,
@@ -98,7 +126,6 @@ async function main() {
         reviewsByProducto,
         relacionadosByProducto,
       }
-      // Si la ruta es de producto, además pasamos el detalle
       const productoMatch = route.match(/^\/producto\/(.+)$/)
       if (productoMatch) {
         const id = productoMatch[1]
@@ -114,7 +141,6 @@ async function main() {
         .replace('<!--app-html-->', html)
         .replace('<!--app-state-->', initialStateScript)
 
-      // Path destino: / -> dist/index.html, /categoria/sets -> dist/categoria/sets/index.html
       const destPath = route === '/'
         ? path.join(CLIENT_DIST, 'index.html')
         : path.join(CLIENT_DIST, route.slice(1), 'index.html')
@@ -122,17 +148,16 @@ async function main() {
       await fs.mkdir(path.dirname(destPath), { recursive: true })
       await fs.writeFile(destPath, finalHtml, 'utf-8')
       count++
-      process.stdout.write(`   ✓ ${route}\n`)
     } catch (err) {
       errors++
-      console.error(`   ✗ ${route}: ${err.message}`)
+      console.error(`${ts()}    ✗ ${route}: ${err.message}`)
     }
-  }
+  }))
 
-  console.log(`\n✅ ${count} rutas generadas${errors ? `, ${errors} con errores` : ''}.`)
+  console.log(`${ts()} ✅ ${count} rutas generadas${errors ? `, ${errors} con errores` : ''}.`)
 }
 
 main().catch((err) => {
-  console.error('💥 SSG falló:', err)
+  console.error(`${ts()} 💥 SSG falló:`, err)
   process.exit(1)
 })
