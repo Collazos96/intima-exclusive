@@ -302,7 +302,7 @@ export default {
       if (method === 'POST' && path === '/api/newsletter/suscribir') {
         return await handleSuscribirNewsletter(request, env, cors)
       }
-      if (method === 'GET' && path === '/unsubscribe') {
+      if ((method === 'GET' || method === 'POST') && path === '/unsubscribe') {
         return await handleUnsubscribeNewsletter(request, env)
       }
 
@@ -1140,25 +1140,30 @@ function handleAdminLogout(request, cors) {
 }
 
 // ===== Email via Resend =====
-async function enviarEmail(env, { to, subject, html, from }) {
+async function enviarEmail(env, { to, subject, html, text, from, replyTo, headers }) {
   if (!env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY no configurado — email no enviado')
     return { sent: false, reason: 'no-api-key' }
   }
   const senderDefault = env.RESEND_FROM || 'Íntima Exclusive <onboarding@resend.dev>'
   try {
+    const payload = {
+      from: from || senderDefault,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+    }
+    if (text) payload.text = text
+    if (replyTo) payload.reply_to = replyTo
+    if (headers && Object.keys(headers).length) payload.headers = headers
+
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: from || senderDefault,
-        to: Array.isArray(to) ? to : [to],
-        subject,
-        html,
-      }),
+      body: JSON.stringify(payload),
     })
     if (!res.ok) {
       const errText = await res.text()
@@ -1182,6 +1187,24 @@ function generarCuponBienvenida() {
   let rand = ''
   for (let i = 0; i < 8; i++) rand += alfa[Math.floor(Math.random() * alfa.length)]
   return `BVD${rand}`
+}
+
+function welcomeEmailText({ codigo, porcentaje, unsubscribeUrl }) {
+  return `¡Bienvenida a Íntima Exclusive!
+
+Estamos emocionadas de tenerte aquí.
+
+Tu código de bienvenida: ${codigo}
+${porcentaje}% de descuento en tu primera compra
+
+Válido por 30 días. Úsalo al momento del checkout en intimaexclusive.com
+
+¿Preguntas? WhatsApp +57 302 855 6022
+
+---
+Recibiste este correo porque te suscribiste en intimaexclusive.com
+Cancelar suscripción: ${unsubscribeUrl}
+`
 }
 
 function welcomeEmailHtml({ nombre, codigo, porcentaje, unsubscribeUrl }) {
@@ -1303,10 +1326,21 @@ async function handleSuscribirNewsletter(request, env, cors) {
   // Disparar email (no bloquea si falla)
   const unsubscribeUrl = `${API_BASE}/unsubscribe?token=${unsubscribeToken}`
   const html = welcomeEmailHtml({ nombre, codigo: cuponCodigo, porcentaje, unsubscribeUrl })
+  const text = welcomeEmailText({ codigo: cuponCodigo, porcentaje, unsubscribeUrl })
   const emailRes = await enviarEmail(env, {
     to: email,
     subject: `¡Bienvenida a Íntima Exclusive! Tu ${porcentaje}% está adentro`,
     html,
+    text,
+    replyTo: env.RESEND_REPLY_TO || 'info@intimaexclusive.com',
+    // Headers RFC 8058 — habilita el botón nativo de "Cancelar suscripción" de Gmail/Outlook
+    // y mejora significativamente la reputación del dominio remitente.
+    headers: {
+      'List-Unsubscribe': `<${unsubscribeUrl}>, <mailto:info@intimaexclusive.com?subject=unsubscribe>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      // Clasifica el mensaje como transaccional/marketing para los filtros
+      'X-Entity-Ref-ID': cuponCodigo,
+    },
   })
 
   return ok({
@@ -1321,16 +1355,43 @@ async function handleSuscribirNewsletter(request, env, cors) {
 
 async function handleUnsubscribeNewsletter(request, env) {
   const url = new URL(request.url)
-  const token = url.searchParams.get('token') || ''
+  // GET: token en query; POST (Gmail one-click): token en query tambien
+  let token = url.searchParams.get('token') || ''
+
+  // Si es POST con form-encoded (RFC 8058), también aceptamos el token del body
+  if (request.method === 'POST' && !token) {
+    try {
+      const ct = request.headers.get('Content-Type') || ''
+      if (ct.includes('application/x-www-form-urlencoded')) {
+        const form = new URLSearchParams(await request.text())
+        token = form.get('token') || ''
+      }
+    } catch { /* noop */ }
+  }
+
   if (!/^[a-f0-9]{32}$/.test(token)) {
+    // POST: responde JSON plano (Gmail no espera HTML)
+    if (request.method === 'POST') {
+      return new Response(JSON.stringify({ error: 'Token inválido' }), {
+        status: 400, headers: { 'Content-Type': 'application/json' },
+      })
+    }
     return new Response(unsubscribeHtml({ ok: false, mensaje: 'Enlace inválido.' }), {
       status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
   }
+
   const res = await env.DB.prepare(
     `UPDATE suscriptores SET activo = 0 WHERE unsubscribe_token = ? AND activo = 1`
   ).bind(token).run()
   const success = res.meta.changes > 0
+
+  if (request.method === 'POST') {
+    return new Response(JSON.stringify({ ok: success }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   return new Response(unsubscribeHtml({
     ok: success,
     mensaje: success ? '¡Listo! Ya no recibirás más correos nuestros.' : 'No encontramos una suscripción activa con ese enlace.',
