@@ -258,6 +258,15 @@ export default {
         return await handleSitemap(env)
       }
 
+      // ========== IndexNow key file ==========
+      // Bing/Yandex validan ownership pidiendo /{key}.txt con la key como contenido
+      if (method === 'GET' && env.INDEXNOW_KEY && path === `/${env.INDEXNOW_KEY}.txt`) {
+        return new Response(env.INDEXNOW_KEY, {
+          status: 200,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400' },
+        })
+      }
+
       // ========== Rutas públicas ==========
       if (method === 'GET' && path === '/api/categorias') {
         return await handleCategorias(env, cors)
@@ -360,18 +369,35 @@ export default {
         }
         if (method === 'POST' && path === '/api/admin/productos') {
           const res = await handleAdminCrearProducto(request, env, cors)
-          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          if (res.status === 200) {
+            triggerPagesDeploy(env, ctx)
+            const body = await res.clone().json().catch(() => null)
+            const id = body?.id
+            if (id) {
+              indexNowNotify(env, ctx, [SITE_BASE + '/', ...urlsProducto(id)])
+            }
+          }
           return res
         }
         const editMatch = path.match(/^\/api\/admin\/productos\/([^/]+)$/)
         if (editMatch && method === 'PUT') {
-          const res = await handleAdminEditarProducto(request, env, cors, decodeURIComponent(editMatch[1]))
-          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          const id = decodeURIComponent(editMatch[1])
+          const res = await handleAdminEditarProducto(request, env, cors, id)
+          if (res.status === 200) {
+            triggerPagesDeploy(env, ctx)
+            indexNowNotify(env, ctx, urlsProducto(id))
+          }
           return res
         }
         if (editMatch && method === 'DELETE') {
-          const res = await handleAdminEliminarProducto(env, cors, decodeURIComponent(editMatch[1]))
-          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          const id = decodeURIComponent(editMatch[1])
+          const res = await handleAdminEliminarProducto(env, cors, id)
+          if (res.status === 200) {
+            triggerPagesDeploy(env, ctx)
+            // Al soft-delete, la URL del producto devuelve 404 — avisamos para
+            // que los bots actualicen el índice rápido
+            indexNowNotify(env, ctx, urlsProducto(id))
+          }
           return res
         }
 
@@ -422,8 +448,12 @@ export default {
         }
         const restaurarMatch = path.match(/^\/api\/admin\/productos\/([^/]+)\/restaurar$/)
         if (restaurarMatch && method === 'POST') {
-          const res = await handleAdminRestaurarProducto(env, cors, decodeURIComponent(restaurarMatch[1]))
-          if (res.status === 200) triggerPagesDeploy(env, ctx)
+          const id = decodeURIComponent(restaurarMatch[1])
+          const res = await handleAdminRestaurarProducto(env, cors, id)
+          if (res.status === 200) {
+            triggerPagesDeploy(env, ctx)
+            indexNowNotify(env, ctx, urlsProducto(id))
+          }
           return res
         }
         const permanenteMatch = path.match(/^\/api\/admin\/productos\/([^/]+)\/permanente$/)
@@ -970,6 +1000,39 @@ async function handleUpload(request, env, cors) {
 
 async function safeJson(request) {
   try { return await request.json() } catch { return null }
+}
+
+// ===== IndexNow: notifica a Bing/Yandex/Naver de cambios de URLs =====
+// Docs: https://www.indexnow.org/documentation
+// Requiere env.INDEXNOW_KEY (32 chars alfanum). El Worker sirve la key
+// en https://api.intimaexclusive.com/{KEY}.txt para verificar ownership.
+// Bing acepta ownership verification en cualquier subdominio del site principal.
+function indexNowNotify(env, ctx, urls) {
+  if (!env.INDEXNOW_KEY || !urls || urls.length === 0) return
+  const payload = {
+    host: 'intimaexclusive.com',
+    key: env.INDEXNOW_KEY,
+    keyLocation: `${API_BASE}/${env.INDEXNOW_KEY}.txt`,
+    urlList: urls,
+  }
+  const p = fetch('https://api.indexnow.org/indexnow', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+    .then((r) => console.log('IndexNow:', r.status, urls.length, 'urls'))
+    .catch((err) => console.error('IndexNow error:', err))
+  if (ctx?.waitUntil) ctx.waitUntil(p)
+}
+
+function urlsProducto(productoId) {
+  return [
+    `${SITE_BASE}/producto/${productoId}`,
+  ]
+}
+
+function urlsCategorias(categoriaIds) {
+  return categoriaIds.map((id) => `${SITE_BASE}/categoria/${id}`)
 }
 
 // ===== Re-deploy de Cloudflare Pages =====
