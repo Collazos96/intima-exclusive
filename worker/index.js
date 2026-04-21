@@ -1336,20 +1336,58 @@ async function handleWompiWebhook(request, env, cors) {
 // Admin: listar pedidos con filtros
 async function handleAdminListPedidos(request, env, cors) {
   const url = new URL(request.url)
+  const vista = url.searchParams.get('vista') || 'activos'
   const status = url.searchParams.get('status')
   const estadoEnvio = url.searchParams.get('estado_envio')
+
   let query = `SELECT reference, status, nombre, email, telefono, ciudad,
                       subtotal, envio, total, estado_envio, guia_envio,
                       wompi_payment_method, creado_at, actualizado_at
                FROM pedidos`
   const where = []
   const binds = []
+
+  // Filtro por vista (macro, agrupa estados)
+  // activos:     APPROVED+(preparando|enviado), o PENDING recientes (< 2h)
+  // entregados:  estado_envio = entregado
+  // cancelados:  status en DECLINED/VOIDED/ERROR, o estado_envio=cancelado
+  // todos:       sin filtro por vista
+  if (vista === 'activos') {
+    where.push(`(
+      (status = 'APPROVED' AND estado_envio IN ('preparando', 'enviado'))
+      OR (status = 'PENDING' AND creado_at > datetime('now', '-2 hours'))
+    )`)
+  } else if (vista === 'entregados') {
+    where.push(`estado_envio = 'entregado'`)
+  } else if (vista === 'cancelados') {
+    where.push(`(status IN ('DECLINED', 'VOIDED', 'ERROR') OR estado_envio = 'cancelado')`)
+  }
+
+  // Filtros finos opcionales (pueden combinarse con la vista)
   if (status) { where.push('status = ?'); binds.push(status) }
   if (estadoEnvio) { where.push('estado_envio = ?'); binds.push(estadoEnvio) }
+
   if (where.length) query += ' WHERE ' + where.join(' AND ')
   query += ' ORDER BY creado_at DESC LIMIT 200'
-  const { results } = await env.DB.prepare(query).bind(...binds).all()
-  return ok(results, cors)
+
+  const [{ results }, counts] = await Promise.all([
+    env.DB.prepare(query).bind(...binds).all(),
+    env.DB.prepare(`
+      SELECT
+        SUM(CASE WHEN (status = 'APPROVED' AND estado_envio IN ('preparando','enviado'))
+                   OR (status = 'PENDING' AND creado_at > datetime('now','-2 hours'))
+                THEN 1 ELSE 0 END) AS activos,
+        SUM(CASE WHEN status = 'APPROVED' AND date(creado_at) = date('now')
+                THEN 1 ELSE 0 END) AS nuevos_hoy,
+        SUM(CASE WHEN estado_envio = 'entregado' AND creado_at > datetime('now','-30 days')
+                THEN 1 ELSE 0 END) AS entregados_mes,
+        SUM(CASE WHEN status IN ('DECLINED','VOIDED','ERROR') OR estado_envio = 'cancelado'
+                THEN 1 ELSE 0 END) AS cancelados_total
+      FROM pedidos
+    `).first(),
+  ])
+
+  return ok({ pedidos: results, counts }, cors)
 }
 
 async function handleAdminConsultarPedido(env, cors, reference) {
