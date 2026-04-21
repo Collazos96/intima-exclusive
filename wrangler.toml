@@ -10,8 +10,13 @@ ENVIRONMENT = "production"
 # sean same-site con el frontend (intimaexclusive.com).
 ALLOWED_ORIGINS = "https://intimaexclusive.com,https://www.intimaexclusive.com"
 
-# ADMIN_TOKEN se configura como secret en producción:
-#   npx wrangler secret put ADMIN_TOKEN
+# Newsletter / Resend
+RESEND_FROM = "Íntima Exclusive <info@intimaexclusive.com>"
+NEWSLETTER_WELCOME_PERCENT = "10"
+NEWSLETTER_WELCOME_EXPIRA_DIAS = "30"
+
+# ADMIN_TOKEN, RESEND_API_KEY, PAGES_DEPLOY_HOOK, WOMPI_* son secrets:
+#   npx wrangler secret put <NOMBRE>
 
 [[d1_databases]]
 binding = "DB"
