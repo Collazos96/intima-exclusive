@@ -1221,13 +1221,14 @@ function welcomeEmailHtml({ nombre, codigo, porcentaje, unsubscribeUrl }) {
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5EDE0;">
 <tr><td align="center" style="padding:24px 12px;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;background:#FAF5EE;padding:40px 24px;">
-    <tr><td align="center" style="padding-bottom:24px;">
+    <tr><td align="center" style="padding-bottom:32px;border-bottom:1px solid #D9C4A8;">
       <a href="https://intimaexclusive.com" style="text-decoration:none;">
-        <img src="https://images.intimaexclusive.com/LOGO-INTIMA.jpg" alt="Íntima Exclusive" width="80" height="80" style="display:block;width:80px;height:80px;border-radius:50%;border:2px solid #D9C4A8;max-width:80px;outline:none;">
+        <p style="font-family:Georgia,serif;font-size:24px;color:#7B1A2E;margin:0 0 4px;font-weight:bold;letter-spacing:4px;text-transform:uppercase;">Íntima</p>
+        <p style="font-family:Georgia,serif;font-size:16px;color:#C4A882;margin:0;font-style:italic;letter-spacing:1px;">Exclusive</p>
       </a>
     </td></tr>
+    <tr><td style="height:24px;">&nbsp;</td></tr>
     <tr><td align="center">
-      <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#C4A882;margin:0 0 8px;">Íntima Exclusive</p>
       <h1 style="font-family:Georgia,serif;font-size:30px;color:#7B1A2E;font-weight:normal;margin:0 0 16px;">Gracias por unirte${firstName ? ', ' + firstName : ''}</h1>
       <p style="font-family:Georgia,serif;font-size:15px;color:#7A5A60;line-height:1.6;margin:0 0 28px;">
         Aquí va tu código personal, como te prometimos.<br>
