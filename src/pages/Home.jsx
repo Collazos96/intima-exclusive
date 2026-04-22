@@ -70,24 +70,69 @@ export default function Home() {
           },
         ]}
       />
-      {/* HERO */}
-      <section className="min-h-screen flex items-center justify-center text-center relative bg-cream-200 px-8 pt-20 pb-16 overflow-hidden">
-        <div className="absolute w-[680px] h-[680px] rounded-full border border-gold-300 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-35 pointer-events-none"/>
-        <div className="absolute w-[480px] h-[480px] rounded-full border border-gold-300 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-25 pointer-events-none"/>
-        <div className="relative z-10">
-          <span className="block font-sans text-[0.65rem] tracking-[5px] uppercase text-gold-500 mb-5">Nueva colección 2026</span>
-          <h1 className="font-serif text-[clamp(2rem,6vw,4.5rem)] tracking-widest leading-tight text-wine-800 uppercase mb-3">
-            Para la mujer<br/>que se <em className="text-wine-600 normal-case">elige</em><br/>cada día
+      {/* HERO — Cinematic Full-bleed */}
+      <section className="relative min-h-[calc(100vh-70px)] mt-[70px] overflow-hidden bg-wine-900">
+        <img
+          src="https://images.intimaexclusive.com/SET-CARMINA-1.jpg"
+          alt="Íntima Exclusive — Colección 2026"
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
+          fetchPriority="high"
+        />
+        {/* Overlays para legibilidad */}
+        <div className="absolute inset-0 bg-gradient-to-b from-wine-900/30 via-wine-900/45 to-wine-900/80" />
+        <div className="absolute inset-0 bg-gradient-to-r from-wine-900/40 via-transparent to-transparent" />
+
+        <div className="relative z-10 min-h-[calc(100vh-70px)] flex flex-col items-center justify-center text-center px-6 py-20">
+          <span className="block font-body text-[0.72rem] tracking-[6px] uppercase text-gold-300 mb-8">
+            Nueva colección 2026
+          </span>
+
+          <h1 className="font-display text-[clamp(3rem,10vw,8rem)] leading-[0.9] text-cream-50 mb-6 max-w-5xl">
+            Delicadeza<br />
+            que <em className="font-elegant italic font-light text-gold-300">empodera</em>
           </h1>
-          <p className="font-serif italic text-taupe-600 text-lg mb-8">Delicadeza que empodera</p>
-          <div className="flex items-center gap-4 justify-center mb-8">
-            <div className="w-16 h-px bg-gold-300"/>
-            <span className="font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500">Sets · Corsets · Lencería · Bodys · Accesorios</span>
-            <div className="w-16 h-px bg-gold-300"/>
+
+          <div className="flex items-center gap-4 justify-center mb-8 flex-wrap">
+            <div className="w-12 h-px bg-gold-300 opacity-60" />
+            <span className="font-body text-[0.68rem] tracking-[4px] uppercase text-cream-200/80">
+              Sets · Corsets · Lencería · Bodys
+            </span>
+            <div className="w-12 h-px bg-gold-300 opacity-60" />
           </div>
-          <div className="flex gap-4 justify-center flex-wrap">
-            <button onClick={() => nav('/categoria/sets')} className="bg-wine-600 text-cream-200 px-9 py-3 font-sans text-[0.72rem] tracking-widest uppercase hover:bg-wine-800 transition-colors">Ver colección</button>
-            <button onClick={() => document.getElementById('filosofia').scrollIntoView({behavior:'smooth'})} className="border border-wine-600 text-wine-600 px-9 py-3 font-sans text-[0.72rem] tracking-widest uppercase hover:bg-wine-600 hover:text-cream-200 transition-all">Nuestra historia</button>
+
+          <p className="font-body text-cream-200/80 text-base lg:text-lg max-w-xl mb-12 leading-relaxed">
+            Lencería hecha con amor en Colombia para la mujer que se elige cada día.
+          </p>
+
+          <div className="flex gap-3 flex-wrap justify-center">
+            <button
+              onClick={() => nav('/categoria/sets')}
+              className="bg-cream-50 text-wine-900 px-11 py-4 font-body text-[0.72rem] tracking-[3px] uppercase hover:bg-gold-300 transition-colors"
+            >
+              Descubrir colección
+            </button>
+            <button
+              onClick={() => document.getElementById('filosofia').scrollIntoView({ behavior: 'smooth' })}
+              className="border border-cream-50 text-cream-50 px-11 py-4 font-body text-[0.72rem] tracking-[3px] uppercase hover:bg-cream-50 hover:text-wine-900 transition-all"
+            >
+              Nuestra historia
+            </button>
+          </div>
+
+          {/* Scroll indicator */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-pulse">
+            <span className="font-body text-[0.62rem] tracking-[4px] uppercase text-cream-50/70">Descubre</span>
+            <svg width="16" height="24" viewBox="0 0 16 24" fill="none" className="text-cream-50/70" aria-hidden="true">
+              <path d="M8 2V22M8 22L1 15M8 22L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Tag editorial */}
+        <div className="absolute top-8 right-8 z-10 hidden sm:block">
+          <div className="bg-cream-50/10 backdrop-blur-sm px-4 py-2 border border-cream-50/20">
+            <p className="font-body text-[0.6rem] tracking-[3px] uppercase text-cream-50/90">Colección otoño</p>
           </div>
         </div>
       </section>
