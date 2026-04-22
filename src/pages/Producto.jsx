@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { getProducto, getReviews, registrarVisita } from '../hooks/useApi'
@@ -15,10 +15,10 @@ import ProductosRelacionados from '../components/ProductosRelacionados'
 
 export default function Producto() {
   const { id } = useParams()
-  const nav = useNavigate()
   const addItem = useCart((s) => s.addItem)
   const openCart = useCart((s) => s.open)
   const [mainImg, setMainImg] = useState(0)
+  const touchStartX = useRef(null)
   const [colorSel, setColorSel] = useState(null)
   const [tallaSel, setTallaSel] = useState(null)
   const [tab, setTab] = useState('desc')
@@ -200,7 +200,23 @@ export default function Producto() {
             </button>
           ))}
         </div>
-        <div className="order-1 lg:order-2 border border-gold-300 overflow-hidden bg-cream-200">
+        <button
+          type="button"
+          onClick={() => prod.imagenes.length > 1 && setMainImg(i => (i + 1) % prod.imagenes.length)}
+          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
+          onTouchEnd={(e) => {
+            if (touchStartX.current == null || prod.imagenes.length < 2) return
+            const delta = e.changedTouches[0].clientX - touchStartX.current
+            touchStartX.current = null
+            if (Math.abs(delta) < 40) return
+            if (delta > 0) setMainImg(i => (i - 1 + prod.imagenes.length) % prod.imagenes.length)
+            else setMainImg(i => (i + 1) % prod.imagenes.length)
+          }}
+          aria-label={prod.imagenes.length > 1
+            ? `Foto ${mainImg + 1} de ${prod.imagenes.length}. Tocar o deslizar para cambiar.`
+            : prod.nombre}
+          className="order-1 lg:order-2 border border-gold-300 overflow-hidden bg-cream-200 block w-full touch-pan-y cursor-pointer focus-visible:outline-2 focus-visible:outline-wine-600 focus-visible:outline-offset-2"
+        >
           <Img
             src={prod.imagenes[mainImg]}
             alt={prod.nombre}
@@ -208,9 +224,9 @@ export default function Producto() {
             widths={[600, 900, 1200]}
             sizes="(min-width: 1024px) 45vw, 100vw"
             w={900}
-            className="w-full aspect-[3/4] object-cover"
+            className="w-full aspect-[3/4] object-cover pointer-events-none"
           />
-        </div>
+        </button>
         <div className="order-3">
           {prod.nuevo === 1 && <span className="inline-block bg-wine-600 text-cream-200 font-sans text-[0.55rem] tracking-widest px-2 py-0.5 mb-3 uppercase">Nuevo</span>}
           <span className="block font-sans text-[0.6rem] tracking-widest uppercase text-gold-500 mb-1 capitalize">{prod.categoria_id}</span>
