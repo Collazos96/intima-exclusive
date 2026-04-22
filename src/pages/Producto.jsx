@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { getProducto, getReviews, registrarVisita } from '../hooks/useApi'
@@ -15,7 +15,6 @@ import ProductosRelacionados from '../components/ProductosRelacionados'
 
 export default function Producto() {
   const { id } = useParams()
-  const nav = useNavigate()
   const addItem = useCart((s) => s.addItem)
   const openCart = useCart((s) => s.open)
   const [mainImg, setMainImg] = useState(0)

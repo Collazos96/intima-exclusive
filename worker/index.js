@@ -1036,10 +1036,6 @@ function urlsProducto(productoId) {
   ]
 }
 
-function urlsCategorias(categoriaIds) {
-  return categoriaIds.map((id) => `${SITE_BASE}/categoria/${id}`)
-}
-
 // ===== Re-deploy de Cloudflare Pages =====
 // Llama al Deploy Hook configurado en Pages para re-buildear el sitio
 // y regenerar el HTML pre-renderizado tras cambios de catálogo.

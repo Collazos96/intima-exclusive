@@ -9,16 +9,14 @@ export function useInView({ threshold = 0.15, rootMargin = '0px 0px -10% 0px' } 
   const ref = useRef(null)
   const [inView, setInView] = useState(() => {
     if (typeof window === 'undefined') return true
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (typeof IntersectionObserver === 'undefined') return true
+    return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   })
 
   useEffect(() => {
     if (inView) return
     const el = ref.current
-    if (!el || typeof IntersectionObserver === 'undefined') {
-      setInView(true)
-      return
-    }
+    if (!el) return
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
