@@ -9,7 +9,7 @@ export default function Politica() {
         description="Políticas de envío discreto, cambios hasta 30 días, métodos de pago y garantía en Íntima Exclusive. Compra con total tranquilidad."
         path="/politica"
       />
-      <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-8">
+      <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-4 sm:px-8">
         <nav aria-label="Breadcrumb" className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">
           <Link to="/" className="text-wine-600 hover:underline">Inicio</Link>
           {' / '}<span aria-current="page">Políticas</span>

@@ -16,7 +16,7 @@ export default function Favoritos() {
   return (
     <main id="main" className="pt-[70px] min-h-screen">
       <Seo title="Favoritos" path="/favoritos" />
-      <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-8">
+      <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-4 sm:px-8">
         <nav aria-label="Breadcrumb" className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">
           <Link to="/" className="text-wine-600 hover:underline">Inicio</Link>
           {' / '}<span aria-current="page">Favoritos</span>
@@ -32,7 +32,7 @@ export default function Favoritos() {
         <div className="w-14 h-px bg-gold-500 mx-auto mt-4"/>
       </div>
 
-      <div className="px-8 py-12 max-w-5xl mx-auto">
+      <div className="px-4 sm:px-8 py-12 max-w-5xl mx-auto">
         {items.length === 0 ? (
           <div className="text-center py-16 border border-dashed border-gold-300 max-w-md mx-auto">
             <p className="font-serif text-gold-500 text-3xl mb-3" aria-hidden="true">♡</p>

@@ -57,7 +57,7 @@ export function CategoryGridSkeleton() {
 export function ProductoDetalleSkeleton() {
   return (
     <div
-      className="max-w-5xl mx-auto px-8 py-10 grid grid-cols-1 lg:grid-cols-[72px_1fr_1fr] gap-6 items-start"
+      className="max-w-5xl mx-auto px-4 sm:px-8 py-10 grid grid-cols-1 lg:grid-cols-[72px_1fr_1fr] gap-6 items-start"
       aria-busy="true"
       aria-label="Cargando producto"
     >

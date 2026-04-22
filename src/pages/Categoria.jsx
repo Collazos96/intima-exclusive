@@ -60,7 +60,7 @@ export default function Categoria() {
           ...(buildCategoriaFaqJsonLd(id) ? [buildCategoriaFaqJsonLd(id)] : []),
         ] : undefined}
       />
-      <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-8">
+      <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-4 sm:px-8">
         <nav aria-label="Breadcrumb" className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">
           <Link to="/" className="text-wine-600 hover:underline focus-visible:outline-2 focus-visible:outline-wine-600">Inicio</Link>
           {' / '}<span aria-current="page">{cat?.nombre || '...'}</span>
@@ -71,7 +71,7 @@ export default function Categoria() {
         {cat?.sub && <p className="font-sans text-[0.85rem] text-taupe-600 mt-2">{cat.sub}</p>}
         <div className="w-14 h-px bg-gold-500 mx-auto mt-4"/>
       </div>
-      <div className="px-8 py-12 max-w-6xl mx-auto">
+      <div className="px-4 sm:px-8 py-12 max-w-6xl mx-auto">
         {cat && <CategoriaContenido categoriaId={id} />}
         {isLoading ? (
           <ProductGridSkeleton count={6} />
