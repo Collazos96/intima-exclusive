@@ -29,6 +29,11 @@
 
   /* WhatsApp brand */
   --color-whatsapp-500: #25D366;
+
+  /* Fuentes editoriales (cargadas en index.html via Google Fonts) */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-elegant: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* Accesibilidad: foco visible consistente en elementos interactivos
