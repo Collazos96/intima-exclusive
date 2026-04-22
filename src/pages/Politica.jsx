@@ -35,7 +35,6 @@ export default function Politica() {
             <li>Tiempo de preparación: 1 a 2 días hábiles</li>
             <li>Tiempo de tránsito: 2 a 5 días hábiles (según ciudad)</li>
             <li>Envío gratis en compras superiores a $300.000 COP</li>
-            <li>Opción de contra entrega disponible en principales ciudades</li>
           </ul>
         </section>
 
@@ -60,16 +59,17 @@ export default function Politica() {
 
         <section aria-labelledby="pago">
           <h2 id="pago" className="font-serif text-wine-800 text-xl mb-3">Métodos de pago</h2>
-          <p className="mb-3">Aceptamos varias formas de pago, todas seguras:</p>
+          <p className="mb-3">Aceptamos varias formas de pago, todas seguras y procesadas en línea:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li>Tarjetas de crédito y débito (Visa, Mastercard)</li>
             <li>PSE (transferencia bancaria directa)</li>
             <li>Nequi y Daviplata</li>
-            <li>Contra entrega (efectivo al recibir)</li>
+            <li>Bancolombia (corresponsal directo)</li>
           </ul>
           <p className="mt-3">
-            Procesamos los pagos directamente por WhatsApp para confirmar disponibilidad y
-            tallas antes del cobro — así nunca pagas algo que no podamos enviarte.
+            Los pagos se procesan a través de <strong>Wompi</strong>, la plataforma de pagos
+            de Bancolombia. Tus datos de tarjeta nunca pasan por nuestros servidores —
+            Wompi los maneja con encriptación bancaria.
           </p>
         </section>
 
