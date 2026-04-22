@@ -333,6 +333,11 @@ export default {
         return await handleRelacionados(env, cors, decodeURIComponent(relMatch[1]))
       }
 
+      // Reseñas recientes globales (para home social proof)
+      if (method === 'GET' && path === '/api/reviews/recientes') {
+        return await handleReviewsRecientes(env, cors)
+      }
+
       // Reseñas: publicas (listar y crear pendientes)
       const reviewsMatch = path.match(/^\/api\/productos\/([^/]+)\/reviews$/)
       if (reviewsMatch && method === 'GET') {
@@ -1081,6 +1086,28 @@ async function handleRelacionados(env, cors, productoId) {
 }
 
 // ===== Reseñas =====
+async function handleReviewsRecientes(env, cors) {
+  const [recientes, stats] = await Promise.all([
+    env.DB.prepare(`
+      SELECT r.nombre, r.rating, r.comentario, r.fecha, r.producto_id,
+             p.nombre AS producto_nombre
+      FROM reviews r
+      LEFT JOIN productos p ON p.id = r.producto_id AND p.deleted_at IS NULL
+      WHERE r.aprobada = 1
+      ORDER BY r.fecha DESC
+      LIMIT 6
+    `).all(),
+    env.DB.prepare(
+      'SELECT COUNT(*) AS total, AVG(rating) AS promedio FROM reviews WHERE aprobada = 1'
+    ).first(),
+  ])
+  return ok({
+    total: stats?.total ?? 0,
+    promedio: stats?.promedio ? Math.round(stats.promedio * 10) / 10 : null,
+    recientes: recientes.results,
+  }, cors)
+}
+
 async function handleListReviews(env, cors, productoId) {
   if (!ID_RE.test(productoId)) return bad('id inválido', cors)
   const { results } = await env.DB.prepare(

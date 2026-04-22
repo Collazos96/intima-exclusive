@@ -1,17 +1,18 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getCategorias, getProductos } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
 import ProductCard from '../components/ProductCard'
 import Seo from '../components/Seo'
-import { CategoryGridSkeleton, ProductGridSkeleton } from '../components/Skeletons'
+import { ProductGridSkeleton } from '../components/Skeletons'
 import NewsletterForm from '../components/NewsletterForm'
-
-const iconos = { sets:'🌸', corsets:'🪢', lenceria:'✨', bodys:'🎀', accesorios:'💎' }
+import CategoriasBento from '../components/CategoriasBento'
+import SocialProof from '../components/SocialProof'
+import Reveal from '../components/Reveal'
 
 export default function Home() {
   const nav = useNavigate()
-  const { data: categorias = [], isLoading: cargandoCategorias } = useQuery({
+  const { data: categorias = [] } = useQuery({
     queryKey: qk.categorias,
     queryFn: getCategorias,
   })
@@ -20,6 +21,13 @@ export default function Home() {
     queryFn: getProductos,
   })
   const destacados = productos.filter(p => p.nuevo === 1)
+
+  // Imagen representativa por categoría: primera imagen del primer producto de esa categoría
+  const imagenesPorCategoria = categorias.reduce((acc, c) => {
+    const prod = productos.find((p) => p.categoria_id === c.id && p.imagenes?.length)
+    if (prod) acc[c.id] = prod.imagenes[0]
+    return acc
+  }, {})
 
   return (
     <main id="main">
@@ -137,37 +145,39 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CATEGORÍAS */}
-      <section className="py-20 px-8 bg-cream-50 text-center">
-        <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Explora</span>
-        <h2 className="font-serif text-[clamp(1.4rem,3vw,2.2rem)] text-wine-900 mb-1">Nuestras <em className="text-wine-600">categorías</em></h2>
-        <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
-        {cargandoCategorias ? <CategoryGridSkeleton /> : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 max-w-4xl mx-auto">
-          {categorias.map(c => (
-            <Link
-              key={c.id}
-              to={`/categoria/${c.id}`}
-              className="block p-8 border border-gold-300 bg-cream-100 hover:border-wine-600 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-wine-600 focus-visible:outline-offset-2 transition-all group"
-            >
-              <span className="block text-3xl mb-3" aria-hidden="true">{iconos[c.id]}</span>
-              <h3 className="font-sans text-[0.75rem] tracking-widest uppercase text-wine-900 mb-1">{c.nombre}</h3>
-              <p className="font-sans text-[0.7rem] text-taupe-400">{c.sub}</p>
-              <span aria-hidden="true" className="block text-[0.7rem] text-wine-600 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Ver →</span>
-            </Link>
-          ))}
-        </div>
-        )}
+      {/* CATEGORÍAS — Bento */}
+      <section className="py-20 px-4 sm:px-6 bg-cream-50 text-center">
+        <Reveal>
+          <span className="block font-body text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Explora</span>
+          <h2 className="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] text-wine-900 mb-1">
+            Nuestras <em className="font-elegant italic text-wine-600">categorías</em>
+          </h2>
+          <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
+        </Reveal>
+        <Reveal delay={100}>
+          <CategoriasBento categorias={categorias} imagenesPorCategoria={imagenesPorCategoria} />
+        </Reveal>
       </section>
+
+      {/* SOCIAL PROOF — solo si hay 3+ reseñas */}
+      <SocialProof />
 
       {/* DESTACADOS */}
       <section className="py-20 px-8 bg-cream-100 text-center">
-        <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Lo más deseado</span>
-        <h2 className="font-serif text-[clamp(1.4rem,3vw,2.2rem)] text-wine-900 mb-1">Colección <em className="text-wine-600">destacada</em></h2>
-        <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
+        <Reveal>
+          <span className="block font-body text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Lo más deseado</span>
+          <h2 className="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] text-wine-900 mb-1">
+            Colección <em className="font-elegant italic text-wine-600">destacada</em>
+          </h2>
+          <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
+        </Reveal>
         {cargandoProductos ? <ProductGridSkeleton count={3} /> : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {destacados.map((p, i) => <ProductCard key={p.id} producto={p} priority={i < 3}/>)}
+            {destacados.map((p, i) => (
+              <Reveal key={p.id} delay={i * 100}>
+                <ProductCard producto={p} priority={i < 3}/>
+              </Reveal>
+            ))}
           </div>
         )}
       </section>
