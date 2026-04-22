@@ -171,7 +171,7 @@ export default function Producto() {
           return [productLd, breadcrumbLd]
         })()}
       />
-      <div className="bg-cream-200 border-b border-gold-300 px-8 py-4">
+      <div className="bg-cream-200 border-b border-gold-300 px-4 sm:px-8 py-4">
         <nav aria-label="Breadcrumb" className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400">
           <Link to="/" className="text-wine-600 hover:underline focus-visible:outline-2 focus-visible:outline-wine-600">Inicio</Link>
           {' / '}
@@ -179,7 +179,7 @@ export default function Producto() {
           {' / '}<span aria-current="page">{prod.nombre}</span>
         </nav>
       </div>
-      <div className="max-w-5xl mx-auto px-8 py-10 grid grid-cols-1 lg:grid-cols-[72px_1fr_1fr] gap-6 items-start">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10 grid grid-cols-1 lg:grid-cols-[72px_1fr_1fr] gap-6 items-start">
         <div className="flex lg:flex-col flex-row gap-2 order-2 lg:order-1">
           {prod.imagenes.map((src, i) => (
             <button
@@ -314,7 +314,7 @@ export default function Producto() {
           </div>
         </div>
       </div>
-      <div className="max-w-5xl mx-auto px-8 pb-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 pb-16">
         <ProductosRelacionados productoId={prod.id} />
         <Reviews productoId={prod.id} />
       </div>

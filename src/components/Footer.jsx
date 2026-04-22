@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 export default function Footer() {
   return (
-    <footer className="bg-wine-800 py-10 px-8 text-center">
+    <footer className="bg-wine-800 py-10 px-4 sm:px-8 text-center">
       <span className="block font-serif font-bold text-cream-200 tracking-widest uppercase text-base">Íntima</span>
       <span className="block font-serif italic text-gold-300 text-sm mb-5">Exclusive</span>
       <ul className="flex gap-5 justify-center flex-wrap mb-6">

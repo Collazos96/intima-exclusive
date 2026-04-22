@@ -167,7 +167,7 @@ export default function Home() {
       <SocialProof />
 
       {/* DESTACADOS */}
-      <section className="py-20 px-8 bg-cream-100 text-center">
+      <section className="py-20 px-4 sm:px-8 bg-cream-100 text-center">
         <Reveal>
           <span className="block font-body text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Lo más deseado</span>
           <h2 className="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] text-wine-900 mb-1">
@@ -187,7 +187,7 @@ export default function Home() {
       </section>
 
       {/* FILOSOFÍA */}
-      <section id="filosofia" className="py-20 px-8 bg-cream-200 text-center">
+      <section id="filosofia" className="py-20 px-4 sm:px-8 bg-cream-200 text-center">
         <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Nuestra esencia</span>
         <h2 className="font-serif text-[clamp(1.4rem,3vw,2.2rem)] text-wine-900 mb-1">Elegirte es un acto de <em className="text-wine-600">amor</em></h2>
         <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
@@ -206,7 +206,7 @@ export default function Home() {
       </section>
 
       {/* BENEFICIOS */}
-      <section className="py-20 px-8 bg-cream-50 text-center">
+      <section className="py-20 px-4 sm:px-8 bg-cream-50 text-center">
         <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">¿Por qué elegirnos?</span>
         <h2 className="font-serif text-[clamp(1.4rem,3vw,2.2rem)] text-wine-900 mb-1">Íntima, <em className="text-wine-600">siempre contigo</em></h2>
         <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
@@ -226,7 +226,7 @@ export default function Home() {
       </section>
 
       {/* CONFIANZA */}
-      <section className="py-16 px-8 bg-cream-200 text-center border-y border-gold-300">
+      <section className="py-16 px-4 sm:px-8 bg-cream-200 text-center border-y border-gold-300">
         <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Tu tranquilidad</span>
         <h2 className="font-serif text-[clamp(1.3rem,2.6vw,1.9rem)] text-wine-900 mb-1">
           Compra con <em className="text-wine-600">confianza</em>
@@ -250,7 +250,7 @@ export default function Home() {
 
 
       {/* NEWSLETTER */}
-      <section className="py-20 px-8 bg-wine-600 text-center">
+      <section className="py-20 px-4 sm:px-8 bg-wine-600 text-center">
         <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-300 mb-3">Únete</span>
         <h2 className="font-serif text-[clamp(1.3rem,3vw,2rem)] tracking-widest text-cream-200 uppercase mb-3">Sé la primera en <em className="text-gold-300">saber</em></h2>
         <p className="font-sans text-[0.85rem] text-cream-200/70 mb-8">Lanzamientos exclusivos, descuentos y contenido para mujeres que se eligen.</p>
