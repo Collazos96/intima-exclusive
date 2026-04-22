@@ -17,6 +17,8 @@ import Faq from './pages/Faq'
 import Nosotros from './pages/Nosotros'
 import Checkout from './pages/Checkout'
 import PedidoEstado from './pages/PedidoEstado'
+import DemoHeroA from './pages/DemoHeroA'
+import DemoHeroB from './pages/DemoHeroB'
 
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'))
 const AdminPanel = lazy(() => import('./pages/admin/AdminPanel'))
@@ -98,6 +100,8 @@ export default function App() {
                 <Route path="/nosotros" element={<Nosotros />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/pedido/:reference" element={<PedidoEstado />} />
+                <Route path="/demo/a" element={<DemoHeroA />} />
+                <Route path="/demo/b" element={<DemoHeroB />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <Footer />
