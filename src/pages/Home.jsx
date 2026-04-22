@@ -80,28 +80,14 @@ export default function Home() {
       />
       {/* HERO — Cinematic Full-bleed */}
       <section className="relative min-h-[calc(100vh-70px)] mt-[70px] overflow-hidden bg-wine-900">
-        {/* Video blureado de fondo — solo desktop, rellena costados */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          aria-hidden="true"
-          tabIndex={-1}
-          className="hidden md:block absolute inset-0 w-full h-full object-cover blur-3xl scale-110 opacity-70 pointer-events-none"
-        >
-          <source src="https://images.intimaexclusive.com/hero.mp4" type="video/mp4" />
-        </video>
-        {/* Video principal — mobile llena, desktop centrado respetando aspecto */}
         <video
           autoPlay
           loop
           muted
           playsInline
           preload="auto"
-          poster="https://images.intimaexclusive.com/SET-CARMINA-1.jpg"
           aria-label="Íntima Exclusive — Colección 2026"
-          className="absolute inset-0 w-full h-full object-cover md:object-contain"
+          className="absolute inset-0 w-full h-full object-cover"
         >
           <source src="https://images.intimaexclusive.com/hero.mp4" type="video/mp4" />
         </video>
