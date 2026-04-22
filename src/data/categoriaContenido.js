@@ -195,11 +195,6 @@ export const CONTENIDO_CATEGORIA = {
         respuesta:
           'Tenemos antifaces decorativos (que dejan ver) y antifaces de venda completa (sin visión). En la descripción de cada producto se indica claramente.',
       },
-      {
-        pregunta: '¿Hacen accesorios personalizados?',
-        respuesta:
-          'En algunos casos sí, especialmente para regalos o sesiones de fotos. Escríbenos por WhatsApp con tu idea y te decimos si es viable.',
-      },
     ],
   },
 }

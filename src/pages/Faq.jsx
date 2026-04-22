@@ -20,7 +20,7 @@ const FAQS = [
   },
   {
     pregunta: '¿Cómo pago?',
-    respuesta: 'Aceptamos tarjetas de crédito y débito (Visa, Mastercard), PSE, Nequi, Daviplata y contra entrega en las principales ciudades. Procesamos el pago por WhatsApp para confirmar disponibilidad antes del cobro.',
+    respuesta: 'Aceptamos tarjetas de crédito y débito (Visa, Mastercard), PSE, Nequi, Bancolombia y Daviplata. El pago se procesa de forma segura en línea a través de Wompi (plataforma de Bancolombia).',
   },
   {
     pregunta: '¿Envían a todo Colombia?',
@@ -37,10 +37,6 @@ const FAQS = [
   {
     pregunta: '¿Hacen envíos a otros países?',
     respuesta: 'Por ahora enviamos únicamente dentro de Colombia. Si estás en el exterior y quieres que te enviemos a una dirección colombiana, con gusto lo coordinamos por WhatsApp.',
-  },
-  {
-    pregunta: '¿Puedo pedir un diseño personalizado o una talla que no tienen disponible?',
-    respuesta: 'Depende del diseño. Escríbenos por WhatsApp con la prenda que te interesa y te decimos si es posible. Algunas piezas se pueden hacer bajo medida con un plazo adicional.',
   },
 ]
 

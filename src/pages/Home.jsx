@@ -154,7 +154,7 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-4xl mx-auto">
           {[['01','Envío a todo Colombia','Tu pedido empacado con elegancia directo en tu puerta.'],
             ['02','Cambios fáciles','30 días para cambios sin complicaciones.'],
-            ['03','Pago seguro','Tarjetas, PSE, Nequi y contra entrega.'],
+            ['03','Pago seguro','Tarjetas, PSE, Nequi y Bancolombia.'],
             ['04','Atención personal','Te respondemos por WhatsApp con tus dudas de talla o estilo.']
           ].map(([n,t,d]) => (
             <div key={n} className="p-6 border-t-2 border-wine-500">
@@ -176,7 +176,7 @@ export default function Home() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
           {[
             ['🤫','Empaque discreto','Sin logos ni referencias visibles al contenido'],
-            ['🔒','Pago seguro','Tarjetas, PSE, Nequi o contra entrega'],
+            ['🔒','Pago seguro','Tarjetas, PSE, Nequi o Bancolombia'],
             ['🔄','Cambios 30 días','Cambios por talla o color sin complicaciones'],
             ['💬','Atención real','Te respondemos por WhatsApp en minutos'],
           ].map(([icon, titulo, desc]) => (
