@@ -1,7 +1,7 @@
 const SITE = 'https://intimaexclusive.com'
 const DEFAULT_IMG = 'https://images.intimaexclusive.com/LOGO-INTIMA.jpg'
 const DEFAULT_DESC =
-  'Lencería íntima premium hecha con amor en Colombia. Sets, corsets, bodys y accesorios. Tallas XS a 4XL. Envío discreto.'
+  'Lencería íntima premium hecha con amor en Colombia. Sets, corsets, bodys y accesorios. Tallas S a XL. Envío discreto.'
 
 /**
  * React 19 hoistea <title>, <meta> y <link> al <head> automáticamente.

@@ -4,7 +4,7 @@ import Seo from '../components/Seo'
 const FAQS = [
   {
     pregunta: '¿Cómo sé cuál es mi talla?',
-    respuesta: 'En la página de cada producto tienes un botón "Guía de tallas →" que abre nuestra tabla visual y numérica. Manejamos desde XS hasta 4XL. Si estás entre dos tallas, te recomendamos elegir la más grande para mayor comodidad. Si tienes dudas, escríbenos por WhatsApp con tus medidas (contorno de busto y cintura) y te decimos exactamente cuál pedir.',
+    respuesta: 'En la página de cada producto tienes un botón "Guía de tallas →" que abre nuestra tabla visual y numérica. Manejamos tallas S, M, L y XL. Si estás entre dos tallas, te recomendamos elegir la más grande para mayor comodidad. Si tienes dudas, escríbenos por WhatsApp con tus medidas (contorno de busto y cintura) y te decimos exactamente cuál pedir.',
   },
   {
     pregunta: '¿El empaque es discreto?',
@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     pregunta: '¿Envían a todo Colombia?',
-    respuesta: 'Sí, llegamos a todo el país por transportadora nacional. Si tu pedido supera $250.000 COP, el envío es gratis.',
+    respuesta: 'Sí, llegamos a todo el país por transportadora nacional. Si tu pedido supera $300.000 COP, el envío es gratis.',
   },
   {
     pregunta: '¿De qué materiales están hechas las prendas?',

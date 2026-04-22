@@ -10,7 +10,7 @@
 export const CONTENIDO_CATEGORIA = {
   sets: {
     intro:
-      'Los <strong>sets de lencería</strong> son la forma más completa de elegirte cada día. En Íntima Exclusive diseñamos conjuntos de brasier y panty pensados para que se sientan tan bien como se ven: encajes de alta calidad, copas que sostienen sin apretar y herrajes en tono oro que aportan ese detalle de elegancia. Tallas XS a 4XL, hechos con amor en Colombia.',
+      'Los <strong>sets de lencería</strong> son la forma más completa de elegirte cada día. En Íntima Exclusive diseñamos conjuntos de brasier y panty pensados para que se sientan tan bien como se ven: encajes de alta calidad, copas que sostienen sin apretar y herrajes en tono oro que aportan ese detalle de elegancia. Tallas S, M, L y XL, hechos con amor en Colombia.',
     bloques: [
       {
         titulo: '¿Por qué un set y no piezas sueltas?',
@@ -25,7 +25,7 @@ export const CONTENIDO_CATEGORIA = {
       {
         titulo: 'Cómo elegir tu talla',
         texto:
-          'Manejamos tallas desde XS hasta 4XL en sets. Si estás entre dos tallas, te recomendamos pedir la más grande para mayor comodidad — sobre todo en el contorno del busto. En la página de cada producto encuentras la guía de tallas detallada, y si tienes dudas escríbenos por WhatsApp con tus medidas y te decimos exactamente cuál pedir.',
+          'Manejamos tallas S, M, L y XL en sets. Si estás entre dos tallas, te recomendamos pedir la más grande para mayor comodidad — sobre todo en el contorno del busto. En la página de cada producto encuentras la guía de tallas detallada, y si tienes dudas escríbenos por WhatsApp con tus medidas y te decimos exactamente cuál pedir.',
       },
     ],
     faqs: [
@@ -49,7 +49,7 @@ export const CONTENIDO_CATEGORIA = {
 
   corsets: {
     intro:
-      'La <strong>corsetería</strong> es para mujeres que quieren sentirse esculturales. Nuestros corsets combinan estructura real con confort: varillas estratégicamente colocadas que afinan la silueta, telas firmes que sostienen y encajes que añaden sensualidad. Disponibles en tallas XS a 4XL, son una pieza poderosa que puedes usar sola, bajo un vestido o como parte de un look más atrevido.',
+      'La <strong>corsetería</strong> es para mujeres que quieren sentirse esculturales. Nuestros corsets combinan estructura real con confort: varillas estratégicamente colocadas que afinan la silueta, telas firmes que sostienen y encajes que añaden sensualidad. Disponibles en tallas S, M, L y XL, son una pieza poderosa que puedes usar sola, bajo un vestido o como parte de un look más atrevido.',
     bloques: [
       {
         titulo: '¿Para qué ocasión es un corset?',
@@ -88,7 +88,7 @@ export const CONTENIDO_CATEGORIA = {
 
   lenceria: {
     intro:
-      'La <strong>lencería</strong> de Íntima Exclusive es delicada, sensual y con personalidad. Encajes calados, transparencias estratégicas, detalles bordados y siluetas que abrazan tu cuerpo sin imponerle nada. Es la categoría más romántica de nuestra colección — pensada para esos momentos en los que la elegancia es el lenguaje. Tallas XS a 4XL.',
+      'La <strong>lencería</strong> de Íntima Exclusive es delicada, sensual y con personalidad. Encajes calados, transparencias estratégicas, detalles bordados y siluetas que abrazan tu cuerpo sin imponerle nada. Es la categoría más romántica de nuestra colección — pensada para esos momentos en los que la elegancia es el lenguaje. Tallas S, M, L y XL.',
     bloques: [
       {
         titulo: 'Lencería para sentirte hermosa',
@@ -118,16 +118,16 @@ export const CONTENIDO_CATEGORIA = {
           'Para uso bajo ropa recomendamos colores neutros: nude, beige o piel. El blanco y el negro pueden marcarse. Si tienes dudas, escríbenos con la prenda exterior en mente y te asesoramos.',
       },
       {
-        pregunta: '¿Puedo usar lencería en talla grande sin sentirme apretada?',
+        pregunta: '¿Cómo es el ajuste de la talla XL?',
         respuesta:
-          'Sí. Nuestros diseños en 2XL, 3XL y 4XL están hechos con los mismos encajes, no son simplemente "el mismo modelo más grande". Las copas, elásticos y proporciones se ajustan a cada talla.',
+          'Nuestra XL no es solo "la M más grande" — ajustamos copas, elásticos y proporciones para que la prenda siente cómoda y siga resaltando la silueta. Si tu medida de busto supera nuestra XL, escríbenos por WhatsApp con tus medidas y te orientamos.',
       },
     ],
   },
 
   bodys: {
     intro:
-      'Los <strong>bodys</strong> son la pieza más versátil de tu cajón íntimo. Una sola prenda que funciona como ropa interior, como top bajo un blazer, como base para un look completo. Los nuestros están hechos con encajes y mallas que te abrazan sin marcar, con cierres en la entrepierna que no se ven y cortes que estilizan la silueta. Tallas XS a 4XL.',
+      'Los <strong>bodys</strong> son la pieza más versátil de tu cajón íntimo. Una sola prenda que funciona como ropa interior, como top bajo un blazer, como base para un look completo. Los nuestros están hechos con encajes y mallas que te abrazan sin marcar, con cierres en la entrepierna que no se ven y cortes que estilizan la silueta. Tallas S, M, L y XL.',
     bloques: [
       {
         titulo: 'Un body, mil formas de usarlo',

@@ -30,7 +30,7 @@ export default function Home() {
             '@context': 'https://schema.org',
             '@type': 'Store',
             name: 'Íntima Exclusive',
-            description: 'Lencería íntima premium hecha con amor en Colombia. Sets, corsets, bodys y accesorios. Tallas XS a 4XL.',
+            description: 'Lencería íntima premium hecha con amor en Colombia. Sets, corsets, bodys y accesorios. Tallas S a XL.',
             url: 'https://intimaexclusive.com',
             logo: {
               '@type': 'ImageObject',
@@ -135,7 +135,7 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-4xl mx-auto">
           {[['Sensualidad','Diseños que abrazan cada curva con elegancia y confianza.'],
             ['Calidad premium','Encajes de alta gama, suaves al tacto y delicados con tu piel.'],
-            ['Tallas inclusivas','Toda mujer merece sentirse hermosa. XS hasta 4XL.'],
+            ['Diseño cuidado','Cada prenda pensada para el confort, el ajuste y la duración.'],
             ['Empoderamiento','Más que ropa: una actitud. Una forma de empezar el día contigo.']
           ].map(([t,d]) => (
             <div key={t} className="p-7 border border-gold-300 bg-cream-50">
@@ -155,7 +155,7 @@ export default function Home() {
           {[['01','Envío a todo Colombia','Tu pedido empacado con elegancia directo en tu puerta.'],
             ['02','Cambios fáciles','30 días para cambios sin complicaciones.'],
             ['03','Pago seguro','Tarjetas, PSE, Nequi y contra entrega.'],
-            ['04','Tallas inclusivas','Desde XS hasta 4XL para toda mujer.']
+            ['04','Atención personal','Te respondemos por WhatsApp con tus dudas de talla o estilo.']
           ].map(([n,t,d]) => (
             <div key={n} className="p-6 border-t-2 border-wine-500">
               <span className="block font-serif italic text-wine-600 text-2xl mb-2">{n}</span>

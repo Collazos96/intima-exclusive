@@ -232,7 +232,7 @@ export default function Producto() {
             Talla — <strong>{tallaSel || 'Selecciona una talla'}</strong>
           </span>
           <div className="flex gap-2 flex-wrap mb-2">
-            {['XS','S','M','L','XL','2XL','3XL','4XL'].map(t => {
+            {['S','M','L','XL'].map(t => {
                 const existe = tallasDisp.some(td => (typeof td === 'string' ? td : td.talla) === t)
                 const disponible = tallaDisponible(t)
                 const stock = stockDeTalla(t)

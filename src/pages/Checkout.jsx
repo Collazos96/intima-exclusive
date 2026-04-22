@@ -8,7 +8,7 @@ import Seo from '../components/Seo'
 import Img from '../components/Img'
 
 const WOMPI_WIDGET_SRC = 'https://checkout.wompi.co/widget.js'
-const ENVIO_GRATIS_DESDE_DEFAULT = 250_000
+const ENVIO_GRATIS_DESDE_DEFAULT = 300_000
 const TARIFA_ENVIO_DEFAULT = 15_000
 
 const formatPrecio = (cop) => '$' + cop.toLocaleString('es-CO')

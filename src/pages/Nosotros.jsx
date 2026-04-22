@@ -55,7 +55,7 @@ export default function Nosotros() {
           <h2 id="valores" className="font-serif text-wine-800 text-xl mb-3">Lo que nos mueve</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {[
-              ['Inclusión', 'Todas las tallas, desde XS hasta 4XL. Porque ninguna mujer sobra.'],
+              ['Ajuste preciso', 'Tallas S, M, L y XL con patrones pensados para el cuerpo real.'],
               ['Calidad', 'Encajes premium, herrajes tono oro, costuras revisadas una por una.'],
               ['Cercanía', 'Te respondemos por WhatsApp. Aquí hay alguien que te escucha.'],
               ['Discreción', 'Todo empaque es discreto. Tu compra es solo tuya.'],
