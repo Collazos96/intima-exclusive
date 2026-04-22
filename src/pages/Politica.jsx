@@ -34,7 +34,7 @@ export default function Politica() {
           <ul className="list-disc pl-5 space-y-1">
             <li>Tiempo de preparación: 1 a 2 días hábiles</li>
             <li>Tiempo de tránsito: 2 a 5 días hábiles (según ciudad)</li>
-            <li>Envío gratis en compras superiores a $250.000 COP</li>
+            <li>Envío gratis en compras superiores a $300.000 COP</li>
             <li>Opción de contra entrega disponible en principales ciudades</li>
           </ul>
         </section>

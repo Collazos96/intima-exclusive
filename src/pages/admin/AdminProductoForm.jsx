@@ -4,7 +4,7 @@ import { crearProducto, editarProducto, isAuthenticated } from '../../hooks/useA
 import { getCategorias, getProducto } from '../../hooks/useApi'
 import ImageUploader from '../../components/ImageUploader'
 
-const TALLAS_DISPONIBLES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL']
+const TALLAS_DISPONIBLES = ['S', 'M', 'L', 'XL']
 
 const productoVacio = {
   id: '',

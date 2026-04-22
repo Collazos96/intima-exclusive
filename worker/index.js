@@ -10,7 +10,7 @@ const API_BASE = 'https://api.intimaexclusive.com'
 const IMAGES_PUBLIC_BASE = 'https://images.intimaexclusive.com'
 
 // Envío (defaults, sobrescribibles por env vars ENVIO_GRATIS_DESDE y TARIFA_ENVIO)
-const DEFAULT_ENVIO_GRATIS_DESDE = 250_000_00 // 250.000 COP en centavos
+const DEFAULT_ENVIO_GRATIS_DESDE = 300_000_00 // 300.000 COP en centavos
 const DEFAULT_TARIFA_ENVIO = 15_000_00        // 15.000 COP en centavos
 
 function getEnvioConfig(env) {
