@@ -80,13 +80,18 @@ export default function Home() {
       />
       {/* HERO — Cinematic Full-bleed */}
       <section className="relative min-h-[calc(100vh-70px)] mt-[70px] overflow-hidden bg-wine-900">
-        <img
-          src="https://images.intimaexclusive.com/SET-CARMINA-1.jpg"
-          alt="Íntima Exclusive — Colección 2026"
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          poster="https://images.intimaexclusive.com/SET-CARMINA-1.jpg"
+          aria-label="Íntima Exclusive — Colección 2026"
           className="absolute inset-0 w-full h-full object-cover"
-          loading="eager"
-          fetchPriority="high"
-        />
+        >
+          <source src="https://images.intimaexclusive.com/hero.mp4" type="video/mp4" />
+        </video>
         {/* Overlays para legibilidad */}
         <div className="absolute inset-0 bg-gradient-to-b from-wine-900/30 via-wine-900/45 to-wine-900/80" />
         <div className="absolute inset-0 bg-gradient-to-r from-wine-900/40 via-transparent to-transparent" />
