@@ -16,6 +16,7 @@ export default function AdminInventario() {
       return
     }
     cargar()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function cargar() {

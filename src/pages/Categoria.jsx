@@ -6,8 +6,10 @@ import { qk } from '../lib/queryClient'
 import ProductCard from '../components/ProductCard'
 import Seo from '../components/Seo'
 import { ProductGridSkeleton } from '../components/Skeletons'
-import CategoriaFilters, { filtrarYOrdenar } from '../components/CategoriaFilters'
-import CategoriaContenido, { buildCategoriaFaqJsonLd } from '../components/CategoriaContenido'
+import CategoriaFilters from '../components/CategoriaFilters'
+import CategoriaContenido from '../components/CategoriaContenido'
+import { filtrarYOrdenar } from '../lib/filtrarProductos'
+import { buildCategoriaFaqJsonLd } from '../lib/categoriaFaq'
 
 const filtrosIniciales = { colores: [], soloNuevos: false, precioMax: 0, orden: 'nuevo' }
 

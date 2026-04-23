@@ -8,6 +8,7 @@ import { useInView } from '../lib/useInView'
  *   as           — etiqueta HTML (default 'div')
  *   className    — clases extra
  */
+// eslint-disable-next-line no-unused-vars -- Tag is used as JSX element name, not detected without eslint-plugin-react
 export default function Reveal({ children, delay = 0, as: Tag = 'div', className = '', ...rest }) {
   const [ref, inView] = useInView()
   const style = {

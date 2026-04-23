@@ -56,6 +56,7 @@ export default function AdminProductoForm() {
       }
     }
     cargar()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   function handleCampo(campo, valor) {

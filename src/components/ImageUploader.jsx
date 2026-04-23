@@ -48,7 +48,7 @@ export default function ImageUploader({ onUpload }) {
       } else {
         setError(data.error || 'Error al subir la imagen.')
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexion al subir la imagen.')
     }
 
