@@ -12,6 +12,7 @@ import Reviews from '../components/Reviews'
 import { ProductoDetalleSkeleton } from '../components/Skeletons'
 import WishlistButton from '../components/WishlistButton'
 import ProductosRelacionados from '../components/ProductosRelacionados'
+import { useSwipe } from '../lib/useSwipe'
 
 export default function Producto() {
   const { id } = useParams()
@@ -27,6 +28,12 @@ export default function Producto() {
     queryKey: qk.producto(id),
     queryFn: () => getProducto(id),
     enabled: !!id,
+  })
+
+  const totalImgs = prod?.imagenes?.length ?? 1
+  const swipeMain = useSwipe({
+    onSwipeLeft: () => setMainImg((i) => (i + 1) % totalImgs),
+    onSwipeRight: () => setMainImg((i) => (i - 1 + totalImgs) % totalImgs),
   })
 
   // Pre-cargamos reseñas para poder incluir aggregateRating en el JSON-LD
@@ -199,7 +206,11 @@ export default function Producto() {
             </button>
           ))}
         </div>
-        <div className="order-1 lg:order-2 border border-gold-300 overflow-hidden bg-cream-200">
+        <div
+          className="order-1 lg:order-2 border border-gold-300 overflow-hidden bg-cream-200 relative"
+          style={{ touchAction: 'pan-y' }}
+          {...swipeMain}
+        >
           <Img
             src={prod.imagenes[mainImg]}
             alt={prod.nombre}
@@ -209,6 +220,17 @@ export default function Producto() {
             w={900}
             className="w-full aspect-[3/4] object-cover"
           />
+          {prod.imagenes.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 lg:hidden">
+              {prod.imagenes.map((_, i) => (
+                <span
+                  key={i}
+                  aria-hidden="true"
+                  className={`w-2 h-2 rounded-full transition-colors ${i === mainImg ? 'bg-wine-600' : 'bg-wine-600/30'}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
         <div className="order-3">
           {prod.nuevo === 1 && <span className="inline-block bg-wine-600 text-cream-200 font-sans text-[0.55rem] tracking-widest px-2 py-0.5 mb-3 uppercase">Nuevo</span>}

@@ -85,10 +85,12 @@ export default function Home() {
           loop
           muted
           playsInline
-          preload="auto"
+          preload="metadata"
           aria-label="Íntima Exclusive — Colección 2026"
           className="absolute inset-0 w-full h-full object-cover"
         >
+          {/* Si subes un hero-mobile.mp4 mas liviano, descomenta la siguiente linea: */}
+          {/* <source src="https://images.intimaexclusive.com/hero-mobile.mp4" media="(max-width: 768px)" type="video/mp4" /> */}
           <source src="https://images.intimaexclusive.com/hero.mp4" type="video/mp4" />
         </video>
         {/* Overlays para legibilidad */}

@@ -1,18 +1,23 @@
 import { useState } from 'react'
 import Img from './Img'
+import { useSwipe } from '../lib/useSwipe'
 
 export default function Carousel({ imagenes, nombre, priority = false }) {
   const [idx, setIdx] = useState(0)
-  const prev = (e) => { e.preventDefault(); e.stopPropagation(); setIdx(i => (i - 1 + imagenes.length) % imagenes.length) }
-  const next = (e) => { e.preventDefault(); e.stopPropagation(); setIdx(i => (i + 1) % imagenes.length) }
+  const goPrev = () => setIdx(i => (i - 1 + imagenes.length) % imagenes.length)
+  const goNext = () => setIdx(i => (i + 1) % imagenes.length)
+  const prev = (e) => { e.preventDefault(); e.stopPropagation(); goPrev() }
+  const next = (e) => { e.preventDefault(); e.stopPropagation(); goNext() }
+  const swipe = useSwipe({ onSwipeLeft: goNext, onSwipeRight: goPrev })
 
   return (
     <div
       className="relative overflow-hidden bg-cream-200"
-      style={{ height: '300px' }}
+      style={{ height: '300px', touchAction: 'pan-y' }}
       role="group"
       aria-roledescription="carrusel"
       aria-label={`Imágenes de ${nombre}`}
+      {...swipe}
     >
       <div className="flex h-full transition-transform duration-400" style={{ transform: `translateX(-${idx * 100}%)` }}>
         {imagenes.map((src, i) => (

@@ -59,7 +59,7 @@ export default function AdminPanel() {
 
   return (
     <main className="min-h-screen bg-cream-100 pt-[70px]">
-      <div className="max-w-6xl mx-auto px-8 py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
 
         {/* HEADER */}
         <div className="flex items-center justify-between mb-8">
