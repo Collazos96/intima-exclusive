@@ -207,16 +207,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BENEFICIOS */}
+      {/* BENEFICIOS + CONFIANZA (fusionados) */}
       <section className="py-20 px-4 sm:px-8 bg-cream-50 text-center">
         <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">¿Por qué elegirnos?</span>
         <h2 className="font-serif text-[clamp(1.4rem,3vw,2.2rem)] text-wine-900 mb-1">Íntima, <em className="text-wine-600">siempre contigo</em></h2>
         <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-4xl mx-auto">
-          {[['01','Envío a todo Colombia','Tu pedido empacado con elegancia directo en tu puerta.'],
-            ['02','Cambios fáciles','30 días para cambios sin complicaciones.'],
-            ['03','Pago seguro','Tarjetas, PSE, Nequi y Bancolombia.'],
-            ['04','Atención personal','Te respondemos por WhatsApp con tus dudas de talla o estilo.']
+          {[['01','Empaque discreto','Sin logos ni referencias visibles al contenido.'],
+            ['02','Envío a todo Colombia','Tu pedido empacado con elegancia directo en tu puerta.'],
+            ['03','Cambios 30 días','Por talla o color sin complicaciones.'],
+            ['04','Pago seguro','Tarjetas, PSE, Nequi y Bancolombia.']
           ].map(([n,t,d]) => (
             <div key={n} className="p-6 border-t-2 border-wine-500">
               <span className="block font-serif italic text-wine-600 text-2xl mb-2">{n}</span>
@@ -226,30 +226,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-
-      {/* CONFIANZA */}
-      <section className="py-16 px-4 sm:px-8 bg-cream-200 text-center border-y border-gold-300">
-        <span className="block font-sans text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Tu tranquilidad</span>
-        <h2 className="font-serif text-[clamp(1.3rem,2.6vw,1.9rem)] text-wine-900 mb-1">
-          Compra con <em className="text-wine-600">confianza</em>
-        </h2>
-        <div className="w-12 h-px bg-gold-500 mx-auto my-5"/>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
-          {[
-            ['Empaque discreto','Sin logos ni referencias visibles al contenido'],
-            ['Pago seguro','Tarjetas, PSE, Nequi o Bancolombia'],
-            ['Cambios 30 días','Cambios por talla o color sin complicaciones'],
-            ['Atención real','Te respondemos por WhatsApp en minutos'],
-          ].map(([titulo, desc]) => (
-            <div key={titulo} className="p-5 bg-cream-50 border border-gold-300">
-              <div className="w-8 h-px bg-gold-500 mx-auto mb-3" aria-hidden="true" />
-              <h3 className="font-sans text-[0.72rem] tracking-widest uppercase text-wine-900 mb-1">{titulo}</h3>
-              <p className="font-sans text-[0.75rem] text-taupe-600 leading-relaxed">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
 
       {/* NEWSLETTER */}
       <section className="py-20 px-4 sm:px-8 bg-wine-600 text-center">
