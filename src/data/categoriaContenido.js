@@ -5,7 +5,6 @@
  * Estructura por categoría:
  *  - intro: párrafo de apertura (~70 palabras, primer impacto y keywords)
  *  - bloques: secciones con título y texto (~80-100 palabras c/u)
- *  - faqs: 3 preguntas frecuentes específicas de la categoría
  */
 export const CONTENIDO_CATEGORIA = {
   sets: {
@@ -26,23 +25,6 @@ export const CONTENIDO_CATEGORIA = {
         titulo: 'Cómo elegir tu talla',
         texto:
           'Manejamos tallas S, M, L y XL en sets. Si estás entre dos tallas, te recomendamos pedir la más grande para mayor comodidad — sobre todo en el contorno del busto. En la página de cada producto encuentras la guía de tallas detallada, y si tienes dudas escríbenos por WhatsApp con tus medidas y te decimos exactamente cuál pedir.',
-      },
-    ],
-    faqs: [
-      {
-        pregunta: '¿Los sets vienen con copa removible?',
-        respuesta:
-          'Depende del diseño. La mayoría tiene espuma ligera fija para dar forma sin volumen. Algunos modelos sin alambre tienen copa más suave. En la descripción de cada producto te decimos exactamente.',
-      },
-      {
-        pregunta: '¿Puedo cambiar solo el panty si me queda grande?',
-        respuesta:
-          'Sí. Ofrecemos cambio por talla dentro de los 30 días. Por higiene, los pantys solo se cambian si llegan en empaque original sin uso.',
-      },
-      {
-        pregunta: '¿Qué set recomiendan para regalo?',
-        respuesta:
-          'Los sets de encaje rojo, negro o blanco son los favoritos para regalar. Si tienes dudas con la talla, podemos enviar una tarjeta de cambio dentro del paquete para que la persona pueda ajustar después.',
       },
     ],
   },
@@ -67,23 +49,6 @@ export const CONTENIDO_CATEGORIA = {
           'En corsetería el ajuste es crítico. Mide el contorno del busto bajo el seno y la cintura natural (la parte más estrecha del torso). Si tu medida está entre dos tallas, elige la mayor — siempre puedes ajustar más cerrado con los corchetes. La guía de tallas tiene la tabla completa con equivalencias.',
       },
     ],
-    faqs: [
-      {
-        pregunta: '¿Los corsets son cómodos para usar muchas horas?',
-        respuesta:
-          'Sí, si eliges la talla correcta. Nuestros corsets están diseñados para uso prolongado, no son fajas reductoras. La sensación es de "abrazo firme", no de presión.',
-      },
-      {
-        pregunta: '¿Puedo lavarlos en lavadora?',
-        respuesta:
-          'No. Lava a mano con agua fría y jabón suave, presiona con toalla y seca al aire libre. La lavadora deforma las varillas y daña el encaje.',
-      },
-      {
-        pregunta: '¿Sirven después del embarazo?',
-        respuesta:
-          'Muchas mujeres nos compran corsets postparto. Te recomendamos esperar al menos 6 semanas y consultarlo con tu médico. Mide tu cintura al momento de comprar — el cuerpo cambia.',
-      },
-    ],
   },
 
   lenceria: {
@@ -104,23 +69,6 @@ export const CONTENIDO_CATEGORIA = {
         titulo: 'Cuidado para que duren',
         texto:
           'Las prendas delicadas requieren cuidado consciente. Lava a mano con agua fría y jabón neutro, evita blanqueadores, no retuerzas — presiona suavemente con una toalla limpia y seca al aire libre, a la sombra. Sin secadora ni plancha directa sobre el encaje. Con esos cuidados, una pieza de buena calidad te dura años.',
-      },
-    ],
-    faqs: [
-      {
-        pregunta: '¿Hay diseños más cómodos para uso diario?',
-        respuesta:
-          'Sí. Tenemos lencería de uso diario (sin transparencias, telas suaves, sin alambre) y diseños más sensuales para momentos especiales. En cada producto se indica el tipo de uso recomendado.',
-      },
-      {
-        pregunta: '¿Las transparencias se ven bajo la ropa?',
-        respuesta:
-          'Para uso bajo ropa recomendamos colores neutros: nude, beige o piel. El blanco y el negro pueden marcarse. Si tienes dudas, escríbenos con la prenda exterior en mente y te asesoramos.',
-      },
-      {
-        pregunta: '¿Cómo es el ajuste de la talla XL?',
-        respuesta:
-          'Nuestra XL no es solo "la M más grande" — ajustamos copas, elásticos y proporciones para que la prenda siente cómoda y siga resaltando la silueta. Si tu medida de busto supera nuestra XL, escríbenos por WhatsApp con tus medidas y te orientamos.',
       },
     ],
   },
@@ -145,23 +93,6 @@ export const CONTENIDO_CATEGORIA = {
           'Si lo vas a usar como prenda exterior bajo ropa, fíjate en la copa: las con espuma ligera dan forma sin marcar el pezón. Si lo quieres como prenda íntima sensual, los bodys de encaje pleno o con transparencias son ideales. Para tallas más amplias, los modelos sin alambre suelen ser más cómodos durante el día.',
       },
     ],
-    faqs: [
-      {
-        pregunta: '¿Los bodys se ven gruesos bajo la ropa?',
-        respuesta:
-          'No. Están diseñados con telas finas que no agregan volumen. Los modelos con copa de espuma son los que dan más estructura, pero igual son discretos.',
-      },
-      {
-        pregunta: '¿Es práctico usar body para ir al baño?',
-        respuesta:
-          'Todos nuestros bodys tienen broches metálicos en la entrepierna que se abren y cierran fácilmente, no necesitas quitártelo entero.',
-      },
-      {
-        pregunta: '¿Aguantan ser lavados muchas veces?',
-        respuesta:
-          'Sí, si los lavas a mano y los secas a la sombra. Hemos visto clientas que mantienen sus bodys impecables después de años de uso.',
-      },
-    ],
   },
 
   accesorios: {
@@ -182,18 +113,6 @@ export const CONTENIDO_CATEGORIA = {
         titulo: 'Tallas y ajuste',
         texto:
           'La mayoría de nuestros accesorios son de talla única ajustable. Las medias se gradúan con el alto de la pierna y los ligueros tienen ganchos en varias posiciones. Para antifaces y diademas, todos vienen con cinta elástica regulable. Si necesitas medidas específicas, contáctanos antes de comprar.',
-      },
-    ],
-    faqs: [
-      {
-        pregunta: '¿Las medias se rasgan fácil?',
-        respuesta:
-          'Si las usas con cuidado y las lavas a mano, duran muchos usos. Te recomendamos cortarte las uñas largas o usar guantes finos al ponerlas para evitar engancharlas.',
-      },
-      {
-        pregunta: '¿Los antifaces son muy oscuros para ver?',
-        respuesta:
-          'Tenemos antifaces decorativos (que dejan ver) y antifaces de venda completa (sin visión). En la descripción de cada producto se indica claramente.',
       },
     ],
   },

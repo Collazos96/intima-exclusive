@@ -1,7 +1,7 @@
 import { CONTENIDO_CATEGORIA } from '../data/categoriaContenido'
 
 /**
- * Renderiza contenido editorial + FAQ de una categoría.
+ * Renderiza contenido editorial de una categoría (intro + bloques).
  * Si la categoría no tiene contenido, no renderiza nada.
  */
 export default function CategoriaContenido({ categoriaId }) {
@@ -23,22 +23,6 @@ export default function CategoriaContenido({ categoriaId }) {
           </section>
         ))}
       </div>
-
-      {contenido.faqs?.length > 0 && (
-        <section className="mt-12">
-          <h2 className="font-serif text-wine-800 text-xl mb-4 text-center">
-            Preguntas frecuentes sobre esta categoría
-          </h2>
-          <dl className="space-y-4">
-            {contenido.faqs.map((f, i) => (
-              <div key={i} className="bg-cream-50 border border-gold-300 p-4">
-                <dt className="font-serif text-wine-900 mb-1">{f.pregunta}</dt>
-                <dd className="text-[0.88rem]">{f.respuesta}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
     </article>
   )
 }

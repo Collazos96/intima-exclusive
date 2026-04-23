@@ -9,7 +9,6 @@ import { ProductGridSkeleton } from '../components/Skeletons'
 import CategoriaFilters from '../components/CategoriaFilters'
 import CategoriaContenido from '../components/CategoriaContenido'
 import { filtrarYOrdenar } from '../lib/filtrarProductos'
-import { buildCategoriaFaqJsonLd } from '../lib/categoriaFaq'
 
 const filtrosIniciales = { colores: [], soloNuevos: false, precioMax: 0, orden: 'nuevo' }
 
@@ -59,7 +58,6 @@ export default function Categoria() {
             inLanguage: 'es-CO',
             isPartOf: { '@type': 'WebSite', url: 'https://intimaexclusive.com' },
           },
-          ...(buildCategoriaFaqJsonLd(id) ? [buildCategoriaFaqJsonLd(id)] : []),
         ] : undefined}
       />
       <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-4 sm:px-8">
