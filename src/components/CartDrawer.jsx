@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Lock } from 'lucide-react'
 import { useCart, lineKey } from '../lib/cartStore'
 
 const formatPrecio = (p) => '$' + p.toLocaleString('es-CO')
@@ -115,9 +116,10 @@ export default function CartDrawer() {
             </div>
             <button
               onClick={irACheckout}
-              className="w-full bg-wine-600 text-cream-200 py-3.5 font-sans text-[0.72rem] tracking-widest uppercase hover:bg-wine-800 transition-colors mb-2"
+              className="w-full bg-wine-600 text-cream-200 py-3.5 font-sans text-[0.72rem] tracking-widest uppercase hover:bg-wine-800 transition-colors mb-2 flex items-center justify-center gap-2"
             >
-              🔒 Pagar con Wompi
+              <Lock size={14} strokeWidth={1.5} aria-hidden="true" />
+              Pagar con Wompi
             </button>
             <button
               onClick={clear}

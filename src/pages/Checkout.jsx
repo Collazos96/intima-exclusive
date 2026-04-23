@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react' // useEffect ya importado
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
+import { Lock } from 'lucide-react'
 import { useCart } from '../lib/cartStore'
 import { crearPedido, getConfig, validarCuponApi } from '../hooks/useApi'
 import Seo from '../components/Seo'
@@ -313,8 +314,9 @@ export default function Checkout() {
             </label>
           </section>
 
-          <div className="bg-cream-100 border border-gold-300 p-4 text-[0.78rem] text-taupe-600 font-sans">
-            <p>🔒 El pago lo procesa <strong>Wompi</strong>, una plataforma de Bancolombia. Tus datos de tarjeta NUNCA pasan por nuestros servidores.</p>
+          <div className="bg-cream-100 border border-gold-300 p-4 text-[0.78rem] text-taupe-600 font-sans flex items-start gap-2">
+            <Lock size={14} strokeWidth={1.5} className="mt-0.5 flex-shrink-0" aria-hidden="true" />
+            <p>El pago lo procesa <strong>Wompi</strong>, una plataforma de Bancolombia. Tus datos de tarjeta NUNCA pasan por nuestros servidores.</p>
           </div>
         </div>
 
@@ -410,9 +412,14 @@ export default function Checkout() {
           <button
             type="submit"
             disabled={enviando || !widgetReady}
-            className="w-full bg-wine-600 text-cream-200 py-4 font-sans text-[0.75rem] tracking-widest uppercase hover:bg-wine-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-wine-600 text-cream-200 py-4 font-sans text-[0.75rem] tracking-widest uppercase hover:bg-wine-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
-            {enviando ? 'Procesando…' : !widgetReady ? 'Cargando pagos…' : '🔒 Pagar con Wompi'}
+            {enviando ? 'Procesando…' : !widgetReady ? 'Cargando pagos…' : (
+              <>
+                <Lock size={14} strokeWidth={1.5} aria-hidden="true" />
+                Pagar con Wompi
+              </>
+            )}
           </button>
 
           <Link

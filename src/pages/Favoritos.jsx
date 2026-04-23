@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Heart } from 'lucide-react'
 import { useWishlist } from '../lib/wishlistStore'
 import { useCart } from '../lib/cartStore'
 import Seo from '../components/Seo'
@@ -35,7 +36,7 @@ export default function Favoritos() {
       <div className="px-4 sm:px-8 py-12 max-w-5xl mx-auto">
         {items.length === 0 ? (
           <div className="text-center py-16 border border-dashed border-gold-300 max-w-md mx-auto">
-            <p className="font-serif text-gold-500 text-3xl mb-3" aria-hidden="true">♡</p>
+            <Heart size={36} strokeWidth={1.25} className="mx-auto mb-3 text-gold-500" aria-hidden="true" />
             <p className="font-sans text-[0.88rem] text-taupe-600 italic mb-6">
               Aún no tienes prendas guardadas.
             </p>

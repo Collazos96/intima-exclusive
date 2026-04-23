@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ShoppingBag } from 'lucide-react'
 import { categorias } from '../data/productos'
 import { useCart } from '../lib/cartStore'
 import { useWishlist } from '../lib/wishlistStore'
@@ -76,7 +77,7 @@ export default function Navbar() {
             aria-label={`Abrir carrito, ${cartCount} ${cartCount === 1 ? 'prenda' : 'prendas'}`}
             className="relative bg-wine-600 text-cream-200 p-2 sm:px-4 sm:py-2 font-sans text-[0.68rem] tracking-widest uppercase hover:bg-wine-800 transition-colors flex items-center gap-2"
           >
-            <span aria-hidden="true">🛍</span>
+            <ShoppingBag size={18} strokeWidth={1.5} aria-hidden="true" />
             <span className="hidden sm:inline">Mi selección</span>
             {cartCount > 0 && (
               <span

@@ -236,13 +236,13 @@ export default function Home() {
         <div className="w-12 h-px bg-gold-500 mx-auto my-5"/>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
           {[
-            ['🤫','Empaque discreto','Sin logos ni referencias visibles al contenido'],
-            ['🔒','Pago seguro','Tarjetas, PSE, Nequi o Bancolombia'],
-            ['🔄','Cambios 30 días','Cambios por talla o color sin complicaciones'],
-            ['💬','Atención real','Te respondemos por WhatsApp en minutos'],
-          ].map(([icon, titulo, desc]) => (
+            ['Empaque discreto','Sin logos ni referencias visibles al contenido'],
+            ['Pago seguro','Tarjetas, PSE, Nequi o Bancolombia'],
+            ['Cambios 30 días','Cambios por talla o color sin complicaciones'],
+            ['Atención real','Te respondemos por WhatsApp en minutos'],
+          ].map(([titulo, desc]) => (
             <div key={titulo} className="p-5 bg-cream-50 border border-gold-300">
-              <span className="block text-2xl mb-2" aria-hidden="true">{icon}</span>
+              <div className="w-8 h-px bg-gold-500 mx-auto mb-3" aria-hidden="true" />
               <h3 className="font-sans text-[0.72rem] tracking-widest uppercase text-wine-900 mb-1">{titulo}</h3>
               <p className="font-sans text-[0.75rem] text-taupe-600 leading-relaxed">{desc}</p>
             </div>

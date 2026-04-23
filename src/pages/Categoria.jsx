@@ -79,9 +79,10 @@ export default function Categoria() {
           <ProductGridSkeleton count={6} />
         ) : prods.length === 0 ? (
           <div className="text-center py-20 border border-dashed border-gold-300 max-w-md mx-auto">
-            <p className="font-serif text-gold-500 text-2xl mb-3" aria-hidden="true">🌹</p>
+            <div className="w-10 h-px bg-gold-500 mx-auto mb-4" aria-hidden="true" />
+            <p className="font-serif italic text-gold-500 text-sm tracking-widest uppercase mb-3">Próximamente</p>
             <p className="font-sans text-[0.85rem] text-taupe-400 italic mb-6">
-              Próximamente — Estamos preparando nuestra colección de {cat.nombre.toLowerCase()}.
+              Estamos preparando nuestra colección de {cat.nombre.toLowerCase()}.
             </p>
             <button
               onClick={() => window.open('https://wa.me/573028556022', '_blank')}

@@ -1,16 +1,17 @@
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { Clock, CheckCircle2, XCircle, Ban, AlertTriangle } from 'lucide-react'
 import { getPedido } from '../hooks/useApi'
 import Seo from '../components/Seo'
 
 const formatPrecio = (cop) => '$' + cop.toLocaleString('es-CO')
 
 const STATUS_META = {
-  PENDING:  { label: 'Procesando pago',   color: 'amber',  icon: '⏳', mensaje: 'Tu pago se está procesando. En unos segundos actualizamos el estado.' },
-  APPROVED: { label: 'Pago aprobado',     color: 'green',  icon: '✅', mensaje: '¡Gracias! Tu pago fue confirmado. Empezamos a preparar tu pedido.' },
-  DECLINED: { label: 'Pago rechazado',    color: 'red',    icon: '❌', mensaje: 'Tu pago fue rechazado. Puedes intentar de nuevo con otro medio de pago.' },
-  VOIDED:   { label: 'Pago cancelado',    color: 'taupe',  icon: '🚫', mensaje: 'El pago fue cancelado.' },
-  ERROR:    { label: 'Error en el pago',  color: 'red',    icon: '⚠️', mensaje: 'Hubo un error procesando tu pago. Intenta de nuevo o escríbenos por WhatsApp.' },
+  PENDING:  { label: 'Procesando pago',   color: 'amber', Icon: Clock,          mensaje: 'Tu pago se está procesando. En unos segundos actualizamos el estado.' },
+  APPROVED: { label: 'Pago aprobado',     color: 'green', Icon: CheckCircle2,   mensaje: '¡Gracias! Tu pago fue confirmado. Empezamos a preparar tu pedido.' },
+  DECLINED: { label: 'Pago rechazado',    color: 'red',   Icon: XCircle,        mensaje: 'Tu pago fue rechazado. Puedes intentar de nuevo con otro medio de pago.' },
+  VOIDED:   { label: 'Pago cancelado',    color: 'taupe', Icon: Ban,            mensaje: 'El pago fue cancelado.' },
+  ERROR:    { label: 'Error en el pago',  color: 'red',   Icon: AlertTriangle,  mensaje: 'Hubo un error procesando tu pago. Intenta de nuevo o escríbenos por WhatsApp.' },
 }
 
 export default function PedidoEstado() {
@@ -38,7 +39,7 @@ export default function PedidoEstado() {
         )}
         {isError && (
           <div className="text-center py-12">
-            <p className="text-6xl mb-3" aria-hidden="true">⚠️</p>
+            <AlertTriangle size={56} strokeWidth={1.25} className="mx-auto mb-3 text-wine-600" aria-hidden="true" />
             <h1 className="font-serif text-2xl text-wine-900 mb-2">No encontramos el pedido</h1>
             <p className="font-sans text-sm text-taupe-600 mb-6">
               La referencia <code className="font-mono text-xs">{reference}</code> no existe o expiró.
@@ -52,7 +53,7 @@ export default function PedidoEstado() {
         {data && meta && (
           <>
             <div className="text-center mb-8">
-              <p className="text-6xl mb-3" aria-hidden="true">{meta.icon}</p>
+              <meta.Icon size={56} strokeWidth={1.25} className="mx-auto mb-3 text-wine-600" aria-hidden="true" />
               <h1 className="font-serif text-2xl sm:text-3xl text-wine-900 mb-2">{meta.label}</h1>
               <p className="font-sans text-sm text-taupe-600 max-w-md mx-auto">{meta.mensaje}</p>
               <p className="font-mono text-[0.7rem] text-taupe-400 mt-3">Ref: {data.reference}</p>

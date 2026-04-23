@@ -289,15 +289,18 @@ export default function Producto() {
           <div className="flex justify-center">
             <WishlistButton producto={prod} variant="full" />
           </div>
-          <ul className="grid grid-cols-3 gap-2 mt-4 font-sans text-[0.65rem] text-taupe-600">
-            <li className="flex flex-col items-center text-center gap-1 p-2 bg-cream-100 border border-gold-300">
-              <span aria-hidden="true">🤫</span><span>Empaque discreto</span>
+          <ul className="grid grid-cols-3 gap-2 mt-4 font-sans text-[0.65rem] text-taupe-600 tracking-widest uppercase">
+            <li className="flex flex-col items-center text-center gap-2 p-3 bg-cream-100 border border-gold-300">
+              <div className="w-6 h-px bg-gold-500" aria-hidden="true" />
+              <span>Empaque discreto</span>
             </li>
-            <li className="flex flex-col items-center text-center gap-1 p-2 bg-cream-100 border border-gold-300">
-              <span aria-hidden="true">🔄</span><span>Cambios 30 días</span>
+            <li className="flex flex-col items-center text-center gap-2 p-3 bg-cream-100 border border-gold-300">
+              <div className="w-6 h-px bg-gold-500" aria-hidden="true" />
+              <span>Cambios 30 días</span>
             </li>
-            <li className="flex flex-col items-center text-center gap-1 p-2 bg-cream-100 border border-gold-300">
-              <span aria-hidden="true">🚚</span><span>Envío nacional</span>
+            <li className="flex flex-col items-center text-center gap-2 p-3 bg-cream-100 border border-gold-300">
+              <div className="w-6 h-px bg-gold-500" aria-hidden="true" />
+              <span>Envío nacional</span>
             </li>
           </ul>
           <div className="mt-7">
@@ -313,13 +316,18 @@ export default function Producto() {
               {tab === 'desc' && <p>{prod.descripcion}</p>}
               {tab === 'care' && (
                 <ul className="space-y-2">
-                  {['🖐️ Lavar a mano con agua fría y jabón suave.',
-                    '🚫 Evitar blanqueadores o suavizantes.',
-                    '🔄 No retorcer. Presionar suavemente con toalla limpia.',
-                    '🌬️ Secar al aire libre, a la sombra, en posición horizontal.',
-                    '❌ No usar secadora ni plancha.'
-                  ].map(c => <li key={c} className="border-b border-gold-300 pb-2">{c}</li>)}
-                  <li className="italic pt-1">¡Tus prendas íntimas merecen un cuidado especial, y tú también!</li>
+                  {['Lavar a mano con agua fría y jabón suave.',
+                    'Evitar blanqueadores o suavizantes.',
+                    'No retorcer. Presionar suavemente con toalla limpia.',
+                    'Secar al aire libre, a la sombra, en posición horizontal.',
+                    'No usar secadora ni plancha.'
+                  ].map(c => (
+                    <li key={c} className="border-b border-gold-300 pb-2 flex gap-3">
+                      <span className="text-gold-500" aria-hidden="true">—</span>
+                      <span>{c}</span>
+                    </li>
+                  ))}
+                  <li className="italic pt-1">Tus prendas íntimas merecen un cuidado especial, y tú también.</li>
                 </ul>
               )}
               {tab === 'tallas' && (
