@@ -436,7 +436,7 @@ export default {
         }
         const adminEnvioMatch = path.match(/^\/api\/admin\/pedidos\/([^/]+)\/envio$/)
         if (adminEnvioMatch && method === 'PUT') {
-          return await handleAdminActualizarEnvio(request, env, cors, decodeURIComponent(adminEnvioMatch[1]))
+          return await handleAdminActualizarEnvio(request, env, ctx, cors, decodeURIComponent(adminEnvioMatch[1]))
         }
 
         // Limpieza de R2: huérfanas (archivos en R2 sin referencia en DB)
@@ -1558,8 +1558,6 @@ La verdadera elegancia comienza con la comodidad. Gracias por elegirnos — porq
 Preparación: 1-2 días hábiles + Entrega: 2-5 días hábiles.
 Empaque completamente discreto, como siempre.
 
-Consulta el estado en: https://intimaexclusive.com/pedido/${pedido.reference}
-
 ¿Preguntas? WhatsApp +57 302 855 6022
 `
 }
@@ -1580,8 +1578,6 @@ function orderConfirmationHtml({ pedido, items }) {
         ${formatCopCents(i.precio_unitario * i.cantidad)}
       </td>
     </tr>`).join('')
-
-  const estadoUrl = `https://intimaexclusive.com/pedido/${pedido.reference}`
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -1651,16 +1647,133 @@ function orderConfirmationHtml({ pedido, items }) {
         Empaque completamente discreto, como siempre.
       </p>
     </td></tr>
-    <tr><td align="center" style="padding:28px 0 16px;">
-      <a href="${estadoUrl}" style="display:inline-block;background:#7B1A2E;color:#F5EDE0;text-decoration:none;padding:14px 32px;font-family:Arial,sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;">Ver estado del pedido</a>
-    </td></tr>
     <tr><td>
-      <hr style="border:none;border-top:1px solid #D9C4A8;margin:24px 0;">
+      <hr style="border:none;border-top:1px solid #D9C4A8;margin:32px 0 24px;">
     </td></tr>
     <tr><td align="center">
       <p style="font-family:Georgia,serif;font-size:13px;color:#7A5A60;line-height:1.5;margin:0;">
         ¿Alguna pregunta sobre tu pedido?<br>
         <a href="https://wa.me/573028556022?text=${encodeURIComponent(`Hola! Tengo una pregunta sobre mi pedido ${pedido.reference}`)}" style="color:#7B1A2E;text-decoration:none;font-weight:bold;">Escríbenos por WhatsApp</a>
+      </p>
+    </td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>`
+}
+
+// ===== Email: pedido en camino (guia de envio) =====
+function shippingNotificationText({ pedido, items }) {
+  const lineas = items.map((i, idx) =>
+    `${idx + 1}. ${i.nombre} — ${i.color}, talla ${i.talla} x${i.cantidad}`
+  ).join('\n')
+
+  return `Tu pedido va en camino, ${pedido.nombre.split(' ')[0]}
+
+Referencia: ${pedido.reference}
+Guía de envío: ${pedido.guia_envio}
+
+${lineas}
+
+Envío a:
+${pedido.direccion}, ${pedido.ciudad}${pedido.departamento ? ', ' + pedido.departamento : ''}
+
+Pronto llegará a tu puerta — empacada con el mismo cuidado con el que fue hecha.
+Tiempo estimado de entrega: 2-5 días hábiles.
+
+¿Preguntas? WhatsApp +57 302 855 6022
+`
+}
+
+function shippingNotificationHtml({ pedido, items }) {
+  const firstName = pedido.nombre?.split(' ')[0] || ''
+  const itemsHtml = items.map((i) => `
+    <tr>
+      <td valign="top" style="padding:8px 0;border-bottom:1px solid #D9C4A8;">
+        <p style="font-family:Georgia,serif;color:#3A1A20;font-size:14px;margin:0 0 2px;">${i.nombre}</p>
+        <p style="font-family:Arial,sans-serif;color:#7A5A60;font-size:12px;margin:0;">${i.color} · Talla ${i.talla} · x${i.cantidad}</p>
+      </td>
+    </tr>`).join('')
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu pedido va en camino — Íntima Exclusive</title>
+</head>
+<body style="margin:0;padding:0;font-family:Georgia,serif;background:#F5EDE0;color:#3A1A20;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5EDE0;">
+<tr><td align="center" style="padding:24px 12px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#FAF5EE;padding:40px 24px;">
+    <tr><td align="center" style="padding-bottom:32px;border-bottom:1px solid #D9C4A8;">
+      <a href="https://intimaexclusive.com" style="text-decoration:none;">
+        <p style="font-family:Georgia,serif;font-size:24px;color:#7B1A2E;margin:0 0 4px;font-weight:bold;letter-spacing:4px;text-transform:uppercase;">Íntima</p>
+        <p style="font-family:Georgia,serif;font-size:16px;color:#C4A882;margin:0;font-style:italic;letter-spacing:1px;">Exclusive</p>
+      </a>
+    </td></tr>
+    <tr><td style="height:24px;">&nbsp;</td></tr>
+    <tr><td align="center">
+      <h1 style="font-family:Georgia,serif;font-size:26px;color:#7B1A2E;font-weight:normal;margin:0 0 8px;">Tu pedido va en camino${firstName ? ', ' + firstName : ''}</h1>
+      <p style="font-family:Georgia,serif;font-size:14px;color:#7A5A60;margin:0 0 4px;">Ya está con el transportador. Pronto llegará a tu puerta.</p>
+      <p style="font-family:'Courier New',monospace;font-size:12px;color:#C4A882;margin:16px 0 0;">Ref: ${pedido.reference}</p>
+    </td></tr>
+    <tr><td style="height:24px;">&nbsp;</td></tr>
+    <tr><td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FFFDF9;border:2px solid #7B1A2E;padding:20px;">
+        <tr><td align="center">
+          <p style="font-family:Arial,sans-serif;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#7A5A60;margin:0 0 8px;">Guía de envío</p>
+          <p style="font-family:'Courier New',monospace;font-size:20px;color:#7B1A2E;font-weight:bold;margin:0;letter-spacing:1px;word-break:break-all;">${pedido.guia_envio}</p>
+          <p style="font-family:Arial,sans-serif;font-size:11px;color:#7A5A60;margin:10px 0 0;">Úsala en el sitio del transportador para rastrear tu paquete.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="height:24px;">&nbsp;</td></tr>
+    <tr><td>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FFFDF9;border:1px solid #D9C4A8;padding:20px;">
+        <tr><td>
+          <p style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#7A5A60;margin:0 0 12px;">Tu pedido</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+            ${itemsHtml}
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="height:20px;">&nbsp;</td></tr>
+    <tr><td>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="padding:0 4px;">
+        <tr><td>
+          <p style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#7A5A60;margin:0 0 8px;">Dirección de entrega</p>
+          <p style="font-family:Georgia,serif;font-size:14px;color:#3A1A20;margin:0 0 4px;line-height:1.5;">
+            ${pedido.nombre}<br>
+            ${pedido.direccion}<br>
+            ${pedido.ciudad}${pedido.departamento ? ', ' + pedido.departamento : ''}<br>
+            ${pedido.telefono}
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+    <tr><td style="height:24px;">&nbsp;</td></tr>
+    <tr><td align="center" style="padding:24px 20px;background:#F5EDE0;border-left:3px solid #7B1A2E;">
+      <p style="font-family:Georgia,serif;font-style:italic;color:#7B1A2E;font-size:15px;margin:0 0 10px;line-height:1.6;">
+        Pronto llegará a tu puerta.
+      </p>
+      <p style="font-family:Georgia,serif;color:#3A1A20;font-size:13px;margin:0 0 14px;line-height:1.6;">
+        Empacada con el mismo cuidado con el que fue hecha.
+      </p>
+      <p style="font-family:Arial,sans-serif;color:#7A5A60;font-size:12px;margin:0;">
+        Tiempo estimado de entrega: 2-5 días hábiles<br>
+        Empaque completamente discreto, como siempre.
+      </p>
+    </td></tr>
+    <tr><td>
+      <hr style="border:none;border-top:1px solid #D9C4A8;margin:32px 0 24px;">
+    </td></tr>
+    <tr><td align="center">
+      <p style="font-family:Georgia,serif;font-size:13px;color:#7A5A60;line-height:1.5;margin:0;">
+        ¿Alguna pregunta sobre tu envío?<br>
+        <a href="https://wa.me/573028556022?text=${encodeURIComponent(`Hola! Tengo una pregunta sobre mi pedido ${pedido.reference} (guia ${pedido.guia_envio})`)}" style="color:#7B1A2E;text-decoration:none;font-weight:bold;">Escríbenos por WhatsApp</a>
       </p>
     </td></tr>
   </table>
@@ -2217,7 +2330,7 @@ async function handleAdminConsultarPedido(env, cors, reference) {
   return handleConsultarPedido(env, cors, reference)
 }
 
-async function handleAdminActualizarEnvio(request, env, cors, reference) {
+async function handleAdminActualizarEnvio(request, env, ctx, cors, reference) {
   const body = await safeJson(request)
   if (!body || typeof body !== 'object') return bad('Body inválido', cors)
   const { estado_envio, guia_envio } = body
@@ -2226,11 +2339,39 @@ async function handleAdminActualizarEnvio(request, env, cors, reference) {
   if (guia_envio != null && (typeof guia_envio !== 'string' || guia_envio.length > 100)) {
     return bad('guia_envio inválido', cors)
   }
+
+  // Lee el estado previo para detectar transicion a "enviado"
+  const previo = await env.DB.prepare(
+    `SELECT estado_envio FROM pedidos WHERE reference = ?`
+  ).bind(reference).first()
+
   const now = new Date().toISOString()
   const res = await env.DB.prepare(
     `UPDATE pedidos SET estado_envio = ?, guia_envio = ?, actualizado_at = ? WHERE reference = ?`
   ).bind(estado_envio, guia_envio ?? null, now, reference).run()
   if (res.meta.changes === 0) return json({ error: 'No encontrado' }, 404, cors)
+
+  // Envia email de "pedido en camino" si transiciono a enviado con guia
+  const transicionoAEnviado = previo?.estado_envio !== 'enviado' && estado_envio === 'enviado'
+  if (transicionoAEnviado && guia_envio) {
+    const pedidoCompleto = await env.DB.prepare('SELECT * FROM pedidos WHERE reference = ?')
+      .bind(reference).first()
+    if (pedidoCompleto?.email) {
+      const { results: items } = await env.DB.prepare(
+        'SELECT producto_id, color, talla, cantidad, nombre FROM pedidos_items WHERE pedido_ref = ?'
+      ).bind(reference).all()
+      const sendPromise = enviarEmail(env, {
+        to: pedidoCompleto.email,
+        subject: `Tu pedido ${reference} va en camino — Íntima Exclusive`,
+        html: shippingNotificationHtml({ pedido: pedidoCompleto, items }),
+        text: shippingNotificationText({ pedido: pedidoCompleto, items }),
+        replyTo: env.RESEND_REPLY_TO || 'info@intimaexclusive.com',
+        headers: { 'X-Entity-Ref-ID': `${reference}-shipped` },
+      }).catch((err) => console.error('Shipping notification email error:', err))
+      if (ctx?.waitUntil) ctx.waitUntil(sendPromise)
+    }
+  }
+
   return ok({ ok: true }, cors)
 }
 

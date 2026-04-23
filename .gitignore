@@ -25,6 +25,9 @@ dist-ssr/
 # Screenshots de auditoría (generados por agentes SEO)
 screenshots/
 
+# Previews de email generadas por scripts/preview-email.mjs
+public/preview-email*.html
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
