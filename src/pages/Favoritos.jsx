@@ -15,7 +15,7 @@ export default function Favoritos() {
   const openCart = useCart((s) => s.open)
 
   return (
-    <main id="main" className="pt-[70px] min-h-screen">
+    <main id="main" className="pt-[98px] min-h-screen">
       <Seo title="Favoritos" path="/favoritos" />
       <div className="bg-cream-200 border-b border-gold-300 text-center py-12 px-4 sm:px-8">
         <nav aria-label="Breadcrumb" className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-400 mb-3">

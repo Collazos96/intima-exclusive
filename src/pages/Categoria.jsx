@@ -36,7 +36,7 @@ export default function Categoria() {
   if (!cat && !isLoading) return <div className="pt-24 text-center text-taupe-600">Categoría no encontrada</div>
 
   return (
-    <main id="main" className="pt-[70px] min-h-screen">
+    <main id="main" className="pt-[98px] min-h-screen">
       <Seo
         title={`${cat?.nombre || 'Categoría'} — Lencería`}
         description={cat ? `${cat.nombre}: ${cat.sub}. Envío discreto a toda Colombia, cambios hasta 30 días.` : undefined}

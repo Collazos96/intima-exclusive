@@ -31,7 +31,7 @@ export default function PedidoEstado() {
   const toCop = (c) => Math.round((c || 0) / 100)
 
   return (
-    <main id="main" className="pt-[70px] min-h-screen bg-cream-50">
+    <main id="main" className="pt-[98px] min-h-screen bg-cream-50">
       <Seo title="Estado de tu pedido" path={`/pedido/${reference}`} />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12">
         {isLoading && (

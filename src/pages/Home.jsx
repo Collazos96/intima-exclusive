@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getCategorias, getProductos } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
@@ -79,7 +79,7 @@ export default function Home() {
         ]}
       />
       {/* HERO — Cinematic Full-bleed */}
-      <section className="relative min-h-[calc(100vh-70px)] mt-[70px] overflow-hidden bg-wine-900">
+      <section className="relative min-h-[calc(100vh-98px)] mt-[98px] overflow-hidden bg-wine-900">
         <video
           autoPlay
           loop
@@ -97,7 +97,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-wine-900/30 via-wine-900/45 to-wine-900/80" />
         <div className="absolute inset-0 bg-gradient-to-r from-wine-900/40 via-transparent to-transparent" />
 
-        <div className="relative z-10 min-h-[calc(100vh-70px)] flex flex-col items-center justify-center text-center px-6 py-20">
+        <div className="relative z-10 min-h-[calc(100vh-98px)] flex flex-col items-center justify-center text-center px-6 py-20">
           <span className="block font-body text-[0.72rem] tracking-[6px] uppercase text-gold-300 mb-8">
             Nueva colección 2026
           </span>
@@ -115,8 +115,11 @@ export default function Home() {
             <div className="w-12 h-px bg-gold-300 opacity-60" />
           </div>
 
-          <p className="font-body text-cream-200/80 text-base lg:text-lg max-w-xl mb-12 leading-relaxed">
+          <p className="font-body text-cream-200/80 text-base lg:text-lg max-w-xl mb-3 leading-relaxed">
             Lencería hecha con amor en Colombia para la mujer que se elige cada día.
+          </p>
+          <p className="font-body text-[0.62rem] sm:text-[0.68rem] tracking-[3px] uppercase text-gold-300/90 mb-12">
+            Tallas S a XL · Hecha a mano
           </p>
 
           <div className="flex gap-3 flex-wrap justify-center">
@@ -162,6 +165,25 @@ export default function Home() {
         </Reveal>
         <Reveal delay={100}>
           <CategoriasBento categorias={categorias} imagenesPorCategoria={imagenesPorCategoria} />
+        </Reveal>
+      </section>
+
+      {/* GUÍA DE TALLAS — reduce friccion pre-compra */}
+      <section className="py-14 px-4 sm:px-8 bg-cream-100 border-y border-gold-300 text-center">
+        <Reveal>
+          <span className="block font-body text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">¿Dudas con tu talla?</span>
+          <h2 className="font-display text-[clamp(1.4rem,2.8vw,2rem)] text-wine-900 mb-3">
+            Encuentra tu <em className="font-elegant italic text-wine-600">talla perfecta</em>
+          </h2>
+          <p className="font-sans text-[0.88rem] text-taupe-600 max-w-md mx-auto mb-6 leading-relaxed">
+            Guía de medidas en centímetros y tabla por estilo para que tu prenda quede como debe quedar.
+          </p>
+          <Link
+            to="/guia-tallas"
+            className="inline-block border border-wine-600 text-wine-600 px-8 py-3 font-sans text-[0.7rem] tracking-[3px] uppercase hover:bg-wine-600 hover:text-cream-200 transition-colors"
+          >
+            Ver guía de tallas
+          </Link>
         </Reveal>
       </section>
 

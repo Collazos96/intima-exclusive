@@ -3,7 +3,7 @@ import Seo from '../components/Seo'
 
 export default function Politica() {
   return (
-    <main id="main" className="pt-[70px] min-h-screen bg-cream-50">
+    <main id="main" className="pt-[98px] min-h-screen bg-cream-50">
       <Seo
         title="Política de envíos, cambios y devoluciones"
         description="Políticas de envío discreto, cambios hasta 30 días, métodos de pago y garantía en Íntima Exclusive. Compra con total tranquilidad."

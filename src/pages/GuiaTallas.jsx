@@ -4,7 +4,7 @@ import TablasTallas from '../components/TablasTallas'
 
 export default function GuiaTallas() {
   return (
-    <main id="main" className="pt-[70px] min-h-screen bg-cream-50">
+    <main id="main" className="pt-[98px] min-h-screen bg-cream-50">
       <Seo
         title="Guía de tallas"
         description="Tabla de tallas de brassier y panty en centímetros. Equivalencias S/32, M/34, L/36, XL/38. Cómo medirte para acertar tu talla en lencería."

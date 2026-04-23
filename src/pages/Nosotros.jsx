@@ -11,7 +11,7 @@ import Seo from '../components/Seo'
  */
 export default function Nosotros() {
   return (
-    <main id="main" className="pt-[70px] min-h-screen bg-cream-50">
+    <main id="main" className="pt-[98px] min-h-screen bg-cream-50">
       <Seo
         title="Nuestra historia"
         description="Íntima Exclusive nace en Colombia con la misión de crear lencería premium que celebre a toda mujer, en todas las tallas."

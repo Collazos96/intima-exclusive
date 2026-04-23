@@ -228,7 +228,7 @@ export default function Checkout() {
 
   if (items.length === 0) {
     return (
-      <main id="main" className="pt-[70px] min-h-screen bg-cream-50">
+      <main id="main" className="pt-[98px] min-h-screen bg-cream-50">
         <Seo title="Checkout" path="/checkout" />
         <div className="max-w-md mx-auto px-6 py-20 text-center">
           <p className="font-serif text-gold-500 text-3xl mb-3" aria-hidden="true">🌸</p>
@@ -246,7 +246,7 @@ export default function Checkout() {
   }
 
   return (
-    <main id="main" className="pt-[70px] min-h-screen bg-cream-50">
+    <main id="main" className="pt-[98px] min-h-screen bg-cream-50">
       <Seo
         title="Checkout"
         description="Finaliza tu compra en Íntima Exclusive con pago seguro por tarjeta, PSE, Nequi o Bancolombia."

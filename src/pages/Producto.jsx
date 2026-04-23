@@ -48,7 +48,7 @@ export default function Producto() {
   }, [id, prod])
 
   if (isLoading) return (
-    <main id="main" className="pt-[70px] min-h-screen">
+    <main id="main" className="pt-[98px] min-h-screen">
       <ProductoDetalleSkeleton />
     </main>
   )
@@ -104,7 +104,7 @@ export default function Producto() {
   )
 
   return (
-    <main id="main" className="pt-[70px] min-h-screen">
+    <main id="main" className="pt-[98px] min-h-screen">
       <link rel="preload" as="image" href={prod.imagenes[0]} />
       <Seo
         title={prod.nombre}

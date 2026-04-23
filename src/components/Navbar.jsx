@@ -24,6 +24,17 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-cream-100/97 border-b border-gold-300 backdrop-blur-sm">
+      {/* Announcement bar */}
+      <div
+        aria-label="Promociones"
+        className="bg-wine-900 text-cream-50 font-sans text-[0.6rem] sm:text-[0.65rem] tracking-[2.5px] sm:tracking-[3px] uppercase text-center py-1.5 px-3"
+      >
+        <span>Envío gratis desde $300.000</span>
+        <span aria-hidden="true" className="mx-2 sm:mx-3 text-gold-300">·</span>
+        <span>Cambios 30 días</span>
+        <span aria-hidden="true" className="hidden sm:inline mx-3 text-gold-300">·</span>
+        <span className="hidden sm:inline">Tallas S a XL</span>
+      </div>
       <div className="flex items-center justify-between gap-2 px-4 sm:px-10 py-4">
         <Link
           to="/"

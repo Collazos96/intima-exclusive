@@ -55,7 +55,7 @@ export default function Faq() {
   }
 
   return (
-    <main id="main" className="pt-[70px] min-h-screen bg-cream-50">
+    <main id="main" className="pt-[98px] min-h-screen bg-cream-50">
       <Seo
         title="Preguntas frecuentes"
         description="Resolvemos las dudas más comunes sobre tallas, envío discreto, cambios, pagos y cuidado de tus prendas íntimas."
