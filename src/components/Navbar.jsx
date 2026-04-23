@@ -33,7 +33,7 @@ export default function Navbar() {
         <span aria-hidden="true" className="mx-2 sm:mx-3 text-gold-300">·</span>
         <span>Cambios 30 días</span>
         <span aria-hidden="true" className="hidden sm:inline mx-3 text-gold-300">·</span>
-        <span className="hidden sm:inline">Tallas S a XL</span>
+        <span className="hidden sm:inline">Tallas S, M, L, XL</span>
       </div>
       <div className="flex items-center justify-between gap-2 px-4 sm:px-10 py-4">
         <Link
