@@ -305,7 +305,7 @@ export default function Producto() {
           </ul>
           <div className="mt-7">
             <div className="flex border-b border-gold-300">
-              {[['desc','Descripción'],['care','Cuidados'],['tallas','Guía de tallas']].map(([k,l]) => (
+              {[['desc','Descripción'],['care','Cuidados']].map(([k,l]) => (
                 <button key={k} onClick={() => setTab(k)}
                   className={`font-sans text-[0.65rem] tracking-widest uppercase px-4 py-2.5 border-b-2 transition-all ${tab===k ? 'text-wine-600 border-wine-600' : 'text-taupe-400 border-transparent hover:text-wine-600'}`}>
                   {l}
@@ -329,15 +329,6 @@ export default function Producto() {
                   ))}
                   <li className="italic pt-1">Tus prendas íntimas merecen un cuidado especial, y tú también.</li>
                 </ul>
-              )}
-              {tab === 'tallas' && (
-                <div>
-                  <img src="https://images.intimaexclusive.com/GUIA-TALLAS.png" alt="Guía de tallas" className="w-full border border-gold-300 mb-4"/>
-                  <p className="font-bold text-wine-900 mb-2">¿Cómo saber tu talla?</p>
-                  <p className="mb-3">En la parte superior de nuestros brassieres manejamos:</p>
-                  <img src="https://images.intimaexclusive.com/tabla.png" alt="Tabla de tallas" className="w-full border border-gold-300 mb-3"/>
-                  <p>La mayoría de nuestros pantys son ajustables, se gradúan a los lados y se adaptan a diferentes tallas.</p>
-                </div>
               )}
             </div>
           </div>
