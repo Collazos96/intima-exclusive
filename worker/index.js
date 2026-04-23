@@ -1553,8 +1553,10 @@ Envío a:
 ${pedido.direccion}, ${pedido.ciudad}${pedido.departamento ? ', ' + pedido.departamento : ''}
 ${pedido.telefono}
 
-Empezamos a preparar tu pedido. Recibirás otro correo cuando lo enviemos.
-Tiempo estimado: 1-2 días hábiles de preparación + 2-5 días de entrega.
+La verdadera elegancia comienza con la comodidad. Gracias por elegirnos — porque cuando te sientes bien contigo, el mundo lo nota.
+
+Preparación: 1-2 días hábiles + Entrega: 2-5 días hábiles.
+Empaque completamente discreto, como siempre.
 
 Consulta el estado en: https://intimaexclusive.com/pedido/${pedido.reference}
 
@@ -1566,11 +1568,15 @@ function orderConfirmationHtml({ pedido, items }) {
   const firstName = pedido.nombre?.split(' ')[0] || ''
   const itemsHtml = items.map((i) => `
     <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #D9C4A8;">
+      ${i.imagen ? `
+      <td width="80" valign="top" style="padding:10px 12px 10px 0;border-bottom:1px solid #D9C4A8;">
+        <img src="${i.imagen}" alt="${i.nombre}" width="80" height="100" style="display:block;width:80px;height:100px;object-fit:cover;border:1px solid #D9C4A8;background:#F5EDE0;" />
+      </td>` : ''}
+      <td valign="top" style="padding:10px 0;border-bottom:1px solid #D9C4A8;">
         <p style="font-family:Georgia,serif;color:#3A1A20;font-size:14px;margin:0 0 2px;">${i.nombre}</p>
         <p style="font-family:Arial,sans-serif;color:#7A5A60;font-size:12px;margin:0;">${i.color} · Talla ${i.talla} · x${i.cantidad}</p>
       </td>
-      <td align="right" style="padding:10px 0;border-bottom:1px solid #D9C4A8;font-family:Arial,sans-serif;color:#7B1A2E;font-weight:bold;font-size:14px;white-space:nowrap;">
+      <td align="right" valign="top" style="padding:10px 0 10px 12px;border-bottom:1px solid #D9C4A8;font-family:Arial,sans-serif;color:#7B1A2E;font-weight:bold;font-size:14px;white-space:nowrap;">
         ${formatCopCents(i.precio_unitario * i.cantidad)}
       </td>
     </tr>`).join('')
@@ -1633,12 +1639,14 @@ function orderConfirmationHtml({ pedido, items }) {
       </table>
     </td></tr>
     <tr><td style="height:24px;">&nbsp;</td></tr>
-    <tr><td align="center" style="padding:20px;background:#F5EDE0;border-left:3px solid #7B1A2E;">
-      <p style="font-family:Georgia,serif;color:#3A1A20;font-size:14px;margin:0 0 4px;line-height:1.6;">
-        <strong>Empezamos a preparar tu pedido.</strong><br>
-        Recibirás otro correo cuando salga de camino.
+    <tr><td align="center" style="padding:24px 20px;background:#F5EDE0;border-left:3px solid #7B1A2E;">
+      <p style="font-family:Georgia,serif;font-style:italic;color:#7B1A2E;font-size:15px;margin:0 0 10px;line-height:1.6;">
+        La verdadera elegancia comienza con la comodidad.
       </p>
-      <p style="font-family:Arial,sans-serif;color:#7A5A60;font-size:12px;margin:8px 0 0;">
+      <p style="font-family:Georgia,serif;color:#3A1A20;font-size:13px;margin:0 0 14px;line-height:1.6;">
+        Gracias por elegirnos — porque cuando te sientes bien contigo, el mundo lo nota.
+      </p>
+      <p style="font-family:Arial,sans-serif;color:#7A5A60;font-size:12px;margin:0;">
         Preparación: 1-2 días hábiles · Entrega: 2-5 días hábiles<br>
         Empaque completamente discreto, como siempre.
       </p>
@@ -2105,9 +2113,12 @@ async function handleWompiWebhook(request, env, cors, ctx) {
   // Si transiciona a APPROVED por primera vez, descuenta stock + envía email.
   // Idempotente: si el webhook llega dos veces, la segunda vez wasApproved=true y no se re-ejecuta.
   if (becomeApproved) {
-    const { results: items } = await env.DB.prepare(
-      'SELECT producto_id, color, talla, cantidad, nombre, precio_unitario FROM pedidos_items WHERE pedido_ref = ?'
-    ).bind(reference).all()
+    const { results: items } = await env.DB.prepare(`
+      SELECT pi.producto_id, pi.color, pi.talla, pi.cantidad, pi.nombre, pi.precio_unitario,
+             (SELECT url FROM imagenes WHERE producto_id = pi.producto_id ORDER BY orden LIMIT 1) AS imagen
+      FROM pedidos_items pi
+      WHERE pi.pedido_ref = ?
+    `).bind(reference).all()
 
     for (const item of items) {
       // WHERE stock >= cantidad evita ir a negativo si hubo race condition.
