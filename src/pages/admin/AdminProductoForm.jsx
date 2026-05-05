@@ -5,6 +5,7 @@ import { getCategorias, getProducto } from '../../hooks/useApi'
 import ImageUploader from '../../components/ImageUploader'
 
 const TALLAS_DISPONIBLES = ['S', 'M', 'L', 'XL']
+const TIPOS_ACCESORIOS = ['Malla', 'Pantalón', 'Lisa']
 
 const productoVacio = {
   id: '',
@@ -60,7 +61,19 @@ export default function AdminProductoForm() {
   }, [id])
 
   function handleCampo(campo, valor) {
-    setForm(f => ({ ...f, [campo]: valor }))
+    if (campo === 'categoria_id') {
+      setForm(f => ({
+        ...f,
+        categoria_id: valor,
+        colores: valor === 'accesorios'
+          ? TIPOS_ACCESORIOS.map(t => ({ nombre: t, tallas: [] }))
+          : f.categoria_id === 'accesorios'
+            ? [{ nombre: '', tallas: [] }]
+            : f.colores,
+      }))
+    } else {
+      setForm(f => ({ ...f, [campo]: valor }))
+    }
   }
 
   function handleImagen(index, valor) {
@@ -121,20 +134,33 @@ export default function AdminProductoForm() {
       setError('Debes agregar al menos una imagen.')
       return
     }
-    if (form.colores.some(c => !c.nombre.trim())) {
-      setError('Todos los colores deben tener nombre.')
-      return
-    }
-    if (form.colores.some(c => c.tallas.length === 0)) {
-      setError('Cada color debe tener al menos una talla seleccionada.')
-      return
+    const esAccesorios = form.categoria_id === 'accesorios'
+    if (!esAccesorios) {
+      if (form.colores.some(c => !c.nombre.trim())) {
+        setError('Todos los colores deben tener nombre.')
+        return
+      }
+      if (form.colores.some(c => c.tallas.length === 0)) {
+        setError('Cada color debe tener al menos una talla seleccionada.')
+        return
+      }
+    } else {
+      const tiposConTallas = form.colores.filter(c => c.tallas.length > 0)
+      if (tiposConTallas.length === 0) {
+        setError('Debes seleccionar tallas en al menos un tipo (Malla, Pantalón o Lisa).')
+        return
+      }
     }
 
     setLoading(true)
+    const coloresFinal = esAccesorios
+      ? form.colores.filter(c => c.tallas.length > 0)
+      : form.colores
     const payload = {
       ...form,
       precio: parseInt(form.precio),
       imagenes: form.imagenes.filter(i => i.trim()),
+      colores: coloresFinal,
     }
 
     const resultado = esEdicion
@@ -314,56 +340,92 @@ export default function AdminProductoForm() {
             </button>
           </div>
 
-          {/* COLORES Y TALLAS */}
+          {/* COLORES Y TALLAS / TIPOS ACCESORIOS */}
           <div className="bg-white border border-gold-300 p-6">
-            <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-5 pb-3 border-b border-cream-200">
-              Colores y tallas
+            <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-1 pb-3 border-b border-cream-200">
+              {form.categoria_id === 'accesorios' ? 'Tipos y tallas' : 'Colores y tallas'}
             </h2>
-            <div className="space-y-5">
-              {form.colores.map((color, ci) => (
-                <div key={ci} className="border border-cream-200 p-4">
-                  <div className="flex gap-3 items-center mb-4">
-                    <input
-                      type="text"
-                      value={color.nombre}
-                      onChange={e => handleColorNombre(ci, e.target.value)}
-                      className="flex-1 border border-gold-300 px-3 py-2 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
-                      placeholder="Nombre del color (ej: Rojo)"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => eliminarColor(ci)}
-                      className="border border-red-200 text-red-400 px-3 py-2 font-sans text-[0.6rem] tracking-widest uppercase hover:bg-red-50 transition-colors">
-                      Eliminar
-                    </button>
-                  </div>
-                  <div>
-                    <p className="font-sans text-[0.62rem] tracking-widest uppercase text-taupe-400 mb-2">Tallas disponibles</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {TALLAS_DISPONIBLES.map(t => (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => toggleTalla(ci, t)}
-                          className={`w-11 h-11 font-sans text-[0.75rem] border-2 transition-all ${
-                            color.tallas.includes(t)
-                              ? 'border-wine-600 bg-wine-600 text-cream-200'
-                              : 'border-gold-300 text-taupe-600 hover:border-wine-600'
-                          }`}>
-                          {t}
-                        </button>
-                      ))}
+
+            {form.categoria_id === 'accesorios' ? (
+              <>
+                <p className="font-sans text-[0.72rem] text-taupe-400 mb-5 mt-3">
+                  Selecciona las tallas disponibles para cada tipo. Los tipos sin tallas no se guardan.
+                </p>
+                <div className="space-y-5">
+                  {form.colores.map((tipo, ci) => (
+                    <div key={tipo.nombre} className="border border-cream-200 p-4">
+                      <p className="font-sans text-sm font-medium text-wine-800 mb-3">{tipo.nombre}</p>
+                      <div>
+                        <p className="font-sans text-[0.62rem] tracking-widest uppercase text-taupe-400 mb-2">Tallas disponibles</p>
+                        <div className="flex gap-2 flex-wrap">
+                          {TALLAS_DISPONIBLES.map(t => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => toggleTalla(ci, t)}
+                              className={`w-11 h-11 font-sans text-[0.75rem] border-2 transition-all ${
+                                tipo.tallas.includes(t)
+                                  ? 'border-wine-600 bg-wine-600 text-cream-200'
+                                  : 'border-gold-300 text-taupe-600 hover:border-wine-600'
+                              }`}>
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={agregarColor}
-              className="mt-4 border border-gold-300 text-taupe-600 px-4 py-2 font-sans text-[0.65rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
-              + Agregar color
-            </button>
+              </>
+            ) : (
+              <>
+                <div className="space-y-5 mt-5">
+                  {form.colores.map((color, ci) => (
+                    <div key={ci} className="border border-cream-200 p-4">
+                      <div className="flex gap-3 items-center mb-4">
+                        <input
+                          type="text"
+                          value={color.nombre}
+                          onChange={e => handleColorNombre(ci, e.target.value)}
+                          className="flex-1 border border-gold-300 px-3 py-2 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
+                          placeholder="Nombre del color (ej: Rojo)"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => eliminarColor(ci)}
+                          className="border border-red-200 text-red-400 px-3 py-2 font-sans text-[0.6rem] tracking-widest uppercase hover:bg-red-50 transition-colors">
+                          Eliminar
+                        </button>
+                      </div>
+                      <div>
+                        <p className="font-sans text-[0.62rem] tracking-widest uppercase text-taupe-400 mb-2">Tallas disponibles</p>
+                        <div className="flex gap-2 flex-wrap">
+                          {TALLAS_DISPONIBLES.map(t => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => toggleTalla(ci, t)}
+                              className={`w-11 h-11 font-sans text-[0.75rem] border-2 transition-all ${
+                                color.tallas.includes(t)
+                                  ? 'border-wine-600 bg-wine-600 text-cream-200'
+                                  : 'border-gold-300 text-taupe-600 hover:border-wine-600'
+                              }`}>
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={agregarColor}
+                  className="mt-4 border border-gold-300 text-taupe-600 px-4 py-2 font-sans text-[0.65rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
+                  + Agregar color
+                </button>
+              </>
+            )}
           </div>
 
           <div className="flex gap-3 justify-end">
