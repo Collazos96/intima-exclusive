@@ -193,20 +193,51 @@ export default function Home() {
       {/* DESTACADOS */}
       <section className="py-20 px-4 sm:px-8 bg-cream-100 text-center">
         <Reveal>
-          <span className="block font-body text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Lo más deseado</span>
+          <span className="block font-body text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">Piezas estrella</span>
           <h2 className="font-display text-[clamp(1.8rem,3.5vw,2.6rem)] text-wine-900 mb-1">
-            Colección <em className="font-elegant italic text-wine-600">destacada</em>
+            Las 3 más <em className="font-elegant italic text-wine-600">deseadas</em>
           </h2>
+          <p className="font-sans text-[0.82rem] text-taupe-600 max-w-sm mx-auto mt-3 leading-relaxed">
+            Selección de las prendas que más enamoran temporada tras temporada.
+          </p>
           <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
         </Reveal>
+
         {cargandoProductos ? <ProductGridSkeleton count={3} /> : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {destacados.map((p, i) => (
-              <Reveal key={p.id} delay={i * 100}>
-                <ProductCard producto={p} priority={i < 3}/>
-              </Reveal>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {destacados.slice(0, 3).map((p, i) => {
+                const badges = ['Favorita', 'Más deseada', 'Imperdible']
+                return (
+                  <Reveal key={p.id} delay={i * 120}>
+                    <div className="relative group">
+                      {/* Badge editorial */}
+                      <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-wine-900/85 backdrop-blur-sm px-2.5 py-1 pointer-events-none">
+                        <span className="font-serif italic text-gold-300 text-[0.7rem]">N°{i + 1}</span>
+                        <span className="font-body text-[0.58rem] tracking-[2px] uppercase text-cream-200/90">{badges[i]}</span>
+                      </div>
+                      <ProductCard producto={p} priority={i < 3} />
+                    </div>
+                  </Reveal>
+                )
+              })}
+            </div>
+
+            {/* CTA */}
+            <Reveal delay={400}>
+              <div className="mt-12 flex flex-col items-center gap-3">
+                <p className="font-sans text-[0.72rem] tracking-[2px] uppercase text-taupe-400">
+                  ¿Quieres ver más prendas?
+                </p>
+                <Link
+                  to="/categoria/sets"
+                  className="inline-block border border-wine-600 text-wine-600 px-10 py-3 font-sans text-[0.7rem] tracking-[3px] uppercase hover:bg-wine-600 hover:text-cream-200 transition-colors"
+                >
+                  Ver toda la colección
+                </Link>
+              </div>
+            </Reveal>
+          </>
         )}
       </section>
 
