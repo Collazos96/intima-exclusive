@@ -537,11 +537,15 @@ async function handleTopProductos(request, env, cors) {
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '3'), 10)
   const { results } = await env.DB.prepare(`
     SELECT p.*, GROUP_CONCAT(i.url, '|') AS imagenes_concat,
-           COUNT(v.id) AS visitas_total
+           COALESCE(v.visitas_total, 0) AS visitas_total
     FROM productos p
     LEFT JOIN (SELECT producto_id, url, orden FROM imagenes ORDER BY orden) i
       ON i.producto_id = p.id
-    LEFT JOIN visitas v ON v.producto_id = p.id
+    LEFT JOIN (
+      SELECT producto_id, COUNT(*) AS visitas_total
+      FROM visitas
+      GROUP BY producto_id
+    ) v ON v.producto_id = p.id
     WHERE p.deleted_at IS NULL
     GROUP BY p.id
     ORDER BY visitas_total DESC, p.nuevo DESC
