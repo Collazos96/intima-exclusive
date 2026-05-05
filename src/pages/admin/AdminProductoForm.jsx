@@ -66,7 +66,7 @@ export default function AdminProductoForm() {
         ...f,
         categoria_id: valor,
         colores: valor === 'accesorios'
-          ? TIPOS_ACCESORIOS.map(t => ({ nombre: t, tallas: [] }))
+          ? []
           : f.categoria_id === 'accesorios'
             ? [{ nombre: '', tallas: [] }]
             : f.colores,
@@ -74,6 +74,18 @@ export default function AdminProductoForm() {
     } else {
       setForm(f => ({ ...f, [campo]: valor }))
     }
+  }
+
+  function toggleTipoAccesorio(nombre) {
+    setForm(f => {
+      const existe = f.colores.some(c => c.nombre === nombre)
+      return {
+        ...f,
+        colores: existe
+          ? f.colores.filter(c => c.nombre !== nombre)
+          : [...f.colores, { nombre, tallas: ['Única'] }],
+      }
+    })
   }
 
   function handleImagen(index, valor) {
@@ -145,22 +157,17 @@ export default function AdminProductoForm() {
         return
       }
     } else {
-      const tiposConTallas = form.colores.filter(c => c.tallas.length > 0)
-      if (tiposConTallas.length === 0) {
-        setError('Debes seleccionar tallas en al menos un tipo (Malla, Pantalón o Lisa).')
+      if (form.colores.length === 0) {
+        setError('Selecciona al menos un tipo (Malla, Pantalón o Lisa).')
         return
       }
     }
 
     setLoading(true)
-    const coloresFinal = esAccesorios
-      ? form.colores.filter(c => c.tallas.length > 0)
-      : form.colores
     const payload = {
       ...form,
       precio: parseInt(form.precio),
       imagenes: form.imagenes.filter(i => i.trim()),
-      colores: coloresFinal,
     }
 
     const resultado = esEdicion
@@ -343,38 +350,31 @@ export default function AdminProductoForm() {
           {/* COLORES Y TALLAS / TIPOS ACCESORIOS */}
           <div className="bg-white border border-gold-300 p-6">
             <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-1 pb-3 border-b border-cream-200">
-              {form.categoria_id === 'accesorios' ? 'Tipos y tallas' : 'Colores y tallas'}
+              {form.categoria_id === 'accesorios' ? 'Tipo de accesorio' : 'Colores y tallas'}
             </h2>
 
             {form.categoria_id === 'accesorios' ? (
               <>
                 <p className="font-sans text-[0.72rem] text-taupe-400 mb-5 mt-3">
-                  Selecciona las tallas disponibles para cada tipo. Los tipos sin tallas no se guardan.
+                  Talla única. Selecciona los tipos disponibles para este accesorio.
                 </p>
-                <div className="space-y-5">
-                  {form.colores.map((tipo, ci) => (
-                    <div key={tipo.nombre} className="border border-cream-200 p-4">
-                      <p className="font-sans text-sm font-medium text-wine-800 mb-3">{tipo.nombre}</p>
-                      <div>
-                        <p className="font-sans text-[0.62rem] tracking-widest uppercase text-taupe-400 mb-2">Tallas disponibles</p>
-                        <div className="flex gap-2 flex-wrap">
-                          {TALLAS_DISPONIBLES.map(t => (
-                            <button
-                              key={t}
-                              type="button"
-                              onClick={() => toggleTalla(ci, t)}
-                              className={`w-11 h-11 font-sans text-[0.75rem] border-2 transition-all ${
-                                tipo.tallas.includes(t)
-                                  ? 'border-wine-600 bg-wine-600 text-cream-200'
-                                  : 'border-gold-300 text-taupe-600 hover:border-wine-600'
-                              }`}>
-                              {t}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex gap-3 flex-wrap">
+                  {TIPOS_ACCESORIOS.map(tipo => {
+                    const activo = form.colores.some(c => c.nombre === tipo)
+                    return (
+                      <button
+                        key={tipo}
+                        type="button"
+                        onClick={() => toggleTipoAccesorio(tipo)}
+                        className={`px-6 py-3 font-sans text-[0.75rem] tracking-widest uppercase border-2 transition-all ${
+                          activo
+                            ? 'border-wine-600 bg-wine-600 text-cream-200'
+                            : 'border-gold-300 text-taupe-600 hover:border-wine-600'
+                        }`}>
+                        {tipo}
+                      </button>
+                    )
+                  })}
                 </div>
               </>
             ) : (
