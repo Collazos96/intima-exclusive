@@ -5,7 +5,11 @@ import { getCategorias, getProducto } from '../../hooks/useApi'
 import ImageUploader from '../../components/ImageUploader'
 
 const TALLAS_DISPONIBLES = ['S', 'M', 'L', 'XL']
-const TIPOS_ACCESORIOS = ['Malla', 'Pantalón', 'Lisa']
+const TIPOS_ACCESORIOS = {
+  'Malla':    ['Rojo', 'Blanco', 'Negro'],
+  'Pantalón': ['Negro', 'Blanco'],
+  'Lisa':     ['Rojo', 'Blanco', 'Negro'],
+}
 
 const productoVacio = {
   id: '',
@@ -76,7 +80,8 @@ export default function AdminProductoForm() {
     }
   }
 
-  function toggleTipoAccesorio(nombre) {
+  function toggleColorAccesorio(tipo, color) {
+    const nombre = `${tipo} ${color}`
     setForm(f => {
       const existe = f.colores.some(c => c.nombre === nombre)
       return {
@@ -356,25 +361,32 @@ export default function AdminProductoForm() {
             {form.categoria_id === 'accesorios' ? (
               <>
                 <p className="font-sans text-[0.72rem] text-taupe-400 mb-5 mt-3">
-                  Talla única. Selecciona los tipos disponibles para este accesorio.
+                  Talla única. Selecciona los colores disponibles por tipo.
                 </p>
-                <div className="flex gap-3 flex-wrap">
-                  {TIPOS_ACCESORIOS.map(tipo => {
-                    const activo = form.colores.some(c => c.nombre === tipo)
-                    return (
-                      <button
-                        key={tipo}
-                        type="button"
-                        onClick={() => toggleTipoAccesorio(tipo)}
-                        className={`px-6 py-3 font-sans text-[0.75rem] tracking-widest uppercase border-2 transition-all ${
-                          activo
-                            ? 'border-wine-600 bg-wine-600 text-cream-200'
-                            : 'border-gold-300 text-taupe-600 hover:border-wine-600'
-                        }`}>
-                        {tipo}
-                      </button>
-                    )
-                  })}
+                <div className="space-y-4">
+                  {Object.entries(TIPOS_ACCESORIOS).map(([tipo, colores]) => (
+                    <div key={tipo} className="border border-cream-200 p-4">
+                      <p className="font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-3">{tipo}</p>
+                      <div className="flex gap-2 flex-wrap">
+                        {colores.map(color => {
+                          const activo = form.colores.some(c => c.nombre === `${tipo} ${color}`)
+                          return (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => toggleColorAccesorio(tipo, color)}
+                              className={`px-5 py-2.5 font-sans text-[0.72rem] tracking-widest uppercase border-2 transition-all ${
+                                activo
+                                  ? 'border-wine-600 bg-wine-600 text-cream-200'
+                                  : 'border-gold-300 text-taupe-600 hover:border-wine-600'
+                              }`}>
+                              {color}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </>
             ) : (
