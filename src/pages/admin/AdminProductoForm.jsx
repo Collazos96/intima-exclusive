@@ -88,7 +88,7 @@ export default function AdminProductoForm() {
         ...f,
         colores: existe
           ? f.colores.filter(c => c.nombre !== nombre)
-          : [...f.colores, { nombre, tallas: ['Única'] }],
+          : [...f.colores, { nombre, tallas: ['Unica'] }],
       }
     })
   }
