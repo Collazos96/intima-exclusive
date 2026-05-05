@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getCategorias, getProductos } from '../hooks/useApi'
+import { getCategorias, getProductos, getTopProductos } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
 import ProductCard from '../components/ProductCard'
 import Seo from '../components/Seo'
@@ -20,7 +20,10 @@ export default function Home() {
     queryKey: qk.productos,
     queryFn: getProductos,
   })
-  const destacados = productos.filter(p => p.nuevo === 1)
+  const { data: topProductos = [], isLoading: cargandoTop } = useQuery({
+    queryKey: qk.topProductos,
+    queryFn: () => getTopProductos(3),
+  })
 
   // Imagen representativa por categoría: primera imagen del primer producto de esa categoría
   const imagenesPorCategoria = categorias.reduce((acc, c) => {
@@ -203,10 +206,10 @@ export default function Home() {
           <div className="w-12 h-px bg-gold-500 mx-auto my-6"/>
         </Reveal>
 
-        {cargandoProductos ? <ProductGridSkeleton count={3} /> : (
+        {cargandoTop ? <ProductGridSkeleton count={3} /> : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {destacados.slice(0, 3).map((p, i) => {
+              {topProductos.map((p, i) => {
                 const badges = ['Favorita', 'Más deseada', 'Imperdible']
                 return (
                   <Reveal key={p.id} delay={i * 120}>

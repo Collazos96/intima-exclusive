@@ -25,4 +25,5 @@ export const qk = {
   relacionados: (productoId) => ['relacionados', productoId],
   reviews: (productoId) => ['reviews', productoId],
   adminReviews: (estado) => ['admin', 'reviews', estado || 'all'],
+  topProductos: ['productos', 'top'],
 }

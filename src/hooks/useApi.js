@@ -13,6 +13,7 @@ async function fetchJson(path, options = {}) {
 export const getConfig = () => fetchJson('/api/config')
 export const getCategorias = () => fetchJson('/api/categorias')
 export const getProductos = () => fetchJson('/api/productos')
+export const getTopProductos = (limit = 3) => fetchJson(`/api/productos/top?limit=${limit}`)
 export const getProductosByCategoria = (id) => fetchJson(`/api/categoria/${id}`)
 export const getProducto = (id) => fetchJson(`/api/productos/${id}`)
 

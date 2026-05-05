@@ -274,6 +274,9 @@ export default {
       if (method === 'GET' && path === '/api/productos') {
         return await handleProductos(env, cors)
       }
+      if (method === 'GET' && path === '/api/productos/top') {
+        return await handleTopProductos(request, env, cors)
+      }
       const prodMatch = path.match(/^\/api\/productos\/([^/]+)$/)
       if (method === 'GET' && prodMatch) {
         return await handleProducto(env, cors, decodeURIComponent(prodMatch[1]))
@@ -521,6 +524,29 @@ async function handleProductos(env, cors) {
     WHERE p.deleted_at IS NULL
     GROUP BY p.id
   `).all()
+  const productos = results.map((p) => ({
+    ...p,
+    imagenes: p.imagenes_concat ? p.imagenes_concat.split('|') : [],
+    imagenes_concat: undefined,
+  }))
+  return ok(productos, cors)
+}
+
+async function handleTopProductos(request, env, cors) {
+  const url = new URL(request.url)
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '3'), 10)
+  const { results } = await env.DB.prepare(`
+    SELECT p.*, GROUP_CONCAT(i.url, '|') AS imagenes_concat,
+           COUNT(v.id) AS visitas_total
+    FROM productos p
+    LEFT JOIN (SELECT producto_id, url, orden FROM imagenes ORDER BY orden) i
+      ON i.producto_id = p.id
+    LEFT JOIN visitas v ON v.producto_id = p.id
+    WHERE p.deleted_at IS NULL
+    GROUP BY p.id
+    ORDER BY visitas_total DESC, p.nuevo DESC
+    LIMIT ?
+  `).bind(limit).all()
   const productos = results.map((p) => ({
     ...p,
     imagenes: p.imagenes_concat ? p.imagenes_concat.split('|') : [],
