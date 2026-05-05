@@ -4,6 +4,7 @@ export const categorias = [
   { id: 'lenceria', nombre: 'Lencería', sub: 'Delicada y sofisticada' },
   { id: 'bodys', nombre: 'Bodys', sub: 'Elegancia sin límites' },
   { id: 'accesorios', nombre: 'Accesorios', sub: 'El toque final' },
+  { id: 'pijamas', nombre: 'Pijamas', sub: 'Suavidad para descansar' },
 ]
 
 export const productos = [

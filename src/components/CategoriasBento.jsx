@@ -12,7 +12,7 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
   if (!categorias?.length) return null
 
   // Orden fijo — define visualmente qué categoría va en cada celda
-  const ORDEN = ['sets', 'corsets', 'lenceria', 'bodys', 'accesorios']
+  const ORDEN = ['sets', 'corsets', 'lenceria', 'bodys', 'accesorios', 'pijamas']
   const ordenadas = ORDEN
     .map((id) => categorias.find((c) => c.id === id))
     .filter(Boolean)
@@ -27,8 +27,10 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
     >
       {ordenadas.map((cat, i) => {
         const imagen = imagenesPorCategoria?.[cat.id]
-        // La primera categoría (Sets) ocupa toda la columna izquierda (2 filas)
+        // Sets: columna izquierda, 2 filas (héroe)
         const isHero = i === 0
+        // Pijamas (6.ª): card ancho que ocupa las 2 columnas
+        const isWide = i === 5
         return (
           <BentoCard
             key={cat.id}
@@ -37,9 +39,11 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
             className={
               isHero
                 ? 'row-span-2 aspect-[3/4] sm:aspect-auto sm:min-h-[520px]'
-                : 'aspect-[4/3] sm:aspect-auto sm:min-h-[250px]'
+                : isWide
+                  ? 'col-span-2 aspect-[21/9] sm:min-h-[220px]'
+                  : 'aspect-[4/3] sm:aspect-auto sm:min-h-[250px]'
             }
-            size={isHero ? 'large' : 'small'}
+            size={isHero ? 'large' : isWide ? 'wide' : 'small'}
           />
         )
       })}
@@ -69,11 +73,11 @@ function BentoCard({ categoria, imagen, className = '', size }) {
       <div className="absolute inset-0 bg-gradient-to-t from-wine-900/80 via-wine-900/20 to-transparent" />
 
       {/* Contenido */}
-      <div className={`relative z-10 h-full flex flex-col justify-end p-5 ${size === 'large' ? 'sm:p-8' : 'sm:p-6'}`}>
+      <div className={`relative z-10 h-full flex flex-col justify-end p-5 ${size === 'large' ? 'sm:p-8' : size === 'wide' ? 'sm:p-8' : 'sm:p-6'}`}>
         <span className="block font-body text-[0.6rem] tracking-[4px] uppercase text-gold-300 mb-2">
           Colección
         </span>
-        <h3 className={`font-display text-cream-50 mb-1 ${size === 'large' ? 'text-3xl sm:text-5xl' : 'text-xl sm:text-2xl'}`}>
+        <h3 className={`font-display text-cream-50 mb-1 ${size === 'large' ? 'text-3xl sm:text-5xl' : size === 'wide' ? 'text-2xl sm:text-4xl' : 'text-xl sm:text-2xl'}`}>
           {categoria.nombre}
         </h3>
         {categoria.sub && (
