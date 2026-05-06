@@ -12,7 +12,7 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
   if (!categorias?.length) return null
 
   // Orden fijo — define visualmente qué categoría va en cada celda
-  const ORDEN = ['sets', 'corsets', 'croptops', 'lenceria', 'bodys', 'accesorios', 'pijamas', 'promociones']
+  const ORDEN = ['sets', 'corsets', 'croptops', 'lenceria', 'bodys', 'accesorios', 'pijamas', 'promociones', 'babydolls']
   const ordenadas = ORDEN
     .map((id) => categorias.find((c) => c.id === id))
     .filter(Boolean)
@@ -22,8 +22,8 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
       {ordenadas.map((cat, i) => {
         const imagen = imagenesPorCategoria?.[cat.id]
         const isHero = i === 0
-        // En mobile (2 cols) Promociones queda sola → la hacemos ancha solo en mobile
-        const isLastMobileOrphan = i === 7
+        // Baby dolls (9.ª): solo en fila desktop → banner full width en ambas vistas
+        const isBanner = i === 8
         return (
           <BentoCard
             key={cat.id}
@@ -32,11 +32,11 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
             className={
               isHero
                 ? 'row-span-2 aspect-[3/4] sm:aspect-auto sm:min-h-[520px]'
-                : isLastMobileOrphan
-                  ? 'col-span-2 sm:col-span-1 aspect-[21/9] sm:aspect-auto sm:min-h-[250px]'
+                : isBanner
+                  ? 'col-span-2 sm:col-span-3 aspect-[21/9] sm:aspect-[32/9] sm:min-h-[200px]'
                   : 'aspect-[4/3] sm:aspect-auto sm:min-h-[250px]'
             }
-            size={isHero ? 'large' : 'small'}
+            size={isHero ? 'large' : isBanner ? 'wide' : 'small'}
           />
         )
       })}
