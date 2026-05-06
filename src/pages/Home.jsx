@@ -121,9 +121,6 @@ export default function Home() {
           <p className="font-body text-cream-200/80 text-base lg:text-lg max-w-xl mb-3 leading-relaxed">
             Lencería hecha con amor en Colombia para la mujer que se elige cada día.
           </p>
-          <p className="font-body text-[0.62rem] sm:text-[0.68rem] tracking-[3px] uppercase text-gold-300/90 mb-12">
-            Tallas S, M, L, XL
-          </p>
 
           <div className="flex gap-3 flex-wrap justify-center">
             <button
