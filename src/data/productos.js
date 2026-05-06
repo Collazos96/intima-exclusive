@@ -6,6 +6,7 @@ export const categorias = [
   { id: 'accesorios', nombre: 'Accesorios', sub: 'El toque final' },
   { id: 'pijamas', nombre: 'Pijamas', sub: 'Suavidad para descansar' },
   { id: 'promociones', nombre: 'Promociones', sub: 'Ofertas exclusivas' },
+  { id: 'croptops', nombre: 'Croptops', sub: 'Estilo y comodidad' },
 ]
 
 export const productos = [

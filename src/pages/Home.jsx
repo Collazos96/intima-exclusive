@@ -118,10 +118,6 @@ export default function Home() {
             <div className="w-12 h-px bg-gold-300 opacity-60" />
           </div>
 
-          <p className="font-body text-cream-200/80 text-base lg:text-lg max-w-xl mb-3 leading-relaxed">
-            Lencería hecha con amor en Colombia para la mujer que se elige cada día.
-          </p>
-
           <div className="flex gap-3 flex-wrap justify-center">
             <button
               onClick={() => nav('/categoria/sets')}
