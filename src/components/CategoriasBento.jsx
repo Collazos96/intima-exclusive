@@ -29,8 +29,8 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
         const imagen = imagenesPorCategoria?.[cat.id]
         // Sets: columna izquierda, 2 filas (héroe)
         const isHero = i === 0
-        // Pijamas (7.ª) y Promociones (8.ª): cards anchas, el resto son small
-        const isWide = i === 6 || i === 7
+        // Accesorios (6.ª), Pijamas (7.ª) y Promociones (8.ª): cards anchas
+        const isWide = i >= 5
         return (
           <BentoCard
             key={cat.id}
