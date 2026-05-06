@@ -4,10 +4,10 @@ export const categorias = [
   { id: 'croptops', nombre: 'Croptops', sub: 'Estilo y comodidad' },
   { id: 'lenceria', nombre: 'Lencería', sub: 'Delicada y sofisticada' },
   { id: 'bodys', nombre: 'Bodys', sub: 'Elegancia sin límites' },
+  { id: 'babydolls', nombre: 'Baby Dolls', sub: 'Romanticismo y delicadeza' },
   { id: 'accesorios', nombre: 'Accesorios', sub: 'El toque final' },
   { id: 'pijamas', nombre: 'Pijamas', sub: 'Suavidad para descansar' },
   { id: 'promociones', nombre: 'Promociones', sub: 'Ofertas exclusivas' },
-  { id: 'babydolls', nombre: 'Baby Dolls', sub: 'Romanticismo y delicadeza' },
 ]
 
 export const productos = [
