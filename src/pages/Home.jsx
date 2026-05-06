@@ -122,7 +122,7 @@ export default function Home() {
             Lencería hecha con amor en Colombia para la mujer que se elige cada día.
           </p>
           <p className="font-body text-[0.62rem] sm:text-[0.68rem] tracking-[3px] uppercase text-gold-300/90 mb-12">
-            Tallas S, M, L, XL · Hecha a mano
+            Tallas S, M, L, XL
           </p>
 
           <div className="flex gap-3 flex-wrap justify-center">
@@ -171,24 +171,6 @@ export default function Home() {
         </Reveal>
       </section>
 
-      {/* GUÍA DE TALLAS — reduce friccion pre-compra */}
-      <section className="py-14 px-4 sm:px-8 bg-cream-100 border-y border-gold-300 text-center">
-        <Reveal>
-          <span className="block font-body text-[0.62rem] tracking-[4px] uppercase text-gold-500 mb-3">¿Dudas con tu talla?</span>
-          <h2 className="font-display text-[clamp(1.4rem,2.8vw,2rem)] text-wine-900 mb-3">
-            Encuentra tu <em className="font-elegant italic text-wine-600">talla perfecta</em>
-          </h2>
-          <p className="font-sans text-[0.88rem] text-taupe-600 max-w-md mx-auto mb-6 leading-relaxed">
-            Guía de medidas en centímetros y tabla por estilo para que tu prenda quede como debe quedar.
-          </p>
-          <Link
-            to="/guia-tallas"
-            className="inline-block border border-wine-600 text-wine-600 px-8 py-3 font-sans text-[0.7rem] tracking-[3px] uppercase hover:bg-wine-600 hover:text-cream-200 transition-colors"
-          >
-            Ver guía de tallas
-          </Link>
-        </Reveal>
-      </section>
 
       {/* SOCIAL PROOF — solo si hay 3+ reseñas */}
       <SocialProof />
