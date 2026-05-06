@@ -66,15 +66,19 @@ export default function AdminProductoForm() {
 
   function handleCampo(campo, valor) {
     if (campo === 'categoria_id') {
-      setForm(f => ({
-        ...f,
-        categoria_id: valor,
-        colores: valor === 'accesorios'
-          ? []
-          : f.categoria_id === 'accesorios'
-            ? [{ nombre: '', tallas: [] }]
-            : f.colores,
-      }))
+      setForm(f => {
+        const desde = f.categoria_id
+        const hacia = valor
+        let colores = f.colores
+        if (hacia === 'accesorios') {
+          colores = []
+        } else if (hacia === 'pijamas') {
+          colores = [{ nombre: '', tallas: ['Única'] }]
+        } else if (desde === 'accesorios' || desde === 'pijamas') {
+          colores = [{ nombre: '', tallas: [] }]
+        }
+        return { ...f, categoria_id: valor, colores }
+      })
     } else {
       setForm(f => ({ ...f, [campo]: valor }))
     }
@@ -130,7 +134,8 @@ export default function AdminProductoForm() {
   }
 
   function agregarColor() {
-    setForm(f => ({ ...f, colores: [...f.colores, { nombre: '', tallas: [] }] }))
+    const esPijamas = form.categoria_id === 'pijamas'
+    setForm(f => ({ ...f, colores: [...f.colores, { nombre: '', tallas: esPijamas ? ['Única'] : [] }] }))
   }
 
   function eliminarColor(index) {
@@ -152,18 +157,28 @@ export default function AdminProductoForm() {
       return
     }
     const esAccesorios = form.categoria_id === 'accesorios'
-    if (!esAccesorios) {
+    const esPijamas = form.categoria_id === 'pijamas'
+    if (esAccesorios) {
+      if (form.colores.length === 0) {
+        setError('Selecciona al menos un tipo (Malla, Pantalón o Lisa).')
+        return
+      }
+    } else if (esPijamas) {
+      if (form.colores.some(c => !c.nombre.trim())) {
+        setError('Todos los diseños deben tener nombre.')
+        return
+      }
+      if (form.colores.length === 0) {
+        setError('Agrega al menos un diseño.')
+        return
+      }
+    } else {
       if (form.colores.some(c => !c.nombre.trim())) {
         setError('Todos los colores deben tener nombre.')
         return
       }
       if (form.colores.some(c => c.tallas.length === 0)) {
         setError('Cada color debe tener al menos una talla seleccionada.')
-        return
-      }
-    } else {
-      if (form.colores.length === 0) {
-        setError('Selecciona al menos un tipo (Malla, Pantalón o Lisa).')
         return
       }
     }
@@ -173,6 +188,10 @@ export default function AdminProductoForm() {
       ...form,
       precio: parseInt(form.precio),
       imagenes: form.imagenes.filter(i => i.trim()),
+      // Pijamas: garantizar talla Única en todos los diseños
+      colores: esPijamas
+        ? form.colores.map(c => ({ ...c, tallas: ['Única'] }))
+        : form.colores,
     }
 
     const resultado = esEdicion
@@ -355,10 +374,42 @@ export default function AdminProductoForm() {
           {/* COLORES Y TALLAS / TIPOS ACCESORIOS */}
           <div className="bg-white border border-gold-300 p-6">
             <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-1 pb-3 border-b border-cream-200">
-              {form.categoria_id === 'accesorios' ? 'Tipo de accesorio' : 'Colores y tallas'}
+              {form.categoria_id === 'accesorios' ? 'Tipo de accesorio' : form.categoria_id === 'pijamas' ? 'Diseños disponibles' : 'Colores y tallas'}
             </h2>
 
-            {form.categoria_id === 'accesorios' ? (
+            {form.categoria_id === 'pijamas' ? (
+              <>
+                <p className="font-sans text-[0.72rem] text-taupe-400 mb-5 mt-3">
+                  Talla única. Agrega cada diseño por nombre (ej: Flores rosas, Lunares, Rayas azules).
+                </p>
+                <div className="space-y-3">
+                  {form.colores.map((diseno, ci) => (
+                    <div key={ci} className="flex gap-3 items-center border border-cream-200 p-3">
+                      <span className="font-sans text-[0.62rem] text-taupe-400 w-5">{ci + 1}</span>
+                      <input
+                        type="text"
+                        value={diseno.nombre}
+                        onChange={e => handleColorNombre(ci, e.target.value)}
+                        className="flex-1 border border-gold-300 px-3 py-2 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
+                        placeholder="Nombre del diseño (ej: Flores rosas)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => eliminarColor(ci)}
+                        className="border border-red-200 text-red-400 px-3 py-2 font-sans text-[0.6rem] tracking-widest uppercase hover:bg-red-50 transition-colors">
+                        Eliminar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={agregarColor}
+                  className="mt-4 border border-gold-300 text-taupe-600 px-4 py-2 font-sans text-[0.65rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
+                  + Agregar diseño
+                </button>
+              </>
+            ) : form.categoria_id === 'accesorios' ? (
               <>
                 <p className="font-sans text-[0.72rem] text-taupe-400 mb-5 mt-3">
                   Talla única. Selecciona los colores disponibles por tipo.
