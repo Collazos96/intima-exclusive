@@ -16,9 +16,16 @@ export function filtrarYOrdenar(productos, filtros) {
   if (typeof precioMax === 'number' && precioMax > 0) {
     out = out.filter((p) => p.precio <= precioMax)
   }
-  if (orden === 'precio-asc') out = [...out].sort((a, b) => a.precio - b.precio)
-  else if (orden === 'precio-desc') out = [...out].sort((a, b) => b.precio - a.precio)
-  else if (orden === 'nuevo') out = [...out].sort((a, b) => (b.nuevo ?? 0) - (a.nuevo ?? 0))
+  const alfa = (a, b) => a.nombre.localeCompare(b.nombre, 'es')
+
+  if (orden === 'precio-asc')
+    out = [...out].sort((a, b) => a.precio - b.precio || alfa(a, b))
+  else if (orden === 'precio-desc')
+    out = [...out].sort((a, b) => b.precio - a.precio || alfa(a, b))
+  else if (orden === 'nuevo')
+    out = [...out].sort((a, b) => (b.nuevo ?? 0) - (a.nuevo ?? 0) || alfa(a, b))
+  else
+    out = [...out].sort(alfa)
 
   return out
 }
