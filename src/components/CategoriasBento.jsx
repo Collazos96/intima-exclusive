@@ -18,19 +18,12 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
     .filter(Boolean)
 
   return (
-    <div
-      className="grid gap-3 sm:gap-4 max-w-6xl mx-auto"
-      style={{
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-        gridTemplateRows: 'auto auto',
-      }}
-    >
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 max-w-6xl mx-auto">
       {ordenadas.map((cat, i) => {
         const imagen = imagenesPorCategoria?.[cat.id]
-        // Sets: columna izquierda, 2 filas (héroe)
         const isHero = i === 0
-        // Accesorios (6.ª), Pijamas (7.ª) y Promociones (8.ª): cards anchas
-        const isWide = i >= 5
+        // En mobile (2 cols) Promociones queda sola → la hacemos ancha solo en mobile
+        const isLastMobileOrphan = i === 7
         return (
           <BentoCard
             key={cat.id}
@@ -39,11 +32,11 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
             className={
               isHero
                 ? 'row-span-2 aspect-[3/4] sm:aspect-auto sm:min-h-[520px]'
-                : isWide
-                  ? 'col-span-2 aspect-[21/9] sm:min-h-[220px]'
+                : isLastMobileOrphan
+                  ? 'col-span-2 sm:col-span-1 aspect-[21/9] sm:aspect-auto sm:min-h-[250px]'
                   : 'aspect-[4/3] sm:aspect-auto sm:min-h-[250px]'
             }
-            size={isHero ? 'large' : isWide ? 'wide' : 'small'}
+            size={isHero ? 'large' : 'small'}
           />
         )
       })}
