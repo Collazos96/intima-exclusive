@@ -80,6 +80,11 @@ function BentoCard({ categoria, imagen, className = '', size }) {
         <h3 className={`font-display text-cream-50 mb-1 ${size === 'large' ? 'text-3xl sm:text-5xl' : size === 'wide' ? 'text-2xl sm:text-4xl' : 'text-xl sm:text-2xl'}`}>
           {categoria.nombre}
         </h3>
+        {categoria.sub && (
+          <p className={`font-body text-cream-200/80 ${size === 'large' ? 'text-sm sm:text-base max-w-xs' : 'text-xs sm:text-sm'}`}>
+            {categoria.sub}
+          </p>
+        )}
         <span className="mt-3 font-body text-[0.7rem] tracking-widest uppercase text-cream-50 opacity-0 group-hover:opacity-100 transition-opacity">
           Explorar →
         </span>
