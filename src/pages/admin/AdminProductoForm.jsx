@@ -5,11 +5,8 @@ import { getCategorias, getProducto } from '../../hooks/useApi'
 import ImageUploader from '../../components/ImageUploader'
 
 const TALLAS_DISPONIBLES = ['S', 'M', 'L', 'XL']
-const TIPOS_ACCESORIOS = {
-  'Malla':    ['Rojo', 'Blanco', 'Negro'],
-  'Pantalón': ['Negro', 'Blanco'],
-  'Lisa':     ['Rojo', 'Blanco', 'Negro'],
-}
+// Categorías con talla única y variantes de nombre libre
+const CATS_TALLA_UNICA = ['accesorios', 'pijamas']
 
 const productoVacio = {
   id: '',
@@ -67,14 +64,12 @@ export default function AdminProductoForm() {
   function handleCampo(campo, valor) {
     if (campo === 'categoria_id') {
       setForm(f => {
-        const desde = f.categoria_id
-        const hacia = valor
+        const desdeUnica = CATS_TALLA_UNICA.includes(f.categoria_id)
+        const haciaUnica = CATS_TALLA_UNICA.includes(valor)
         let colores = f.colores
-        if (hacia === 'accesorios') {
-          colores = []
-        } else if (hacia === 'pijamas') {
+        if (haciaUnica && !desdeUnica) {
           colores = [{ nombre: '', tallas: ['Unica'] }]
-        } else if (desde === 'accesorios' || desde === 'pijamas') {
+        } else if (!haciaUnica && desdeUnica) {
           colores = [{ nombre: '', tallas: [] }]
         }
         return { ...f, categoria_id: valor, colores }
@@ -84,18 +79,6 @@ export default function AdminProductoForm() {
     }
   }
 
-  function toggleColorAccesorio(tipo, color) {
-    const nombre = `${tipo} ${color}`
-    setForm(f => {
-      const existe = f.colores.some(c => c.nombre === nombre)
-      return {
-        ...f,
-        colores: existe
-          ? f.colores.filter(c => c.nombre !== nombre)
-          : [...f.colores, { nombre, tallas: ['Unica'] }],
-      }
-    })
-  }
 
   function handleImagen(index, valor) {
     const nuevas = [...form.imagenes]
@@ -134,8 +117,8 @@ export default function AdminProductoForm() {
   }
 
   function agregarColor() {
-    const esPijamas = form.categoria_id === 'pijamas'
-    setForm(f => ({ ...f, colores: [...f.colores, { nombre: '', tallas: esPijamas ? ['Unica'] : [] }] }))
+    const esTallaUnica = CATS_TALLA_UNICA.includes(form.categoria_id)
+    setForm(f => ({ ...f, colores: [...f.colores, { nombre: '', tallas: esTallaUnica ? ['Unica'] : [] }] }))
   }
 
   function eliminarColor(index) {
@@ -156,20 +139,14 @@ export default function AdminProductoForm() {
       setError('Debes agregar al menos una imagen.')
       return
     }
-    const esAccesorios = form.categoria_id === 'accesorios'
-    const esPijamas = form.categoria_id === 'pijamas'
-    if (esAccesorios) {
+    const esTallaUnica = CATS_TALLA_UNICA.includes(form.categoria_id)
+    if (esTallaUnica) {
       if (form.colores.length === 0) {
-        setError('Selecciona al menos un tipo (Malla, Pantalón o Lisa).')
+        setError('Agrega al menos una variante.')
         return
       }
-    } else if (esPijamas) {
       if (form.colores.some(c => !c.nombre.trim())) {
-        setError('Todos los diseños deben tener nombre.')
-        return
-      }
-      if (form.colores.length === 0) {
-        setError('Agrega al menos un diseño.')
+        setError('Todas las variantes deben tener nombre.')
         return
       }
     } else {
@@ -188,8 +165,8 @@ export default function AdminProductoForm() {
       ...form,
       precio: parseInt(form.precio),
       imagenes: form.imagenes.filter(i => i.trim()),
-      // Pijamas: garantizar talla Única en todos los diseños
-      colores: esPijamas
+      // Talla única: garantizar 'Unica' en todas las variantes
+      colores: esTallaUnica
         ? form.colores.map(c => ({ ...c, tallas: ['Unica'] }))
         : form.colores,
     }
@@ -374,24 +351,25 @@ export default function AdminProductoForm() {
           {/* COLORES Y TALLAS / TIPOS ACCESORIOS */}
           <div className="bg-white border border-gold-300 p-6">
             <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-1 pb-3 border-b border-cream-200">
-              {form.categoria_id === 'accesorios' ? 'Tipo de accesorio' : form.categoria_id === 'pijamas' ? 'Diseños disponibles' : 'Colores y tallas'}
+              {form.categoria_id === 'pijamas' ? 'Diseños disponibles' : form.categoria_id === 'accesorios' ? 'Variantes disponibles' : 'Colores y tallas'}
             </h2>
 
-            {form.categoria_id === 'pijamas' ? (
+            {CATS_TALLA_UNICA.includes(form.categoria_id) ? (
               <>
                 <p className="font-sans text-[0.72rem] text-taupe-400 mb-5 mt-3">
-                  Talla única. Agrega cada diseño por nombre (ej: Flores rosas, Lunares, Rayas azules).
+                  Talla única. Agrega cada variante por nombre
+                  {form.categoria_id === 'pijamas' ? ' (ej: Flores rosas, Lunares, Rayas azules)' : ' (ej: Antifaz Negro, Liguero Rojo, Malla Blanca)'}.
                 </p>
                 <div className="space-y-3">
-                  {form.colores.map((diseno, ci) => (
+                  {form.colores.map((variante, ci) => (
                     <div key={ci} className="flex gap-3 items-center border border-cream-200 p-3">
                       <span className="font-sans text-[0.62rem] text-taupe-400 w-5">{ci + 1}</span>
                       <input
                         type="text"
-                        value={diseno.nombre}
+                        value={variante.nombre}
                         onChange={e => handleColorNombre(ci, e.target.value)}
                         className="flex-1 border border-gold-300 px-3 py-2 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
-                        placeholder="Nombre del diseño (ej: Flores rosas)"
+                        placeholder={form.categoria_id === 'pijamas' ? 'Nombre del diseño (ej: Flores rosas)' : 'Nombre de la variante (ej: Antifaz Negro)'}
                       />
                       <button
                         type="button"
@@ -406,39 +384,8 @@ export default function AdminProductoForm() {
                   type="button"
                   onClick={agregarColor}
                   className="mt-4 border border-gold-300 text-taupe-600 px-4 py-2 font-sans text-[0.65rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
-                  + Agregar diseño
+                  + Agregar variante
                 </button>
-              </>
-            ) : form.categoria_id === 'accesorios' ? (
-              <>
-                <p className="font-sans text-[0.72rem] text-taupe-400 mb-5 mt-3">
-                  Talla única. Selecciona los colores disponibles por tipo.
-                </p>
-                <div className="space-y-4">
-                  {Object.entries(TIPOS_ACCESORIOS).map(([tipo, colores]) => (
-                    <div key={tipo} className="border border-cream-200 p-4">
-                      <p className="font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-3">{tipo}</p>
-                      <div className="flex gap-2 flex-wrap">
-                        {colores.map(color => {
-                          const activo = form.colores.some(c => c.nombre === `${tipo} ${color}`)
-                          return (
-                            <button
-                              key={color}
-                              type="button"
-                              onClick={() => toggleColorAccesorio(tipo, color)}
-                              className={`px-5 py-2.5 font-sans text-[0.72rem] tracking-widest uppercase border-2 transition-all ${
-                                activo
-                                  ? 'border-wine-600 bg-wine-600 text-cream-200'
-                                  : 'border-gold-300 text-taupe-600 hover:border-wine-600'
-                              }`}>
-                              {color}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </>
             ) : (
               <>
