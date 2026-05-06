@@ -7,7 +7,6 @@ import ProductCard from '../components/ProductCard'
 import Seo from '../components/Seo'
 import { ProductGridSkeleton } from '../components/Skeletons'
 import CategoriaFilters from '../components/CategoriaFilters'
-import CategoriaContenido from '../components/CategoriaContenido'
 import { filtrarYOrdenar } from '../lib/filtrarProductos'
 
 const filtrosIniciales = { colores: [], soloNuevos: false, precioMax: 0, orden: 'nuevo' }
@@ -68,11 +67,9 @@ export default function Categoria() {
         <h1 className="font-serif text-[clamp(1.8rem,4vw,3rem)] tracking-widest uppercase text-wine-800">
           <em className="text-wine-600">{cat?.nombre || '...'}</em>
         </h1>
-        {cat?.sub && <p className="font-sans text-[0.85rem] text-taupe-600 mt-2">{cat.sub}</p>}
         <div className="w-14 h-px bg-gold-500 mx-auto mt-4"/>
       </div>
       <div className="px-4 sm:px-8 py-12 max-w-6xl mx-auto">
-        {cat && <CategoriaContenido categoriaId={id} />}
         {isLoading ? (
           <ProductGridSkeleton count={6} />
         ) : prods.length === 0 ? (
