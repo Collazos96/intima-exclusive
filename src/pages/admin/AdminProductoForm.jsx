@@ -73,7 +73,7 @@ export default function AdminProductoForm() {
         if (hacia === 'accesorios') {
           colores = []
         } else if (hacia === 'pijamas') {
-          colores = [{ nombre: '', tallas: ['Única'] }]
+          colores = [{ nombre: '', tallas: ['Unica'] }]
         } else if (desde === 'accesorios' || desde === 'pijamas') {
           colores = [{ nombre: '', tallas: [] }]
         }
@@ -135,7 +135,7 @@ export default function AdminProductoForm() {
 
   function agregarColor() {
     const esPijamas = form.categoria_id === 'pijamas'
-    setForm(f => ({ ...f, colores: [...f.colores, { nombre: '', tallas: esPijamas ? ['Única'] : [] }] }))
+    setForm(f => ({ ...f, colores: [...f.colores, { nombre: '', tallas: esPijamas ? ['Unica'] : [] }] }))
   }
 
   function eliminarColor(index) {
@@ -190,7 +190,7 @@ export default function AdminProductoForm() {
       imagenes: form.imagenes.filter(i => i.trim()),
       // Pijamas: garantizar talla Única en todos los diseños
       colores: esPijamas
-        ? form.colores.map(c => ({ ...c, tallas: ['Única'] }))
+        ? form.colores.map(c => ({ ...c, tallas: ['Unica'] }))
         : form.colores,
     }
 
