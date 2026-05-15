@@ -638,34 +638,28 @@ async function handleAdminListProductos(env, cors) {
   ).all()
   const ids = results.map((p) => p.id)
   if (!ids.length) return ok([], cors)
-  const ph = ids.map(() => '?').join(',')
 
+  // Usamos chunking para no superar el límite de 100 parámetros de D1
   const [imgs, cols] = await Promise.all([
-    env.DB.prepare(`SELECT * FROM imagenes WHERE producto_id IN (${ph}) ORDER BY orden`).bind(...ids).all(),
-    env.DB.prepare(`SELECT * FROM colores WHERE producto_id IN (${ph})`).bind(...ids).all(),
+    queryInChunks(env.DB, 'imagenes', 'producto_id', ids, ' ORDER BY orden'),
+    queryInChunks(env.DB, 'colores', 'producto_id', ids),
   ])
 
-  const colorIds = cols.results.map((c) => c.id)
-  let tallas = { results: [] }
-  if (colorIds.length) {
-    const tph = colorIds.map(() => '?').join(',')
-    tallas = await env.DB.prepare(
-      `SELECT * FROM tallas WHERE color_id IN (${tph})`
-    ).bind(...colorIds).all()
-  }
+  const colorIds = cols.map((c) => c.id)
+  const tallasRows = await queryInChunks(env.DB, 'tallas', 'color_id', colorIds)
 
   const imgsByProd = new Map()
-  for (const i of imgs.results) {
+  for (const i of imgs) {
     if (!imgsByProd.has(i.producto_id)) imgsByProd.set(i.producto_id, [])
     imgsByProd.get(i.producto_id).push(i)
   }
   const tallasByColor = new Map()
-  for (const t of tallas.results) {
+  for (const t of tallasRows) {
     if (!tallasByColor.has(t.color_id)) tallasByColor.set(t.color_id, [])
     tallasByColor.get(t.color_id).push(t)
   }
   const colsByProd = new Map()
-  for (const c of cols.results) {
+  for (const c of cols) {
     if (!colsByProd.has(c.producto_id)) colsByProd.set(c.producto_id, [])
     colsByProd.get(c.producto_id).push({ ...c, tallas: tallasByColor.get(c.id) || [] })
   }
@@ -1035,6 +1029,27 @@ async function handleUpload(request, env, cors) {
 
 async function safeJson(request) {
   try { return await request.json() } catch { return null }
+}
+
+// Divide un array en trozos de máx `size` elementos.
+// Necesario porque D1 tiene límite de 100 parámetros por statement.
+function chunk(arr, size = 90) {
+  const out = []
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
+  return out
+}
+
+// Ejecuta SELECT ... WHERE id IN (...) en lotes seguros y fusiona los results.
+async function queryInChunks(db, table, column, ids, extraSql = '') {
+  if (!ids.length) return []
+  const rows = await Promise.all(
+    chunk(ids).map((batch) => {
+      const ph = batch.map(() => '?').join(',')
+      return db.prepare(`SELECT * FROM ${table} WHERE ${column} IN (${ph})${extraSql}`)
+        .bind(...batch).all().then(r => r.results)
+    })
+  )
+  return rows.flat()
 }
 
 // ===== IndexNow: notifica a Bing/Yandex/Naver de cambios de URLs =====
