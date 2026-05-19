@@ -12,7 +12,7 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
   if (!categorias?.length) return null
 
   // Orden fijo — define visualmente qué categoría va en cada celda
-  const ORDEN = ['sets', 'corsets', 'croptops', 'lenceria', 'bodys', 'babydolls', 'accesorios', 'pijamas', 'promociones']
+  const ORDEN = ['sets', 'corsets', 'croptops', 'lenceria', 'tangas', 'bodys', 'babydolls', 'accesorios', 'pijamas', 'promociones']
   const ordenadas = ORDEN
     .map((id) => categorias.find((c) => c.id === id))
     .filter(Boolean)
@@ -22,8 +22,8 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
       {ordenadas.map((cat, i) => {
         const imagen = imagenesPorCategoria?.[cat.id]
         const isHero = i === 0
-        // Baby dolls (9.ª): solo en fila desktop → banner full width en ambas vistas
-        const isBanner = i === 8
+        // Promociones (10.ª, índice 9): banner full width en ambas vistas
+        const isBanner = i === 9
         return (
           <BentoCard
             key={cat.id}

@@ -3,6 +3,7 @@ export const categorias = [
   { id: 'corsets', nombre: 'Corsets', sub: 'Estructura y feminidad' },
   { id: 'croptops', nombre: 'Croptops', sub: 'Estilo y comodidad' },
   { id: 'lenceria', nombre: 'Lencería', sub: 'Delicada y sofisticada' },
+  { id: 'tangas', nombre: 'Tangas', sub: 'Sensualidad y comodidad' },
   { id: 'bodys', nombre: 'Bodys', sub: 'Elegancia sin límites' },
   { id: 'babydolls', nombre: 'Baby Dolls', sub: 'Romanticismo y delicadeza' },
   { id: 'accesorios', nombre: 'Accesorios', sub: 'El toque final' },
