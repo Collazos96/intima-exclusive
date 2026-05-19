@@ -6,7 +6,7 @@ import ImageUploader from '../../components/ImageUploader'
 
 const TALLAS_DISPONIBLES = ['S', 'M', 'L', 'XL']
 // Categorías con talla única y variantes de nombre libre
-const CATS_TALLA_UNICA = ['accesorios', 'pijamas']
+const CATS_TALLA_UNICA = ['accesorios', 'pijamas', 'tangas']
 
 const productoVacio = {
   id: '',
@@ -356,14 +356,14 @@ export default function AdminProductoForm() {
           {/* COLORES Y TALLAS / TIPOS ACCESORIOS */}
           <div className="bg-white border border-gold-300 p-6">
             <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-1 pb-3 border-b border-cream-200">
-              {form.categoria_id === 'pijamas' ? 'Diseños disponibles' : form.categoria_id === 'accesorios' ? 'Variantes disponibles' : 'Colores y tallas'}
+              {form.categoria_id === 'pijamas' ? 'Diseños disponibles' : CATS_TALLA_UNICA.includes(form.categoria_id) ? 'Variantes disponibles' : 'Colores y tallas'}
             </h2>
 
             {CATS_TALLA_UNICA.includes(form.categoria_id) ? (
               <>
                 <p className="font-sans text-[0.72rem] text-taupe-400 mb-5 mt-3">
                   Talla única. Agrega cada variante por nombre
-                  {form.categoria_id === 'pijamas' ? ' (ej: Flores rosas, Lunares, Rayas azules)' : ' (ej: Antifaz Negro, Liguero Rojo, Malla Blanca)'}.
+                  {form.categoria_id === 'pijamas' ? ' (ej: Flores rosas, Lunares, Rayas azules)' : form.categoria_id === 'tangas' ? ' (ej: Negro, Rojo, Nude, Blanco)' : ' (ej: Antifaz Negro, Liguero Rojo, Malla Blanca)'}.
                 </p>
                 <div className="space-y-3">
                   {form.colores.map((variante, ci) => (
@@ -374,7 +374,7 @@ export default function AdminProductoForm() {
                         value={variante.nombre}
                         onChange={e => handleColorNombre(ci, e.target.value)}
                         className="flex-1 border border-gold-300 px-3 py-2 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
-                        placeholder={form.categoria_id === 'pijamas' ? 'Nombre del diseño (ej: Flores rosas)' : 'Nombre de la variante (ej: Antifaz Negro)'}
+                        placeholder={form.categoria_id === 'pijamas' ? 'Nombre del diseño (ej: Flores rosas)' : form.categoria_id === 'tangas' ? 'Color o variante (ej: Negro, Rojo, Nude)' : 'Nombre de la variante (ej: Antifaz Negro)'}
                       />
                       <button
                         type="button"
