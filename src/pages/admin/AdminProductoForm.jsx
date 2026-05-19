@@ -171,17 +171,22 @@ export default function AdminProductoForm() {
         : form.colores,
     }
 
-    const resultado = esEdicion
-      ? await editarProducto(id, payload)
-      : await crearProducto(payload)
+    try {
+      const resultado = esEdicion
+        ? await editarProducto(id, payload)
+        : await crearProducto(payload)
 
-    if (resultado.error) {
-      setError('Ocurrio un error al guardar el producto.')
-    } else {
-      setExito(esEdicion ? 'Producto actualizado correctamente.' : 'Producto creado correctamente.')
-      setTimeout(() => nav('/admin'), 1500)
+      if (resultado?.error) {
+        setError(resultado.error)
+      } else {
+        setExito(esEdicion ? 'Producto actualizado correctamente.' : 'Producto creado correctamente.')
+        setTimeout(() => nav('/admin'), 1500)
+      }
+    } catch (err) {
+      setError(err.message || 'Ocurrió un error al guardar el producto.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   if (loadingData) return (
