@@ -236,7 +236,23 @@ export default function Producto() {
           {prod.nuevo === 1 && <span className="inline-block bg-wine-600 text-cream-200 font-sans text-[0.55rem] tracking-widest px-2 py-0.5 mb-3 uppercase">Nuevo</span>}
           <span className="block font-sans text-[0.6rem] tracking-widest uppercase text-gold-500 mb-1 capitalize">{prod.categoria_id}</span>
           <h1 className="font-serif text-[clamp(1.3rem,2.5vw,2rem)] text-wine-800 mb-2">{prod.nombre}</h1>
-          <p className="font-sans font-bold text-wine-600 text-2xl mb-5">{formatPrecio(prod.precio)}</p>
+          <p className="font-sans font-bold text-wine-600 text-2xl mb-3">{formatPrecio(prod.precio)}</p>
+
+          {prod.precios_paquete?.length > 0 && (
+            <div className="mb-5">
+              <p className="font-sans text-[0.6rem] tracking-widest uppercase text-taupe-500 mb-2">Precios por paquete</p>
+              <div className="flex flex-wrap gap-2">
+                {prod.precios_paquete.map((pp) => (
+                  <div key={pp.cantidad} className="border border-gold-400 bg-cream-100 px-4 py-2 text-center min-w-[90px]">
+                    <span className="block font-sans text-[0.6rem] tracking-widest uppercase text-taupe-500">{pp.cantidad} und.</span>
+                    <span className="block font-sans font-bold text-wine-600 text-base">{formatPrecio(pp.precio)}</span>
+                    <span className="block font-sans text-[0.58rem] text-taupe-400">{formatPrecio(Math.round(pp.precio / pp.cantidad))} c/u</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="w-full h-px bg-gold-300 mb-5"/>
           <span className="block font-sans text-[0.66rem] tracking-widest uppercase text-taupe-600 mb-2">
             Color — <strong>{colorSel || 'Selecciona un color'}</strong>

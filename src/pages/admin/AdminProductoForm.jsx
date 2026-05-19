@@ -19,6 +19,7 @@ const productoVacio = {
   descripcion: '',
   imagenes: [],
   colores: [{ nombre: '', tallas: [] }],
+  precios_paquete: [],
 }
 
 export default function AdminProductoForm() {
@@ -55,6 +56,7 @@ export default function AdminProductoForm() {
             nombre: c.nombre,
             tallas: c.tallas,
           })) : [{ nombre: '', tallas: [] }],
+          precios_paquete: prod.precios_paquete ?? [],
         })
         setLoadingData(false)
       }
@@ -128,6 +130,20 @@ export default function AdminProductoForm() {
     setForm(f => ({ ...f, colores: nuevos.length > 0 ? nuevos : [{ nombre: '', tallas: [] }] }))
   }
 
+  function agregarPaquete() {
+    setForm(f => ({ ...f, precios_paquete: [...f.precios_paquete, { cantidad: '', precio: '' }] }))
+  }
+
+  function handlePaquete(index, campo, valor) {
+    const nuevos = [...form.precios_paquete]
+    nuevos[index] = { ...nuevos[index], [campo]: valor }
+    setForm(f => ({ ...f, precios_paquete: nuevos }))
+  }
+
+  function eliminarPaquete(index) {
+    setForm(f => ({ ...f, precios_paquete: f.precios_paquete.filter((_, i) => i !== index) }))
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
@@ -171,6 +187,9 @@ export default function AdminProductoForm() {
       colores: esTallaUnica
         ? form.colores.map(c => ({ ...c, tallas: ['Unica'] }))
         : form.colores,
+      precios_paquete: form.precios_paquete
+        .filter(p => p.cantidad !== '' && p.precio !== '')
+        .map(p => ({ cantidad: parseInt(p.cantidad), precio: parseInt(p.precio) })),
     }
 
     try {
@@ -443,6 +462,59 @@ export default function AdminProductoForm() {
                 </button>
               </>
             )}
+          </div>
+
+          {/* PRECIOS POR PAQUETE */}
+          <div className="bg-white border border-gold-300 p-6">
+            <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-1 pb-3 border-b border-cream-200">
+              Precios por paquete <span className="normal-case tracking-normal text-taupe-400">(opcional)</span>
+            </h2>
+            <p className="font-sans text-[0.72rem] text-taupe-400 mt-3 mb-5">
+              Define precios especiales para compras de varias unidades. Ej: 3 por $90.000, 5 por $130.000.
+            </p>
+            {form.precios_paquete.length === 0 ? (
+              <p className="font-sans text-[0.72rem] text-taupe-400 italic mb-4">Sin paquetes configurados.</p>
+            ) : (
+              <div className="space-y-3 mb-4">
+                {form.precios_paquete.map((pp, i) => (
+                  <div key={i} className="flex gap-3 items-center border border-cream-200 p-3">
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="number"
+                        min="2"
+                        max="100"
+                        value={pp.cantidad}
+                        onChange={e => handlePaquete(i, 'cantidad', e.target.value)}
+                        className="w-20 border border-gold-300 px-3 py-2 font-sans text-sm text-wine-900 outline-none focus:border-wine-600 text-center"
+                        placeholder="Cant."
+                      />
+                      <span className="font-sans text-[0.72rem] text-taupe-500">unidades por</span>
+                      <span className="font-sans text-[0.72rem] text-taupe-500">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={pp.precio}
+                        onChange={e => handlePaquete(i, 'precio', e.target.value)}
+                        className="flex-1 border border-gold-300 px-3 py-2 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
+                        placeholder="Precio del paquete"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => eliminarPaquete(i)}
+                      className="border border-red-200 text-red-400 px-3 py-2 font-sans text-[0.6rem] tracking-widest uppercase hover:bg-red-50 transition-colors">
+                      Eliminar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={agregarPaquete}
+              className="border border-gold-300 text-taupe-600 px-4 py-2 font-sans text-[0.65rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
+              + Agregar paquete
+            </button>
           </div>
 
           <div className="flex gap-3 justify-end">

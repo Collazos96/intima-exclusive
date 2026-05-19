@@ -179,7 +179,7 @@ const URL_IMAGEN_RE = new RegExp(`^${IMAGES_PUBLIC_BASE.replace(/\./g, '\\.')}/[
 
 function validateProducto(body, { requireId }) {
   if (!body || typeof body !== 'object') return 'Body inválido'
-  const { id, nombre, precio, categoria_id, descripcion, imagenes, colores, nuevo } = body
+  const { id, nombre, precio, categoria_id, descripcion, imagenes, colores, nuevo, precios_paquete } = body
 
   if (requireId) {
     if (typeof id !== 'string' || !ID_RE.test(id)) return 'id inválido'
@@ -189,6 +189,15 @@ function validateProducto(body, { requireId }) {
   if (typeof categoria_id !== 'string' || !CATEGORIA_ID_RE.test(categoria_id)) return 'categoria_id inválido'
   if (descripcion != null && (typeof descripcion !== 'string' || descripcion.length > 5000)) return 'descripcion inválida'
   if (nuevo != null && typeof nuevo !== 'boolean' && nuevo !== 0 && nuevo !== 1) return 'nuevo inválido'
+
+  if (precios_paquete != null) {
+    if (!Array.isArray(precios_paquete) || precios_paquete.length > 10) return 'precios_paquete inválidos'
+    for (const pp of precios_paquete) {
+      if (!pp || typeof pp !== 'object') return 'precios_paquete inválidos'
+      if (!Number.isInteger(pp.cantidad) || pp.cantidad < 2 || pp.cantidad > 100) return 'cantidad de paquete inválida'
+      if (typeof pp.precio !== 'number' || !Number.isFinite(pp.precio) || pp.precio < 0 || pp.precio > 1e8) return 'precio de paquete inválido'
+    }
+  }
 
   if (!Array.isArray(imagenes) || imagenes.length === 0 || imagenes.length > 20) return 'imagenes inválidas'
   for (const url of imagenes) {
@@ -587,6 +596,7 @@ async function handleProducto(env, cors, id) {
 
   return ok({
     ...producto,
+    precios_paquete: producto.precios_paquete ? JSON.parse(producto.precios_paquete) : [],
     imagenes: imagenes.results.map((i) => i.url),
     colores: colores.results.map((c) => ({ ...c, tallas: tallasPorColor.get(c.id) || [] })),
   }, cors)
@@ -679,10 +689,11 @@ async function handleAdminCrearProducto(request, env, cors) {
   const existe = await env.DB.prepare('SELECT id FROM productos WHERE id = ?').bind(body.id).first()
   if (existe) return json({ error: 'id ya existe' }, 409, cors)
 
+  const ppJson = body.precios_paquete?.length ? JSON.stringify(body.precios_paquete) : null
   const stmts = [
     env.DB.prepare(
-      'INSERT INTO productos (id, nombre, precio, categoria_id, nuevo, descripcion) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(body.id, body.nombre.trim(), body.precio, body.categoria_id, body.nuevo ? 1 : 0, body.descripcion ?? null),
+      'INSERT INTO productos (id, nombre, precio, categoria_id, nuevo, descripcion, precios_paquete) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(body.id, body.nombre.trim(), body.precio, body.categoria_id, body.nuevo ? 1 : 0, body.descripcion ?? null, ppJson),
     ...body.imagenes.map((url, i) =>
       env.DB.prepare('INSERT INTO imagenes (producto_id, url, orden) VALUES (?, ?, ?)').bind(body.id, url, i)
     ),
@@ -728,9 +739,10 @@ async function handleAdminEditarProducto(request, env, cors, id) {
     .filter((url) => !nuevas.has(url))
 
   // Limpiar dependientes, actualizar producto y reinsertar imágenes — todo en un batch atómico.
+  const ppJsonEdit = body.precios_paquete?.length ? JSON.stringify(body.precios_paquete) : null
   const cleanupStmts = [
-    env.DB.prepare('UPDATE productos SET nombre = ?, precio = ?, categoria_id = ?, nuevo = ?, descripcion = ? WHERE id = ?')
-      .bind(body.nombre.trim(), body.precio, body.categoria_id, body.nuevo ? 1 : 0, body.descripcion ?? null, id),
+    env.DB.prepare('UPDATE productos SET nombre = ?, precio = ?, categoria_id = ?, nuevo = ?, descripcion = ?, precios_paquete = ? WHERE id = ?')
+      .bind(body.nombre.trim(), body.precio, body.categoria_id, body.nuevo ? 1 : 0, body.descripcion ?? null, ppJsonEdit, id),
     env.DB.prepare('DELETE FROM tallas WHERE color_id IN (SELECT id FROM colores WHERE producto_id = ?)').bind(id),
     env.DB.prepare('DELETE FROM colores WHERE producto_id = ?').bind(id),
     env.DB.prepare('DELETE FROM imagenes WHERE producto_id = ?').bind(id),
