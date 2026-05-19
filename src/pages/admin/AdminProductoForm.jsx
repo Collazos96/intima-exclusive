@@ -5,8 +5,10 @@ import { getCategorias, getProducto } from '../../hooks/useApi'
 import ImageUploader from '../../components/ImageUploader'
 
 const TALLAS_DISPONIBLES = ['S', 'M', 'L', 'XL']
-// Categorías con talla única y variantes de nombre libre
-const CATS_TALLA_UNICA = ['accesorios', 'pijamas', 'tangas']
+// Tallas extra disponibles por categoría (se agregan a los botones estándar)
+const TALLAS_EXTRA = { tangas: ['Unica'] }
+// Categorías con talla única y variantes de nombre libre (sin botones de talla)
+const CATS_TALLA_UNICA = ['accesorios', 'pijamas']
 
 const productoVacio = {
   id: '',
@@ -356,7 +358,7 @@ export default function AdminProductoForm() {
           {/* COLORES Y TALLAS / TIPOS ACCESORIOS */}
           <div className="bg-white border border-gold-300 p-6">
             <h2 className="font-sans text-[0.68rem] tracking-widest uppercase text-taupe-600 mb-1 pb-3 border-b border-cream-200">
-              {form.categoria_id === 'pijamas' ? 'Diseños disponibles' : CATS_TALLA_UNICA.includes(form.categoria_id) ? 'Variantes disponibles' : 'Colores y tallas'}
+              {form.categoria_id === 'pijamas' ? 'Diseños disponibles' : form.categoria_id === 'accesorios' ? 'Variantes disponibles' : 'Colores y tallas'}
             </h2>
 
             {CATS_TALLA_UNICA.includes(form.categoria_id) ? (
@@ -415,12 +417,12 @@ export default function AdminProductoForm() {
                       <div>
                         <p className="font-sans text-[0.62rem] tracking-widest uppercase text-taupe-400 mb-2">Tallas disponibles</p>
                         <div className="flex gap-2 flex-wrap">
-                          {TALLAS_DISPONIBLES.map(t => (
+                          {[...TALLAS_DISPONIBLES, ...(TALLAS_EXTRA[form.categoria_id] ?? [])].map(t => (
                             <button
                               key={t}
                               type="button"
                               onClick={() => toggleTalla(ci, t)}
-                              className={`w-11 h-11 font-sans text-[0.75rem] border-2 transition-all ${
+                              className={`px-3 h-11 font-sans text-[0.75rem] border-2 transition-all ${
                                 color.tallas.includes(t)
                                   ? 'border-wine-600 bg-wine-600 text-cream-200'
                                   : 'border-gold-300 text-taupe-600 hover:border-wine-600'
