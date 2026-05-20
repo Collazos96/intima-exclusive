@@ -55,6 +55,16 @@ export default function Producto() {
     }
   }, [prod])
 
+  useEffect(() => {
+    if (colorSel === null || !prod) return
+    const color = prod.colores.find(c => c.nombre === colorSel)
+    if (!color) return
+    if (color.tallas.length === 1) {
+      const t = typeof color.tallas[0] === 'string' ? color.tallas[0] : color.tallas[0].talla
+      setTallaSel(t)
+    }
+  }, [colorSel, prod])
+
   if (isLoading) return (
     <main id="main" className="pt-[98px] min-h-screen">
       <ProductoDetalleSkeleton />
@@ -311,27 +321,37 @@ export default function Producto() {
             Talla — <strong>{tallaSel || 'Selecciona una talla'}</strong>
           </span>
           <div className="flex gap-2 flex-wrap mb-2">
-            {['S','M','L','XL'].map(t => {
-                const existe = tallasDisp.some(td => (typeof td === 'string' ? td : td.talla) === t)
-                const disponible = tallaDisponible(t)
-                const stock = stockDeTalla(t)
-                if (!existe) return null
-                return (
-                <button key={t}
-                    onClick={() => disponible && setTallaSel(t)}
-                    disabled={!disponible}
-                    title={disponible ? `${stock} unidades disponibles` : 'Agotado'}
-                    className={`w-11 h-11 font-sans text-[0.78rem] border-2 transition-all flex items-center justify-center relative
-                    ${tallaSel === t ? 'border-wine-600 bg-wine-600 text-cream-200' :
-                    disponible ? 'border-gold-300 text-wine-900 hover:border-wine-600' :
-                    'border-gold-300 text-taupe-400 opacity-30 cursor-not-allowed line-through'}`}>
-                    {t}
-                    {disponible && stock <= 3 && tallaSel !== t && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
-                    )}
-                </button>
-                )
-            })}
+            {(() => {
+                const ORDEN = ['S','M','L','XL']
+                const lista = tallasDisp
+                  .map(td => typeof td === 'string' ? td : td.talla)
+                  .sort((a, b) => {
+                    const ia = ORDEN.indexOf(a), ib = ORDEN.indexOf(b)
+                    if (ia === -1 && ib === -1) return a.localeCompare(b)
+                    if (ia === -1) return 1
+                    if (ib === -1) return -1
+                    return ia - ib
+                  })
+                return lista.map(t => {
+                  const disponible = tallaDisponible(t)
+                  const stock = stockDeTalla(t)
+                  return (
+                    <button key={t}
+                      onClick={() => disponible && setTallaSel(t)}
+                      disabled={!disponible}
+                      title={disponible ? `${stock} unidades disponibles` : 'Agotado'}
+                      className={`min-w-[2.75rem] h-11 px-2 font-sans text-[0.78rem] border-2 transition-all flex items-center justify-center relative
+                      ${tallaSel === t ? 'border-wine-600 bg-wine-600 text-cream-200' :
+                      disponible ? 'border-gold-300 text-wine-900 hover:border-wine-600' :
+                      'border-gold-300 text-taupe-400 opacity-30 cursor-not-allowed line-through'}`}>
+                      {t}
+                      {disponible && stock <= 3 && tallaSel !== t && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
+                      )}
+                    </button>
+                  )
+                })
+              })()}
             </div>
             {tallaSel && stockDeTalla(tallaSel) <= 3 && stockDeTalla(tallaSel) > 0 && (
             <p className="font-sans text-[0.7rem] text-amber-600 mb-2">
