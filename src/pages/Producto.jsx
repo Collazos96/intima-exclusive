@@ -47,6 +47,13 @@ export default function Producto() {
     if (id && prod) registrarVisita(id)
   }, [id, prod])
 
+  useEffect(() => {
+    if (!prod) return
+    if (prod.colores.length === 1 || prod.colores.every(c => !c.nombre.trim())) {
+      setColorSel(prod.colores[0]?.nombre ?? '')
+    }
+  }, [prod])
+
   if (isLoading) return (
     <main id="main" className="pt-[98px] min-h-screen">
       <ProductoDetalleSkeleton />
@@ -55,12 +62,12 @@ export default function Producto() {
 
   if (isError || !prod) return <div className="pt-24 text-center text-taupe-600">Producto no encontrado</div>
 
-    const tallasDisp = colorSel
+    const tallasDisp = colorSel !== null
     ? (prod.colores.find(c => c.nombre === colorSel)?.tallas || [])
     : []
 
     function stockDeTalla(talla) {
-    if (!colorSel) return 0
+    if (colorSel === null) return 0
     const color = prod.colores.find(c => c.nombre === colorSel)
     if (!color) return 0
     const t = color.tallas.find(t => t.talla === talla)
@@ -68,7 +75,7 @@ export default function Producto() {
     }
 
     function tallaDisponible(talla) {
-    if (!colorSel) return false
+    if (colorSel === null) return false
     const color = prod.colores.find(c => c.nombre === colorSel)
     if (!color) return false
     const t = color.tallas.find(t => t.talla === talla)
@@ -77,7 +84,7 @@ export default function Producto() {
   const formatPrecio = (p) => '$' + p.toLocaleString('es-CO')
 
   function validarSeleccion() {
-    if (!colorSel) { toast.error('Por favor selecciona un color.'); return false }
+    if (colorSel === null) { toast.error('Por favor selecciona un color.'); return false }
     if (!tallaSel) { toast.error('Por favor selecciona una talla.'); return false }
     return true
   }
@@ -254,17 +261,21 @@ export default function Producto() {
           )}
 
           <div className="w-full h-px bg-gold-300 mb-5"/>
-          <span className="block font-sans text-[0.66rem] tracking-widest uppercase text-taupe-600 mb-2">
-            Color — <strong>{colorSel || 'Selecciona un color'}</strong>
-          </span>
-          <div className="flex gap-2 flex-wrap mb-5">
-            {prod.colores.map(c => (
-              <button key={c.nombre} onClick={() => { setColorSel(c.nombre); setTallaSel(null) }}
-                className={`px-4 py-1.5 font-sans text-[0.72rem] border transition-all ${colorSel === c.nombre ? 'border-wine-600 bg-wine-600 text-cream-200' : 'border-gold-300 text-wine-900 hover:border-wine-600'}`}>
-                {c.nombre}
-              </button>
-            ))}
-          </div>
+          {prod.colores.length > 1 && prod.colores.some(c => c.nombre.trim()) && (
+            <>
+              <span className="block font-sans text-[0.66rem] tracking-widest uppercase text-taupe-600 mb-2">
+                Color — <strong>{colorSel ?? 'Selecciona un color'}</strong>
+              </span>
+              <div className="flex gap-2 flex-wrap mb-5">
+                {prod.colores.map(c => (
+                  <button key={c.nombre} onClick={() => { setColorSel(c.nombre); setTallaSel(null) }}
+                    className={`px-4 py-1.5 font-sans text-[0.72rem] border transition-all ${colorSel === c.nombre ? 'border-wine-600 bg-wine-600 text-cream-200' : 'border-gold-300 text-wine-900 hover:border-wine-600'}`}>
+                    {c.nombre}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <span className="block font-sans text-[0.66rem] tracking-widest uppercase text-taupe-600 mb-2">
             Talla — <strong>{tallaSel || 'Selecciona una talla'}</strong>
           </span>

@@ -206,7 +206,7 @@ function validateProducto(body, { requireId }) {
 
   if (!Array.isArray(colores) || colores.length === 0 || colores.length > 30) return 'colores inválidos'
   for (const c of colores) {
-    if (!c || typeof c.nombre !== 'string' || c.nombre.trim().length === 0 || c.nombre.length > 40) return 'nombre de color inválido'
+    if (!c || typeof c.nombre !== 'string' || c.nombre.length > 40) return 'nombre de color inválido'
     if (!Array.isArray(c.tallas) || c.tallas.length === 0 || c.tallas.length > 20) return 'tallas inválidas'
     for (const t of c.tallas) {
       const talla = typeof t === 'string' ? t : t?.talla

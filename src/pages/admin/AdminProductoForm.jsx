@@ -168,9 +168,18 @@ export default function AdminProductoForm() {
         return
       }
     } else {
-      if (form.colores.some(c => !c.nombre.trim())) {
+      const esTanga = form.categoria_id === 'tangas'
+      if (!esTanga && form.colores.some(c => !c.nombre.trim())) {
         setError('Todos los colores deben tener nombre.')
         return
+      }
+      if (esTanga) {
+        const conNombre = form.colores.filter(c => c.nombre.trim())
+        const sinNombre = form.colores.filter(c => !c.nombre.trim())
+        if (conNombre.length > 0 && sinNombre.length > 0) {
+          setError('Para tangas: todos deben tener color o ninguno.')
+          return
+        }
       }
       if (form.colores.some(c => c.tallas.length === 0)) {
         setError('Cada color debe tener al menos una talla seleccionada.')
@@ -424,7 +433,7 @@ export default function AdminProductoForm() {
                           value={color.nombre}
                           onChange={e => handleColorNombre(ci, e.target.value)}
                           className="flex-1 border border-gold-300 px-3 py-2 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
-                          placeholder="Nombre del color (ej: Rojo)"
+                          placeholder={form.categoria_id === 'tangas' ? 'Color (ej: Negro, Rojo) — opcional' : 'Nombre del color (ej: Rojo)'}
                         />
                         <button
                           type="button"
