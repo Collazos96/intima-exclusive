@@ -54,7 +54,7 @@ export default function AdminProductoForm() {
           imagenes: prod.imagenes.length > 0 ? prod.imagenes : [],
           colores: prod.colores.length > 0 ? prod.colores.map(c => ({
             nombre: c.nombre,
-            tallas: c.tallas,
+            tallas: c.tallas.map(t => typeof t === 'string' ? t : t.talla),
           })) : [{ nombre: '', tallas: [] }],
           precios_paquete: prod.precios_paquete ?? [],
         })
