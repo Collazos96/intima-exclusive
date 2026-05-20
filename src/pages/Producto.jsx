@@ -21,6 +21,7 @@ export default function Producto() {
   const [mainImg, setMainImg] = useState(0)
   const [colorSel, setColorSel] = useState(null)
   const [tallaSel, setTallaSel] = useState(null)
+  const [paqueteSel, setPaqueteSel] = useState(null)
   const [tab, setTab] = useState('desc')
   const [guiaAbierta, setGuiaAbierta] = useState(false)
 
@@ -91,13 +92,17 @@ export default function Producto() {
 
   function agregarAlCarrito() {
     if (!validarSeleccion()) return
+    const cantidad = paqueteSel ? paqueteSel.cantidad : 1
+    const precio = paqueteSel
+      ? Math.round(paqueteSel.precio / paqueteSel.cantidad)
+      : prod.precio
     addItem({
       productoId: prod.id,
       nombre: prod.nombre,
-      precio: prod.precio,
+      precio,
       color: colorSel,
       talla: tallaSel,
-      cantidad: 1,
+      cantidad,
       imagen: prod.imagenes[0],
     })
     toast.success('Añadido a tu selección', {
@@ -243,18 +248,44 @@ export default function Producto() {
           {prod.nuevo === 1 && <span className="inline-block bg-wine-600 text-cream-200 font-sans text-[0.55rem] tracking-widest px-2 py-0.5 mb-3 uppercase">Nuevo</span>}
           <span className="block font-sans text-[0.6rem] tracking-widest uppercase text-gold-500 mb-1 capitalize">{prod.categoria_id}</span>
           <h1 className="font-serif text-[clamp(1.3rem,2.5vw,2rem)] text-wine-800 mb-2">{prod.nombre}</h1>
-          <p className="font-sans font-bold text-wine-600 text-2xl mb-3">{formatPrecio(prod.precio)}</p>
+          <p className="font-sans font-bold text-wine-600 text-2xl mb-3">
+            {paqueteSel ? formatPrecio(paqueteSel.precio) : formatPrecio(prod.precio)}
+            {paqueteSel && (
+              <span className="font-sans font-normal text-sm text-taupe-500 ml-2">
+                {formatPrecio(Math.round(paqueteSel.precio / paqueteSel.cantidad))} c/u
+              </span>
+            )}
+          </p>
 
           {prod.precios_paquete?.length > 0 && (
             <div className="mb-5">
-              <p className="font-sans text-[0.6rem] tracking-widest uppercase text-taupe-500 mb-2">Precios por paquete</p>
+              <p className="font-sans text-[0.6rem] tracking-widest uppercase text-taupe-500 mb-2">Cantidad</p>
               <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setPaqueteSel(null)}
+                  className={`border-2 px-4 py-2 text-center min-w-[90px] transition-all ${
+                    paqueteSel === null
+                      ? 'border-wine-600 bg-wine-600 text-cream-200'
+                      : 'border-gold-300 text-wine-900 hover:border-wine-600'
+                  }`}>
+                  <span className="block font-sans text-[0.6rem] tracking-widest uppercase">1 und.</span>
+                  <span className="block font-sans font-bold text-base">{formatPrecio(prod.precio)}</span>
+                </button>
                 {prod.precios_paquete.map((pp) => (
-                  <div key={pp.cantidad} className="border border-gold-400 bg-cream-100 px-4 py-2 text-center min-w-[90px]">
-                    <span className="block font-sans text-[0.6rem] tracking-widest uppercase text-taupe-500">{pp.cantidad} und.</span>
-                    <span className="block font-sans font-bold text-wine-600 text-base">{formatPrecio(pp.precio)}</span>
-                    <span className="block font-sans text-[0.58rem] text-taupe-400">{formatPrecio(Math.round(pp.precio / pp.cantidad))} c/u</span>
-                  </div>
+                  <button
+                    key={pp.cantidad}
+                    onClick={() => setPaqueteSel(pp)}
+                    className={`border-2 px-4 py-2 text-center min-w-[90px] transition-all ${
+                      paqueteSel?.cantidad === pp.cantidad
+                        ? 'border-wine-600 bg-wine-600 text-cream-200'
+                        : 'border-gold-300 text-wine-900 hover:border-wine-600'
+                    }`}>
+                    <span className="block font-sans text-[0.6rem] tracking-widest uppercase">{pp.cantidad} und.</span>
+                    <span className="block font-sans font-bold text-base">{formatPrecio(pp.precio)}</span>
+                    <span className={`block font-sans text-[0.58rem] ${paqueteSel?.cantidad === pp.cantidad ? 'text-cream-200/70' : 'text-taupe-400'}`}>
+                      {formatPrecio(Math.round(pp.precio / pp.cantidad))} c/u
+                    </span>
+                  </button>
                 ))}
               </div>
             </div>
