@@ -110,14 +110,18 @@ export default function AdminProductoForm() {
   }
 
   function toggleTalla(colorIndex, talla) {
-    const nuevos = [...form.colores]
-    const tallas = nuevos[colorIndex].tallas
-    if (tallas.includes(talla)) {
-      nuevos[colorIndex].tallas = tallas.filter(t => t !== talla)
-    } else {
-      nuevos[colorIndex].tallas = [...tallas, talla]
-    }
-    setForm(f => ({ ...f, colores: nuevos }))
+    setForm(f => ({
+      ...f,
+      colores: f.colores.map((c, i) => {
+        if (i !== colorIndex) return c
+        return {
+          ...c,
+          tallas: c.tallas.includes(talla)
+            ? c.tallas.filter(t => t !== talla)
+            : [...c.tallas, talla],
+        }
+      }),
+    }))
   }
 
   function agregarColor() {
