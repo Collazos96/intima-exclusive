@@ -258,14 +258,26 @@ export default function Producto() {
           {prod.nuevo === 1 && <span className="inline-block bg-wine-600 text-cream-200 font-sans text-[0.55rem] tracking-widest px-2 py-0.5 mb-3 uppercase">Nuevo</span>}
           <span className="block font-sans text-[0.6rem] tracking-widest uppercase text-gold-500 mb-1 capitalize">{prod.categoria_id}</span>
           <h1 className="font-serif text-[clamp(1.3rem,2.5vw,2rem)] text-wine-800 mb-2">{prod.nombre}</h1>
-          <p className="font-sans font-bold text-wine-600 text-2xl mb-3">
-            {paqueteSel ? formatPrecio(paqueteSel.precio) : formatPrecio(prod.precio)}
-            {paqueteSel && (
+          {paqueteSel ? (
+            <p className="font-sans font-bold text-wine-600 text-2xl mb-3">
+              {formatPrecio(paqueteSel.precio)}
               <span className="font-sans font-normal text-sm text-taupe-500 ml-2">
                 {formatPrecio(Math.round(paqueteSel.precio / paqueteSel.cantidad))} c/u
               </span>
-            )}
-          </p>
+            </p>
+          ) : prod.precio_oferta ? (
+            <div className="mb-3">
+              <p className="font-sans text-taupe-400 text-sm line-through leading-none mb-1">{formatPrecio(prod.precio)}</p>
+              <div className="flex items-center gap-3">
+                <p className="font-sans font-bold text-wine-600 text-2xl">{formatPrecio(prod.precio_oferta)}</p>
+                <span className="bg-wine-600 text-cream-50 font-sans text-[0.6rem] tracking-widest uppercase px-2 py-1">
+                  -{Math.round((1 - prod.precio_oferta / prod.precio) * 100)}% OFF
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="font-sans font-bold text-wine-600 text-2xl mb-3">{formatPrecio(prod.precio)}</p>
+          )}
 
           {prod.precios_paquete?.length > 0 && (
             <div className="mb-5">
@@ -279,7 +291,7 @@ export default function Producto() {
                       : 'border-gold-300 text-wine-900 hover:border-wine-600'
                   }`}>
                   <span className="block font-sans text-[0.6rem] tracking-widest uppercase">1 und.</span>
-                  <span className="block font-sans font-bold text-base">{formatPrecio(prod.precio)}</span>
+                  <span className="block font-sans font-bold text-base">{formatPrecio(prod.precio_oferta ?? prod.precio)}</span>
                 </button>
                 {prod.precios_paquete.map((pp) => (
                   <button

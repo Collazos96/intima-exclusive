@@ -179,13 +179,14 @@ const URL_IMAGEN_RE = new RegExp(`^${IMAGES_PUBLIC_BASE.replace(/\./g, '\\.')}/[
 
 function validateProducto(body, { requireId }) {
   if (!body || typeof body !== 'object') return 'Body inválido'
-  const { id, nombre, precio, categoria_id, descripcion, imagenes, colores, nuevo, precios_paquete } = body
+  const { id, nombre, precio, precio_oferta, categoria_id, descripcion, imagenes, colores, nuevo, precios_paquete } = body
 
   if (requireId) {
     if (typeof id !== 'string' || !ID_RE.test(id)) return 'id inválido'
   }
   if (typeof nombre !== 'string' || nombre.trim().length < 2 || nombre.length > 120) return 'nombre inválido'
   if (typeof precio !== 'number' || !Number.isFinite(precio) || precio < 0 || precio > 1e8) return 'precio inválido'
+  if (precio_oferta != null && (typeof precio_oferta !== 'number' || !Number.isFinite(precio_oferta) || precio_oferta < 0 || precio_oferta >= precio)) return 'precio_oferta inválido (debe ser menor al precio original)'
   if (typeof categoria_id !== 'string' || !CATEGORIA_ID_RE.test(categoria_id)) return 'categoria_id inválido'
   if (descripcion != null && (typeof descripcion !== 'string' || descripcion.length > 5000)) return 'descripcion inválida'
   if (nuevo != null && typeof nuevo !== 'boolean' && nuevo !== 0 && nuevo !== 1) return 'nuevo inválido'
@@ -692,8 +693,8 @@ async function handleAdminCrearProducto(request, env, cors) {
   const ppJson = body.precios_paquete?.length ? JSON.stringify(body.precios_paquete) : null
   const stmts = [
     env.DB.prepare(
-      'INSERT INTO productos (id, nombre, precio, categoria_id, nuevo, descripcion, precios_paquete) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).bind(body.id, body.nombre.trim(), body.precio, body.categoria_id, body.nuevo ? 1 : 0, body.descripcion ?? null, ppJson),
+      'INSERT INTO productos (id, nombre, precio, precio_oferta, categoria_id, nuevo, descripcion, precios_paquete) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(body.id, body.nombre.trim(), body.precio, body.precio_oferta ?? null, body.categoria_id, body.nuevo ? 1 : 0, body.descripcion ?? null, ppJson),
     ...body.imagenes.map((url, i) =>
       env.DB.prepare('INSERT INTO imagenes (producto_id, url, orden) VALUES (?, ?, ?)').bind(body.id, url, i)
     ),
@@ -741,8 +742,8 @@ async function handleAdminEditarProducto(request, env, cors, id) {
   // Limpiar dependientes, actualizar producto y reinsertar imágenes — todo en un batch atómico.
   const ppJsonEdit = body.precios_paquete?.length ? JSON.stringify(body.precios_paquete) : null
   const cleanupStmts = [
-    env.DB.prepare('UPDATE productos SET nombre = ?, precio = ?, categoria_id = ?, nuevo = ?, descripcion = ?, precios_paquete = ? WHERE id = ?')
-      .bind(body.nombre.trim(), body.precio, body.categoria_id, body.nuevo ? 1 : 0, body.descripcion ?? null, ppJsonEdit, id),
+    env.DB.prepare('UPDATE productos SET nombre = ?, precio = ?, precio_oferta = ?, categoria_id = ?, nuevo = ?, descripcion = ?, precios_paquete = ? WHERE id = ?')
+      .bind(body.nombre.trim(), body.precio, body.precio_oferta ?? null, body.categoria_id, body.nuevo ? 1 : 0, body.descripcion ?? null, ppJsonEdit, id),
     env.DB.prepare('DELETE FROM tallas WHERE color_id IN (SELECT id FROM colores WHERE producto_id = ?)').bind(id),
     env.DB.prepare('DELETE FROM colores WHERE producto_id = ?').bind(id),
     env.DB.prepare('DELETE FROM imagenes WHERE producto_id = ?').bind(id),

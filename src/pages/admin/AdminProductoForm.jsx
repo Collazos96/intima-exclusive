@@ -14,6 +14,7 @@ const productoVacio = {
   id: '',
   nombre: '',
   precio: '',
+  precio_oferta: '',
   categoria_id: 'sets',
   nuevo: true,
   descripcion: '',
@@ -48,6 +49,7 @@ export default function AdminProductoForm() {
           id: prod.id,
           nombre: prod.nombre,
           precio: prod.precio,
+          precio_oferta: prod.precio_oferta ?? '',
           categoria_id: prod.categoria_id,
           nuevo: prod.nuevo === 1,
           descripcion: prod.descripcion,
@@ -195,6 +197,7 @@ export default function AdminProductoForm() {
     const payload = {
       ...form,
       precio: parseInt(form.precio),
+      precio_oferta: form.precio_oferta !== '' ? parseInt(form.precio_oferta) : null,
       imagenes: form.imagenes.filter(i => i.trim()),
       // Talla única: garantizar 'Unica' en todas las variantes
       colores: esTallaUnica
@@ -293,7 +296,7 @@ export default function AdminProductoForm() {
                 />
               </div>
               <div>
-                <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">Precio (COP)</label>
+                <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">Precio original (COP)</label>
                 <input
                   type="number"
                   value={form.precio}
@@ -302,6 +305,19 @@ export default function AdminProductoForm() {
                   placeholder="ej: 189000"
                   required
                 />
+              </div>
+              <div>
+                <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">
+                  Precio de oferta (COP) <span className="normal-case tracking-normal text-taupe-400">— opcional</span>
+                </label>
+                <input
+                  type="number"
+                  value={form.precio_oferta}
+                  onChange={e => handleCampo('precio_oferta', e.target.value)}
+                  className="w-full border border-gold-300 px-3 py-2.5 font-sans text-sm text-wine-900 outline-none focus:border-wine-600"
+                  placeholder="ej: 149000 (deja vacío si no aplica)"
+                />
+                <p className="font-sans text-[0.6rem] text-taupe-400 mt-1">El precio original quedará tachado en la tienda.</p>
               </div>
               <div>
                 <label className="block font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600 mb-2">Categoria</label>

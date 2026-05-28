@@ -21,11 +21,20 @@ export default function ProductCard({ producto, priority = false }) {
             {producto.categoria_id || 'Íntima'}
           </span>
           <h3 className="font-serif text-wine-900 text-base mb-3">{producto.nombre}</h3>
-          <div className="flex items-center justify-between">
-            <p className="font-sans font-bold text-wine-600">{formatPrecio(producto.precio)}</p>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              {producto.precio_oferta ? (
+                <>
+                  <p className="font-sans text-taupe-400 text-xs line-through leading-none mb-0.5">{formatPrecio(producto.precio)}</p>
+                  <p className="font-sans font-bold text-wine-600">{formatPrecio(producto.precio_oferta)}</p>
+                </>
+              ) : (
+                <p className="font-sans font-bold text-wine-600">{formatPrecio(producto.precio)}</p>
+              )}
+            </div>
             <span
               aria-hidden="true"
-              className="border border-wine-600 text-wine-600 font-sans text-[0.6rem] tracking-widest uppercase px-3 py-1.5 group-hover:bg-wine-600 group-hover:text-cream-200 transition-all"
+              className="shrink-0 border border-wine-600 text-wine-600 font-sans text-[0.6rem] tracking-widest uppercase px-3 py-1.5 group-hover:bg-wine-600 group-hover:text-cream-200 transition-all"
             >
               Ver detalle
             </span>
