@@ -39,7 +39,7 @@ export default function CategoriasBento({ categorias, imagenesPorCategoria }) {
                 : isHuerfana
                   ? 'col-span-2 sm:col-span-1 aspect-[21/9] sm:aspect-auto sm:min-h-[250px]'
                   : isHero
-                    ? 'aspect-[3/4] sm:aspect-auto sm:min-h-[380px]'
+                    ? 'aspect-[4/3] sm:aspect-auto sm:min-h-[380px]'
                     : 'aspect-[4/3] sm:aspect-auto sm:min-h-[250px]'
             }
             size={isHero ? 'large' : isBanner || isHuerfana ? 'wide' : 'small'}
