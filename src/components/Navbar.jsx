@@ -133,8 +133,8 @@ export default function Navbar() {
 
       <div
         id="mobile-menu"
-        className={`lg:hidden overflow-hidden transition-[max-height] duration-300 ease-out border-t border-gold-300 ${
-          menuOpen ? 'max-h-96' : 'max-h-0 border-t-0'
+        className={`lg:hidden overflow-y-auto transition-[max-height] duration-300 ease-out border-t border-gold-300 ${
+          menuOpen ? 'max-h-[80vh]' : 'max-h-0 border-t-0'
         }`}
       >
         <ul className="flex flex-col py-2 px-4 bg-cream-100">
