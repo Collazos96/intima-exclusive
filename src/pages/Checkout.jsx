@@ -171,12 +171,17 @@ export default function Checkout() {
           codigo_postal: form.codigo_postal.trim() || null,
           notas: form.notas.trim() || null,
         },
-        items: items.map((i) => ({
-          productoId: i.productoId,
-          color: i.color,
-          talla: i.talla,
-          cantidad: i.cantidad,
-        })),
+        // Agrupar por variante: líneas de combo + unidad suelta del mismo
+        // producto/color/talla van como un solo item con la cantidad total,
+        // para que el backend valide stock real y aplique el mejor precio.
+        items: Object.values(
+          items.reduce((acc, i) => {
+            const k = `${i.productoId}::${i.color}::${i.talla}`
+            if (acc[k]) acc[k].cantidad += i.cantidad
+            else acc[k] = { productoId: i.productoId, color: i.color, talla: i.talla, cantidad: i.cantidad }
+            return acc
+          }, {})
+        ),
         cupon_codigo: cuponAplicado?.codigo || null,
       }
 

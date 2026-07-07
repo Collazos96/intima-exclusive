@@ -29,7 +29,7 @@ export default defineConfig({
         return deps.filter((d) =>
           !d.includes('Admin') &&
           !d.includes('useAdmin') &&
-          !d.includes('charts-'),
+          !d.includes('charts'),
         )
       },
     },
@@ -39,6 +39,11 @@ export default defineConfig({
           if (!id.includes('node_modules')) return
           if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/react-router')) {
             return 'react'
+          }
+          // Recharts (+ d3) solo se usa en AdminAnalytics — chunk aparte
+          // para que el público nunca lo descargue.
+          if (id.includes('recharts') || id.includes('/d3-') || id.includes('victory-vendor')) {
+            return 'charts'
           }
         },
       },

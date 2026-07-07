@@ -12,8 +12,10 @@ const safeStorage = createJSONStorage(() =>
   typeof window !== 'undefined' ? window.localStorage : noopStorage
 )
 
-// Cada línea del carrito es única por (productoId, color, talla).
-const lineKey = (item) => `${item.productoId}::${item.color}::${item.talla}`
+// Cada línea del carrito es única por (productoId, color, talla, paquete).
+// El paquete separa combos (ej: 5x$130.000) de unidades sueltas, que tienen
+// precio unitario distinto y no deben fusionarse en una sola línea.
+const lineKey = (item) => `${item.productoId}::${item.color}::${item.talla}::${item.paquete ?? 1}`
 
 export const useCart = create(
   persist(

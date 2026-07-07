@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Link } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -36,9 +36,30 @@ function AdminFallback() {
 
 function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p>Página no encontrada.</p>
-    </div>
+    <main id="main" className="min-h-screen flex items-center justify-center bg-cream-100 pt-[98px] px-6">
+      {/* noindex: evita que Google indexe URLs erradas que responden 200 (SPA fallback) */}
+      <title>Página no encontrada — Íntima Exclusive</title>
+      <meta name="robots" content="noindex" />
+      <div className="text-center max-w-md">
+        <span className="block font-sans text-[0.68rem] tracking-[4px] uppercase text-gold-500 mb-3">Error 404</span>
+        <h1 className="font-serif text-3xl text-wine-800 mb-3">Página no encontrada</h1>
+        <p className="font-sans text-sm text-taupe-600 mb-8">
+          La página que buscas no existe o fue movida. Explora nuestras colecciones o vuelve al inicio.
+        </p>
+        <div className="flex gap-3 justify-center flex-wrap">
+          <Link
+            to="/"
+            className="bg-wine-600 text-cream-200 px-8 py-3 font-sans text-[0.68rem] tracking-widest uppercase hover:bg-wine-800 transition-colors">
+            Volver al inicio
+          </Link>
+          <Link
+            to="/categoria/sets"
+            className="border border-gold-300 text-taupe-600 px-8 py-3 font-sans text-[0.68rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
+            Ver colección
+          </Link>
+        </div>
+      </div>
+    </main>
   )
 }
 

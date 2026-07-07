@@ -48,22 +48,28 @@ export default function Producto() {
     if (id && prod) registrarVisita(id)
   }, [id, prod])
 
-  useEffect(() => {
-    if (!prod) return
+  // Auto-selección durante el render (patrón "adjust state during render",
+  // evita el cascadeo de setState dentro de useEffect).
+  const [prodVisto, setProdVisto] = useState(null)
+  if (prod && prod !== prodVisto) {
+    setProdVisto(prod)
     if (prod.colores.length === 1 || prod.colores.every(c => !c.nombre.trim())) {
       setColorSel(prod.colores[0]?.nombre ?? '')
     }
-  }, [prod])
+  }
 
-  useEffect(() => {
-    if (colorSel === null || !prod) return
-    const color = prod.colores.find(c => c.nombre === colorSel)
-    if (!color) return
-    if (color.tallas.length === 1) {
-      const t = typeof color.tallas[0] === 'string' ? color.tallas[0] : color.tallas[0].talla
-      setTallaSel(t)
+  const [colorVisto, setColorVisto] = useState(null)
+  const colorKey = prod ? `${prod.id}::${colorSel}` : null
+  if (colorKey !== colorVisto) {
+    setColorVisto(colorKey)
+    if (colorSel !== null && prod) {
+      const color = prod.colores.find(c => c.nombre === colorSel)
+      if (color && color.tallas.length === 1) {
+        const t = typeof color.tallas[0] === 'string' ? color.tallas[0] : color.tallas[0].talla
+        setTallaSel(t)
+      }
     }
-  }, [colorSel, prod])
+  }
 
   if (isLoading) return (
     <main id="main" className="pt-[98px] min-h-screen">
@@ -105,7 +111,7 @@ export default function Producto() {
     const cantidad = paqueteSel ? paqueteSel.cantidad : 1
     const precio = paqueteSel
       ? Math.round(paqueteSel.precio / paqueteSel.cantidad)
-      : prod.precio
+      : (prod.precio_oferta ?? prod.precio)
     addItem({
       productoId: prod.id,
       nombre: prod.nombre,
@@ -113,6 +119,8 @@ export default function Producto() {
       color: colorSel,
       talla: tallaSel,
       cantidad,
+      // Distingue líneas de combo vs unidad suelta para no fusionar precios distintos
+      paquete: paqueteSel?.cantidad ?? 1,
       imagen: prod.imagenes[0],
     })
     toast.success('Añadido a tu selección', {
@@ -193,7 +201,7 @@ export default function Producto() {
             itemListElement: [
               { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://intimaexclusive.com/' },
               { '@type': 'ListItem', position: 2, name: prod.categoria_id, item: `https://intimaexclusive.com/categoria/${prod.categoria_id}` },
-              { '@type': 'ListItem', position: 3, name: prod.nombre },
+              { '@type': 'ListItem', position: 3, name: prod.nombre, item: `https://intimaexclusive.com/producto/${prod.id}` },
             ],
           }
           return [productLd, breadcrumbLd]

@@ -392,7 +392,7 @@ export default {
             const body = await res.clone().json().catch(() => null)
             const id = body?.id
             if (id) {
-              indexNowNotify(env, ctx, [SITE_BASE + '/', ...urlsProducto(id)])
+              indexNowNotify(env, ctx, [SITE_BASE + '/', ...(await urlsProductoYCategoria(env, id))])
             }
           }
           return res
@@ -403,7 +403,7 @@ export default {
           const res = await handleAdminEditarProducto(request, env, cors, id)
           if (res.status === 200) {
             triggerPagesDeploy(env, ctx)
-            indexNowNotify(env, ctx, urlsProducto(id))
+            indexNowNotify(env, ctx, await urlsProductoYCategoria(env, id))
           }
           return res
         }
@@ -414,7 +414,7 @@ export default {
             triggerPagesDeploy(env, ctx)
             // Al soft-delete, la URL del producto devuelve 404 — avisamos para
             // que los bots actualicen el índice rápido
-            indexNowNotify(env, ctx, urlsProducto(id))
+            indexNowNotify(env, ctx, await urlsProductoYCategoria(env, id))
           }
           return res
         }
@@ -470,7 +470,7 @@ export default {
           const res = await handleAdminRestaurarProducto(env, cors, id)
           if (res.status === 200) {
             triggerPagesDeploy(env, ctx)
-            indexNowNotify(env, ctx, urlsProducto(id))
+            indexNowNotify(env, ctx, await urlsProductoYCategoria(env, id))
           }
           return res
         }
@@ -1092,6 +1092,19 @@ function urlsProducto(productoId) {
   return [
     `${SITE_BASE}/producto/${productoId}`,
   ]
+}
+
+// Incluye la página de categoría afectada — cambia su listado al
+// crear/editar/eliminar un producto y conviene reindexarla rápido.
+async function urlsProductoYCategoria(env, productoId) {
+  const urls = urlsProducto(productoId)
+  try {
+    const row = await env.DB.prepare(
+      'SELECT categoria_id FROM productos WHERE id = ?'
+    ).bind(productoId).first()
+    if (row?.categoria_id) urls.push(`${SITE_BASE}/categoria/${row.categoria_id}`)
+  } catch { /* noop — notificar solo el producto */ }
+  return urls
 }
 
 // ===== Re-deploy de Cloudflare Pages =====
@@ -2068,6 +2081,38 @@ function validarCrearPedido(body) {
   return null
 }
 
+/**
+ * Mejor precio total (en centavos) para `cantidad` unidades de un producto.
+ * Usa precio_oferta si existe y aplica automáticamente la combinación de
+ * paquetes más barata (DP sobre cantidad ≤ 20). Así el cobro nunca supera
+ * lo que la página anuncia, incluso si el cliente arma la cantidad a mano.
+ */
+function mejorPrecioLinea(prod, cantidad) {
+  const unitCent = Math.round((prod.precio_oferta ?? prod.precio) * 100)
+  let paquetes = []
+  try {
+    paquetes = prod.precios_paquete ? JSON.parse(prod.precios_paquete) : []
+  } catch { /* JSON corrupto → solo precio unitario */ }
+  const packs = (Array.isArray(paquetes) ? paquetes : [])
+    .filter((p) => p && Number.isInteger(p.cantidad) && p.cantidad >= 2 &&
+      typeof p.precio === 'number' && Number.isFinite(p.precio) && p.precio > 0)
+    .map((p) => ({ cantidad: p.cantidad, precioCent: Math.round(p.precio * 100) }))
+
+  if (!packs.length) return unitCent * cantidad
+
+  const dp = new Array(cantidad + 1).fill(Infinity)
+  dp[0] = 0
+  for (let n = 1; n <= cantidad; n++) {
+    dp[n] = dp[n - 1] + unitCent
+    for (const p of packs) {
+      if (p.cantidad <= n && dp[n - p.cantidad] + p.precioCent < dp[n]) {
+        dp[n] = dp[n - p.cantidad] + p.precioCent
+      }
+    }
+  }
+  return dp[cantidad]
+}
+
 async function handleCrearPedido(request, env, cors) {
   const ip = getClientIp(request)
   const rl = await rateLimit(env, `pedido:${ip}`, { windowSec: 3600, max: 20 })
@@ -2081,7 +2126,7 @@ async function handleCrearPedido(request, env, cors) {
   const productoIds = [...new Set(body.items.map((i) => i.productoId))]
   const ph = productoIds.map(() => '?').join(',')
   const { results: productos } = await env.DB.prepare(
-    `SELECT id, nombre, precio FROM productos WHERE id IN (${ph}) AND deleted_at IS NULL`
+    `SELECT id, nombre, precio, precio_oferta, precios_paquete FROM productos WHERE id IN (${ph}) AND deleted_at IS NULL`
   ).bind(...productoIds).all()
   const prodMap = new Map(productos.map((p) => [p.id, p]))
 
@@ -2116,15 +2161,16 @@ async function handleCrearPedido(request, env, cors) {
       }, 409, cors)
     }
 
-    const precioCentavos = Math.round(prod.precio * 100)
-    subtotalCentavos += precioCentavos * it.cantidad
+    // Precio real: oferta si existe, y mejor combinación de paquetes para la cantidad
+    const lineaCentavos = mejorPrecioLinea(prod, it.cantidad)
+    subtotalCentavos += lineaCentavos
     itemsNormalizados.push({
       productoId: prod.id,
       nombre: prod.nombre,
       color: it.color,
       talla: it.talla,
       cantidad: it.cantidad,
-      precioUnitario: precioCentavos,
+      precioUnitario: Math.round(lineaCentavos / it.cantidad),
     })
   }
 

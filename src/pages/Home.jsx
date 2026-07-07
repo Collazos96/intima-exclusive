@@ -16,7 +16,7 @@ export default function Home() {
     queryKey: qk.categorias,
     queryFn: getCategorias,
   })
-  const { data: productos = [], isLoading: cargandoProductos } = useQuery({
+  const { data: productos = [] } = useQuery({
     queryKey: qk.productos,
     queryFn: getProductos,
   })
@@ -204,7 +204,7 @@ export default function Home() {
             {/* CTA */}
             <Reveal delay={400}>
               <div className="mt-12 flex flex-col items-center gap-3">
-                <p className="font-sans text-[0.72rem] tracking-[2px] uppercase text-taupe-400">
+                <p className="font-sans text-[0.72rem] tracking-[2px] uppercase text-taupe-600">
                   ¿Quieres ver más prendas?
                 </p>
                 <Link
