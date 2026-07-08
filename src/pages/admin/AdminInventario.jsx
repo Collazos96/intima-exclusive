@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getAdminProductos, actualizarStock, isAuthenticated } from '../../hooks/useAdmin'
@@ -9,6 +9,9 @@ export default function AdminInventario() {
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState({})
   const [exito, setExito] = useState({})
+  const [busqueda, setBusqueda] = useState('')
+  const [catFiltro, setCatFiltro] = useState('')
+  const [soloAgotados, setSoloAgotados] = useState(false)
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -58,6 +61,22 @@ export default function AdminInventario() {
     }
   }
 
+  const categoriasDisponibles = useMemo(
+    () => Array.from(new Set(productos.map((p) => p.categoria_id))).sort(),
+    [productos]
+  )
+
+  const filtrados = useMemo(() => {
+    let out = productos
+    const q = busqueda.trim().toLowerCase()
+    if (q) out = out.filter((p) => p.nombre.toLowerCase().includes(q) || p.id.toLowerCase().includes(q))
+    if (catFiltro) out = out.filter((p) => p.categoria_id === catFiltro)
+    if (soloAgotados) {
+      out = out.filter((p) => p.colores.some((c) => c.tallas.some((t) => t.stock === 0)))
+    }
+    return out
+  }, [productos, busqueda, catFiltro, soloAgotados])
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-cream-100">
       <p className="font-serif italic text-gold-500">Cargando inventario...</p>
@@ -65,25 +84,56 @@ export default function AdminInventario() {
   )
 
   return (
-    <main className="min-h-screen bg-cream-100 pt-[70px]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
+    <main className="min-h-screen bg-cream-100">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="font-serif text-2xl text-wine-800">Inventario</h1>
-            <p className="font-sans text-[0.75rem] text-taupe-600 tracking-wide mt-1">
-              Gestion de stock por color y talla
-            </p>
-          </div>
-          <button
-            onClick={() => nav('/admin')}
-            className="border border-gold-300 text-taupe-600 px-5 py-2 font-sans text-[0.68rem] tracking-widest uppercase hover:border-wine-600 hover:text-wine-600 transition-colors">
-            Volver al panel
-          </button>
+        <div className="mb-6">
+          <h1 className="font-serif text-2xl text-wine-800">Inventario</h1>
+          <p className="font-sans text-[0.75rem] text-taupe-600 tracking-wide mt-1">
+            Gestion de stock por color y talla
+          </p>
         </div>
 
+        {/* FILTROS */}
+        <div className="bg-white border border-gold-300 px-4 sm:px-6 py-4 mb-6 flex items-center gap-3 flex-wrap">
+          <input
+            type="search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por nombre o ID…"
+            className="border border-gold-300 px-3 py-2 font-sans text-[0.78rem] text-wine-900 outline-none focus:border-wine-600 w-full sm:w-64"
+          />
+          <select
+            value={catFiltro}
+            onChange={(e) => setCatFiltro(e.target.value)}
+            className="border border-gold-300 px-3 py-2 font-sans text-[0.78rem] text-wine-900 outline-none focus:border-wine-600 bg-white capitalize">
+            <option value="">Todas las categorías</option>
+            {categoriasDisponibles.map((c) => (
+              <option key={c} value={c} className="capitalize">{c}</option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 font-sans text-[0.72rem] text-taupe-600 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={soloAgotados}
+              onChange={(e) => setSoloAgotados(e.target.checked)}
+              className="w-4 h-4 accent-wine-600"
+            />
+            Solo con tallas agotadas
+          </label>
+          <span className="ml-auto font-sans text-[0.68rem] text-taupe-400">
+            {filtrados.length} de {productos.length} productos
+          </span>
+        </div>
+
+        {filtrados.length === 0 && (
+          <div className="bg-white border border-gold-300 px-6 py-12 text-center">
+            <p className="font-sans text-[0.85rem] text-taupe-400 italic">Ningún producto coincide con los filtros.</p>
+          </div>
+        )}
+
         <div className="space-y-6">
-          {productos.map(p => (
+          {filtrados.map(p => (
             <div key={p.id} className="bg-white border border-gold-300">
               <div className="px-6 py-4 border-b border-gold-300 flex items-center justify-between">
                 <div>

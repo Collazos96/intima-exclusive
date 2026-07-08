@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route, Link } from 'react-router-dom'
+import { Routes, Route, Link, Outlet } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -29,9 +29,21 @@ const AdminLimpiezaR2 = lazy(() => import('./pages/admin/AdminLimpiezaR2'))
 const AdminPedidos = lazy(() => import('./pages/admin/AdminPedidos'))
 const AdminCupones = lazy(() => import('./pages/admin/AdminCupones'))
 const AdminSuscriptores = lazy(() => import('./pages/admin/AdminSuscriptores'))
+const AdminNav = lazy(() => import('./components/AdminNav'))
 
 function AdminFallback() {
   return <div className="min-h-screen flex items-center justify-center">Cargando…</div>
+}
+
+// Layout compartido del admin: barra de navegación sticky + contenido.
+// El login queda fuera para no mostrar la barra sin sesión.
+function AdminLayout() {
+  return (
+    <>
+      <AdminNav />
+      <Outlet />
+    </>
+  )
 }
 
 function NotFound() {
@@ -85,18 +97,20 @@ export default function App() {
             <Suspense fallback={<AdminFallback />}>
               <Routes>
                 <Route path="login" element={<AdminLogin />} />
-                <Route path="" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
-                <Route path="productos/nuevo" element={<ProtectedRoute><AdminProductoForm /></ProtectedRoute>} />
-                <Route path="productos/:id/editar" element={<ProtectedRoute><AdminProductoForm /></ProtectedRoute>} />
-                <Route path="analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
-                <Route path="inventario" element={<ProtectedRoute><AdminInventario /></ProtectedRoute>} />
-                <Route path="reviews" element={<ProtectedRoute><AdminReviews /></ProtectedRoute>} />
-                <Route path="papelera" element={<ProtectedRoute><AdminPapelera /></ProtectedRoute>} />
-                <Route path="limpieza" element={<ProtectedRoute><AdminLimpiezaR2 /></ProtectedRoute>} />
-                <Route path="pedidos" element={<ProtectedRoute><AdminPedidos /></ProtectedRoute>} />
-                <Route path="cupones" element={<ProtectedRoute><AdminCupones /></ProtectedRoute>} />
-                <Route path="suscriptores" element={<ProtectedRoute><AdminSuscriptores /></ProtectedRoute>} />
-                <Route path="*" element={<NotFound />} />
+                <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                  <Route path="" element={<AdminPanel />} />
+                  <Route path="productos/nuevo" element={<AdminProductoForm />} />
+                  <Route path="productos/:id/editar" element={<AdminProductoForm />} />
+                  <Route path="analytics" element={<AdminAnalytics />} />
+                  <Route path="inventario" element={<AdminInventario />} />
+                  <Route path="reviews" element={<AdminReviews />} />
+                  <Route path="papelera" element={<AdminPapelera />} />
+                  <Route path="limpieza" element={<AdminLimpiezaR2 />} />
+                  <Route path="pedidos" element={<AdminPedidos />} />
+                  <Route path="cupones" element={<AdminCupones />} />
+                  <Route path="suscriptores" element={<AdminSuscriptores />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
               </Routes>
             </Suspense>
           }
