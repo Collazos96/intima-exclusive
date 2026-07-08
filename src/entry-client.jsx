@@ -7,6 +7,14 @@ import './index.css'
 import App from './App.jsx'
 import { queryClient } from './lib/queryClient'
 
+// Tras un deploy, los chunks viejos ya no existen y los import() dinámicos
+// de pestañas abiertas fallan. Vite emite este evento — recargamos para
+// tomar la versión nueva en vez de mostrar un error.
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault()
+  window.location.reload()
+})
+
 const rootElement = document.getElementById('root')
 
 // El SSG inyecta __INITIAL_STATE__ con el cache dehidratado de React Query.
