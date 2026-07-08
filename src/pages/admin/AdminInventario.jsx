@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getAdminProductos, actualizarStock, isAuthenticated } from '../../hooks/useAdmin'
 
+/**
+ * Inventario: stock por color y talla con buscador, filtro por categoría
+ * y vista rápida de tallas agotadas.
+ */
 export default function AdminInventario() {
   const nav = useNavigate()
   const [productos, setProductos] = useState([])
