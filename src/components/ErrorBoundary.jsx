@@ -31,6 +31,10 @@ export default class ErrorBoundary extends Component {
             >
               Reintentar
             </button>
+            {/* Detalle técnico: clave para diagnosticar errores reportados por pantallazo */}
+            <p className="mt-6 font-mono text-[0.65rem] text-taupe-400 break-words">
+              {String(this.state.error?.message || this.state.error)}
+            </p>
           </div>
         </div>
       )
