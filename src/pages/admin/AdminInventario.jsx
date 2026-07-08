@@ -88,7 +88,7 @@ export default function AdminInventario() {
   )
 
   return (
-    <main className="min-h-screen bg-cream-100">
+    <main data-page="inventario-v2" className="min-h-screen bg-cream-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
 
         <div className="mb-6">
