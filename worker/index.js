@@ -1604,6 +1604,75 @@ function formatCopCents(c) {
   return '$' + Math.round((c || 0) / 100).toLocaleString('es-CO') + ' COP'
 }
 
+// Correos del equipo que reciben el aviso de nuevo pedido pagado.
+// Configurable con ADMIN_NOTIFY_EMAIL (separados por coma); si no, usa estos.
+const ADMIN_NOTIFY_DEFAULT = ['intimaexclusivecol@gmail.com', 'juanfecolla@gmail.com']
+function adminNotifyEmails(env) {
+  if (env.ADMIN_NOTIFY_EMAIL) {
+    const list = env.ADMIN_NOTIFY_EMAIL.split(',').map((s) => s.trim()).filter(Boolean)
+    if (list.length) return list
+  }
+  return ADMIN_NOTIFY_DEFAULT
+}
+
+const METODO_PAGO_LABEL = {
+  CARD: 'Tarjeta', NEQUI: 'Nequi', PSE: 'PSE',
+  BANCOLOMBIA_TRANSFER: 'Bancolombia', BANCOLOMBIA_QR: 'Bancolombia QR',
+}
+
+// Aviso interno para el equipo cuando entra un pedido pagado.
+function ownerOrderNotifyText({ pedido, items }) {
+  const lineas = items.map((i) =>
+    `• ${i.nombre} — ${i.color}, talla ${i.talla} x${i.cantidad}`
+  ).join('\n')
+  const metodo = METODO_PAGO_LABEL[pedido.wompi_payment_method] || pedido.wompi_payment_method || '—'
+  return `NUEVO PEDIDO PAGADO
+
+Referencia: ${pedido.reference}
+Total: ${formatCopCents(pedido.total)}  (pago: ${metodo})
+
+Cliente: ${pedido.nombre}
+Teléfono: ${pedido.telefono}
+Ciudad: ${pedido.ciudad}${pedido.departamento ? ', ' + pedido.departamento : ''}
+Dirección: ${pedido.direccion}
+
+Productos:
+${lineas}
+${pedido.notas ? `\nNotas del cliente: ${pedido.notas}\n` : ''}
+Gestiónalo aquí: ${SITE_BASE}/admin/pedidos`
+}
+
+function ownerOrderNotifyHtml({ pedido, items }) {
+  const metodo = METODO_PAGO_LABEL[pedido.wompi_payment_method] || pedido.wompi_payment_method || '—'
+  const filas = items.map((i) => `
+    <tr>
+      <td style="padding:6px 0;border-bottom:1px solid #D9C4A8;font-family:Arial,sans-serif;color:#3A1A20;font-size:14px;">
+        ${i.nombre} <span style="color:#7A5A60;">— ${i.color}, talla ${i.talla}</span>
+      </td>
+      <td align="right" style="padding:6px 0;border-bottom:1px solid #D9C4A8;font-family:Arial,sans-serif;color:#3A1A20;font-size:14px;">x${i.cantidad}</td>
+    </tr>`).join('')
+  return `<!doctype html><html><body style="margin:0;background:#F5EDE0;padding:24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #D9C4A8;">
+    <tr><td style="background:#7B1A2E;padding:18px 24px;">
+      <p style="margin:0;font-family:Georgia,serif;color:#F5EDE0;font-size:18px;">🛍️ Nuevo pedido pagado</p>
+    </td></tr>
+    <tr><td style="padding:22px 24px;">
+      <p style="margin:0 0 4px;font-family:Arial,sans-serif;color:#7A5A60;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Total</p>
+      <p style="margin:0 0 18px;font-family:Georgia,serif;color:#7B1A2E;font-size:28px;font-weight:bold;">${formatCopCents(pedido.total)} <span style="font-size:13px;color:#7A5A60;font-weight:normal;">· ${metodo}</span></p>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">${filas}</table>
+
+      <p style="margin:0 0 2px;font-family:Arial,sans-serif;color:#3A1A20;font-size:14px;"><strong>${pedido.nombre}</strong> · ${pedido.telefono}</p>
+      <p style="margin:0 0 2px;font-family:Arial,sans-serif;color:#3A1A20;font-size:14px;">${pedido.direccion}</p>
+      <p style="margin:0 0 18px;font-family:Arial,sans-serif;color:#3A1A20;font-size:14px;">${pedido.ciudad}${pedido.departamento ? ', ' + pedido.departamento : ''}</p>
+      ${pedido.notas ? `<p style="margin:0 0 18px;font-family:Arial,sans-serif;color:#7A5A60;font-size:13px;font-style:italic;">Nota: ${pedido.notas}</p>` : ''}
+
+      <a href="${SITE_BASE}/admin/pedidos" style="display:inline-block;background:#7B1A2E;color:#F5EDE0;font-family:Arial,sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:1px;text-decoration:none;padding:12px 26px;">Gestionar pedido</a>
+      <p style="margin:16px 0 0;font-family:Arial,sans-serif;color:#9A8A80;font-size:11px;">Ref: ${pedido.reference}</p>
+    </td></tr>
+  </table></body></html>`
+}
+
 function orderConfirmationText({ pedido, items }) {
   const lineas = items.map((i, idx) =>
     `${idx + 1}. ${i.nombre} — ${i.color}, talla ${i.talla} x${i.cantidad} — ${formatCopCents(i.precio_unitario * i.cantidad)}`
@@ -2367,6 +2436,18 @@ async function handleWompiWebhook(request, env, cors, ctx) {
         headers: { 'X-Entity-Ref-ID': reference },
       }).catch((err) => console.error('Order confirmation email error:', err))
       if (ctx?.waitUntil) ctx.waitUntil(sendPromise)
+    }
+
+    // Aviso interno al equipo (fire-and-forget) para no depender del admin
+    if (pedidoCompleto) {
+      const notifyPromise = enviarEmail(env, {
+        to: adminNotifyEmails(env),
+        subject: `🛍️ Pedido pagado ${formatCopCents(pedidoCompleto.total)} — ${pedidoCompleto.nombre?.split(' ')[0] || ''}, ${pedidoCompleto.ciudad} · ${reference}`,
+        html: ownerOrderNotifyHtml({ pedido: pedidoCompleto, items }),
+        text: ownerOrderNotifyText({ pedido: pedidoCompleto, items }),
+        headers: { 'X-Entity-Ref-ID': `notify-${reference}` },
+      }).catch((err) => console.error('Owner order notify email error:', err))
+      if (ctx?.waitUntil) ctx.waitUntil(notifyPromise)
     }
   }
 
