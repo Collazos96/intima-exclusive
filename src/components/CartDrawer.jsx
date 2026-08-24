@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { Lock } from 'lucide-react'
+import { getConfig } from '../hooks/useApi'
 import { useCart, lineKey } from '../lib/cartStore'
 
 const formatPrecio = (p) => '$' + p.toLocaleString('es-CO')
@@ -8,6 +10,10 @@ const formatPrecio = (p) => '$' + p.toLocaleString('es-CO')
 export default function CartDrawer() {
   const nav = useNavigate()
   const { items, isOpen, close, updateCantidad, removeItem, clear, totalItems, totalPrecio } = useCart()
+
+  const { data: config } = useQuery({ queryKey: ['config'], queryFn: getConfig, staleTime: 5 * 60_000 })
+  const banner = config?.banner
+  const campaignMsg = banner?.activo && banner?.mensaje ? banner.mensaje : null
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') close() }
@@ -110,6 +116,11 @@ export default function CartDrawer() {
 
         {items.length > 0 && (
           <footer className="border-t border-gold-300 px-6 py-4 bg-cream-100">
+            {campaignMsg && (
+              <p className="text-center font-sans text-[0.68rem] tracking-wide text-wine-800 bg-cream-200 border border-gold-300 py-2 px-3 mb-3">
+                🎁 {campaignMsg}
+              </p>
+            )}
             <div className="flex items-center justify-between mb-4">
               <span className="font-sans text-[0.7rem] tracking-widest uppercase text-taupe-600">Total</span>
               <span className="font-serif text-xl text-wine-800">{formatPrecio(totalPrecio())}</span>

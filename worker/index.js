@@ -10,8 +10,11 @@ const API_BASE = 'https://api.intimaexclusive.com'
 const IMAGES_PUBLIC_BASE = 'https://images.intimaexclusive.com'
 
 // Envío (defaults, sobrescribibles por env vars ENVIO_GRATIS_DESDE y TARIFA_ENVIO)
-const DEFAULT_ENVIO_GRATIS_DESDE = 300_000_00 // 300.000 COP en centavos
-const DEFAULT_TARIFA_ENVIO = 15_000_00        // 15.000 COP en centavos
+// Estrategia actual: envío gratis para todos (umbral 0). El costo del envío
+// va incluido en el precio de cada producto. Para volver a cobrar envío,
+// sube ENVIO_GRATIS_DESDE en las env vars del worker.
+const DEFAULT_ENVIO_GRATIS_DESDE = 0          // 0 = envío gratis en todos los pedidos
+const DEFAULT_TARIFA_ENVIO = 15_000_00        // 15.000 COP en centavos (solo si el umbral > 0)
 
 function getEnvioConfig(env) {
   const umbral = env.ENVIO_GRATIS_DESDE != null && env.ENVIO_GRATIS_DESDE !== ''
@@ -21,6 +24,24 @@ function getEnvioConfig(env) {
     ? Number(env.TARIFA_ENVIO)
     : DEFAULT_TARIFA_ENVIO
   return { umbral, tarifa }
+}
+
+// ===== Banner de campaña (editable desde el admin) =====
+const BANNER_DEFAULT = { activo: true, mensaje: 'Envío GRATIS a todo Colombia por tiempo limitado' }
+const BANNER_MSG_MAX = 120
+
+async function getBanner(env) {
+  try {
+    const row = await env.DB.prepare('SELECT valor FROM settings WHERE clave = ?').bind('banner').first()
+    if (!row?.valor) return BANNER_DEFAULT
+    const parsed = JSON.parse(row.valor)
+    return {
+      activo: !!parsed.activo,
+      mensaje: typeof parsed.mensaje === 'string' ? parsed.mensaje.slice(0, BANNER_MSG_MAX) : BANNER_DEFAULT.mensaje,
+    }
+  } catch {
+    return BANNER_DEFAULT
+  }
 }
 
 const COOKIE_AUTH = 'intima_admin'       // httpOnly, contiene JWT
@@ -300,7 +321,7 @@ export default {
         return await handleVisita(request, env, cors, decodeURIComponent(visitaMatch[1]))
       }
 
-      // Config pública (incluye tarifas de envío)
+      // Config pública (incluye tarifas de envío y banner de campaña)
       if (method === 'GET' && path === '/api/config') {
         const { umbral, tarifa } = getEnvioConfig(env)
         return ok({
@@ -309,6 +330,7 @@ export default {
             gratis_desde: Math.round(umbral / 100),
             tarifa: Math.round(tarifa / 100),
           },
+          banner: await getBanner(env),
           wompi: {
             monto_minimo: 1500,
           },
@@ -380,6 +402,13 @@ export default {
 
         if (method === 'GET' && path === '/api/admin/me') {
           return ok({ ok: true }, cors)
+        }
+
+        if (method === 'GET' && path === '/api/admin/banner') {
+          return ok(await getBanner(env), cors)
+        }
+        if (method === 'PUT' && path === '/api/admin/banner') {
+          return await handleAdminActualizarBanner(request, env, cors)
         }
 
         if (method === 'GET' && path === '/api/admin/productos') {
@@ -2452,6 +2481,23 @@ async function handleWompiWebhook(request, env, cors, ctx) {
   }
 
   return ok({ ok: true }, cors)
+}
+
+// Admin: actualizar el banner de campaña (barra superior)
+async function handleAdminActualizarBanner(request, env, cors) {
+  const body = await safeJson(request)
+  if (!body || typeof body !== 'object') return bad('Body inválido', cors)
+  const mensaje = typeof body.mensaje === 'string' ? body.mensaje.trim() : ''
+  if (mensaje.length > BANNER_MSG_MAX) return bad(`El mensaje no puede superar ${BANNER_MSG_MAX} caracteres`, cors)
+  const activo = !!body.activo
+  if (activo && mensaje.length < 2) return bad('Escribe un mensaje para la campaña', cors)
+
+  const valor = JSON.stringify({ activo, mensaje })
+  await env.DB.prepare(
+    `INSERT INTO settings (clave, valor, actualizado_at) VALUES ('banner', ?, datetime('now'))
+     ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, actualizado_at = excluded.actualizado_at`
+  ).bind(valor).run()
+  return ok({ activo, mensaje }, cors)
 }
 
 // Admin: listar pedidos con filtros

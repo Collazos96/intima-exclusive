@@ -128,6 +128,13 @@ export const eliminarCupon = (codigo) => authFetch(`/api/admin/cupones/${codigo}
 
 export const getAnalytics = (rango = '30d') => authFetch(`/api/admin/analytics?rango=${rango}`)
 
+// Banner de campaña (barra superior)
+export const getBannerAdmin = () => authFetch('/api/admin/banner')
+export const actualizarBanner = (data) => authFetch('/api/admin/banner', {
+  method: 'PUT',
+  body: JSON.stringify(data),
+})
+
 export async function actualizarStock(colorId, talla, stock) {
   return authFetch(`/api/admin/stock/${colorId}/${talla}`, {
     method: 'PUT',

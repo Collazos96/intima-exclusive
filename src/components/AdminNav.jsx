@@ -7,6 +7,7 @@ const LINKS = [
   { to: '/admin/pedidos', label: 'Pedidos' },
   { to: '/admin/inventario', label: 'Inventario' },
   { to: '/admin/cupones', label: 'Cupones' },
+  { to: '/admin/config', label: 'Campaña' },
   { to: '/admin/reviews', label: 'Reseñas' },
   { to: '/admin/analytics', label: 'Analytics' },
   { to: '/admin/suscriptores', label: 'Suscriptores' },

@@ -29,6 +29,7 @@ const AdminLimpiezaR2 = lazy(() => import('./pages/admin/AdminLimpiezaR2'))
 const AdminPedidos = lazy(() => import('./pages/admin/AdminPedidos'))
 const AdminCupones = lazy(() => import('./pages/admin/AdminCupones'))
 const AdminSuscriptores = lazy(() => import('./pages/admin/AdminSuscriptores'))
+const AdminConfig = lazy(() => import('./pages/admin/AdminConfig'))
 const AdminNav = lazy(() => import('./components/AdminNav'))
 
 function AdminFallback() {
@@ -109,6 +110,7 @@ export default function App() {
                   <Route path="pedidos" element={<AdminPedidos />} />
                   <Route path="cupones" element={<AdminCupones />} />
                   <Route path="suscriptores" element={<AdminSuscriptores />} />
+                  <Route path="config" element={<AdminConfig />} />
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { ShoppingBag } from 'lucide-react'
 import { categorias } from '../data/productos'
+import { getConfig } from '../hooks/useApi'
 import { useCart } from '../lib/cartStore'
 import { useWishlist } from '../lib/wishlistStore'
 
@@ -10,6 +12,11 @@ export default function Navbar() {
   const cartCount = useCart((s) => s.totalItems())
   const favCount = useWishlist((s) => s.count())
   const [menuOpen, setMenuOpen] = useState(false)
+
+  // Mensaje de campaña editable desde el admin (barra superior)
+  const { data: config } = useQuery({ queryKey: ['config'], queryFn: getConfig, staleTime: 5 * 60_000 })
+  const banner = config?.banner
+  const campaignMsg = banner?.activo && banner?.mensaje ? banner.mensaje : null
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -29,11 +36,19 @@ export default function Navbar() {
         aria-label="Promociones"
         className="bg-wine-900 text-cream-50 font-sans text-[0.6rem] sm:text-[0.65rem] tracking-[2.5px] sm:tracking-[3px] uppercase text-center py-1.5 px-3"
       >
-        <span>Envío gratis desde $300.000</span>
-        <span aria-hidden="true" className="mx-2 sm:mx-3 text-gold-300">·</span>
-        <span>Cambios 30 días</span>
-        <span aria-hidden="true" className="hidden sm:inline mx-3 text-gold-300">·</span>
-        <span className="hidden sm:inline">Tallas S, M, L, XL</span>
+        {campaignMsg ? (
+          <>
+            <span>{campaignMsg}</span>
+            <span aria-hidden="true" className="mx-2 sm:mx-3 text-gold-300">·</span>
+            <span>Cambios 30 días</span>
+          </>
+        ) : (
+          <>
+            <span>Cambios 30 días</span>
+            <span aria-hidden="true" className="hidden sm:inline mx-3 text-gold-300">·</span>
+            <span className="hidden sm:inline">Tallas S, M, L, XL</span>
+          </>
+        )}
       </div>
       <div className="flex items-center justify-between gap-2 px-4 sm:px-10 py-4">
         <Link
