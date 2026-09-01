@@ -1,5 +1,6 @@
 import { toast } from 'sonner'
 import { useWishlist } from '../lib/wishlistStore'
+import { trackPixel } from '../lib/metaPixel'
 
 /**
  * Botón corazón para añadir/quitar de favoritos.
@@ -21,6 +22,17 @@ export default function WishlistButton({ producto, variant = 'compact', onToggle
       imagen: producto.imagenes?.[0] || producto.imagen,
       categoria: producto.categoria_id,
     })
+    // Meta Pixel: AddToWishlist solo al AÑADIR (no al quitar).
+    if (agregado) {
+      trackPixel('AddToWishlist', {
+        content_ids: [producto.id],
+        content_name: producto.nombre,
+        content_type: 'product',
+        content_category: producto.categoria_id,
+        value: producto.precio_oferta ?? producto.precio,
+        currency: 'COP',
+      })
+    }
     toast.success(agregado ? 'Añadido a favoritos' : 'Quitado de favoritos')
     onToggle?.(agregado)
   }
