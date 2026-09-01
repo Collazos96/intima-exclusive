@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { getProducto, getReviews, registrarVisita } from '../hooks/useApi'
 import { qk } from '../lib/queryClient'
 import { useCart } from '../lib/cartStore'
+import { trackPixel } from '../lib/metaPixel'
 import GuiaTallasModal from '../components/GuiaTallasModal'
 import Seo from '../components/Seo'
 import Img from '../components/Img'
@@ -47,6 +48,19 @@ export default function Producto() {
   useEffect(() => {
     if (id && prod) registrarVisita(id)
   }, [id, prod])
+
+  // Meta Pixel: ViewContent al cargar el producto
+  useEffect(() => {
+    if (!prod) return
+    trackPixel('ViewContent', {
+      content_ids: [prod.id],
+      content_name: prod.nombre,
+      content_type: 'product',
+      content_category: prod.categoria_id,
+      value: prod.precio_oferta ?? prod.precio,
+      currency: 'COP',
+    })
+  }, [prod])
 
   // Auto-selección durante el render (patrón "adjust state during render",
   // evita el cascadeo de setState dentro de useEffect).
@@ -122,6 +136,14 @@ export default function Producto() {
       // Distingue líneas de combo vs unidad suelta para no fusionar precios distintos
       paquete: paqueteSel?.cantidad ?? 1,
       imagen: prod.imagenes[0],
+    })
+    trackPixel('AddToCart', {
+      content_ids: [prod.id],
+      content_name: prod.nombre,
+      content_type: 'product',
+      contents: [{ id: prod.id, quantity: cantidad }],
+      value: precio * cantidad,
+      currency: 'COP',
     })
     toast.success('Añadido a tu selección', {
       action: { label: 'Ver selección', onClick: () => openCart() },

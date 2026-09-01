@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 import CartDrawer from './components/CartDrawer'
 import ScrollToTop from './components/ScrollToTop'
+import MetaPixel from './components/MetaPixel'
 import Home from './pages/Home'
 import Categoria from './pages/Categoria'
 import Producto from './pages/Producto'
@@ -121,6 +122,7 @@ export default function App() {
           path="/*"
           element={
             <>
+              <MetaPixel />
               <a href="#main" className="skip-link">Saltar al contenido principal</a>
               <Navbar />
               <CartDrawer />

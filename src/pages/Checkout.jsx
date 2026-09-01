@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
 import { Lock } from 'lucide-react'
 import { useCart } from '../lib/cartStore'
+import { trackPixel } from '../lib/metaPixel'
 import { crearPedido, getConfig, validarCuponApi } from '../hooks/useApi'
 import Seo from '../components/Seo'
 import Img from '../components/Img'
@@ -80,6 +81,21 @@ export default function Checkout() {
   const envio = items.length === 0 ? 0
     : subtotalConDescuento >= ENVIO_GRATIS_DESDE ? 0 : TARIFA_ENVIO
   const total = subtotalConDescuento + envio
+
+  // Meta Pixel: InitiateCheckout una vez al montar el checkout con items.
+  useEffect(() => {
+    if (items.length === 0) return
+    trackPixel('InitiateCheckout', {
+      content_ids: items.map((i) => i.productoId),
+      contents: items.map((i) => ({ id: i.productoId, quantity: i.cantidad })),
+      content_type: 'product',
+      num_items: items.reduce((s, i) => s + i.cantidad, 0),
+      value: subtotal,
+      currency: 'COP',
+    })
+    // Solo al montar: no queremos re-disparar en cada cambio del carrito/cupón.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function aplicarCupon() {
     setCuponError('')

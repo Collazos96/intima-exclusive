@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Clock, CheckCircle2, XCircle, Ban, AlertTriangle } from 'lucide-react'
 import { getPedido } from '../hooks/useApi'
+import { trackPixel } from '../lib/metaPixel'
 import Seo from '../components/Seo'
 
 const formatPrecio = (cop) => '$' + cop.toLocaleString('es-CO')
@@ -29,6 +31,32 @@ export default function PedidoEstado() {
   const meta = data ? (STATUS_META[data.status] || STATUS_META.PENDING) : null
   // Centavos -> COP
   const toCop = (c) => Math.round((c || 0) / 100)
+
+  // Meta Pixel: Purchase cuando el pago quedó APPROVED. Se dispara una sola vez
+  // por referencia (guard en localStorage) para no contar doble por el refetch
+  // del polling, recargas de la página o volver atrás.
+  useEffect(() => {
+    if (data?.status !== 'APPROVED') return
+    const key = `fb_purchase_${data.reference}`
+    try {
+      if (localStorage.getItem(key)) return
+      localStorage.setItem(key, '1')
+    } catch {
+      // localStorage bloqueado (modo incógnito estricto): seguimos y asumimos
+      // el pequeño riesgo de doble evento antes que perder la conversión.
+    }
+    trackPixel('Purchase', {
+      content_ids: data.items?.map((i) => i.producto_id) ?? [],
+      contents: data.items?.map((i) => ({ id: i.producto_id, quantity: i.cantidad })) ?? [],
+      content_type: 'product',
+      num_items: data.items?.reduce((s, i) => s + i.cantidad, 0) ?? 0,
+      value: toCop(data.total),
+      currency: 'COP',
+    })
+    // Depende solo de status+reference: los items/total llegan juntos en el
+    // mismo objeto data, así que no hace falta re-ejecutar por ellos.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.status, data?.reference])
 
   return (
     <main id="main" className="pt-[98px] min-h-screen bg-cream-50">
