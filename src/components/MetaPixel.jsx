@@ -1,23 +1,20 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { initMetaPixel, pixelPageView } from '../lib/metaPixel'
+import { pixelPageView } from '../lib/metaPixel'
 
 /**
- * Monta el Meta Pixel para el sitio público. Se coloca dentro de la rama de
- * rutas públicas de App, por lo que NUNCA se monta en /admin (no queremos
- * rastrear el tráfico interno del panel).
+ * PageView del Meta Pixel en cada navegación SPA del sitio público.
  *
- * - Al montar: inyecta el script base y dispara el primer PageView.
- * - En cada cambio de ruta SPA: dispara un PageView adicional.
- *   El render inicial se salta porque ese PageView ya lo emitió initMetaPixel().
+ * El código base del pixel (init + primer PageView) vive en index.html <head>,
+ * así que aquí NO inicializamos nada: solo emitimos un PageView adicional cuando
+ * cambia la ruta. Se salta el render inicial porque ese primer PageView ya lo
+ * disparó el código base al cargar el HTML.
+ *
+ * Se monta solo en la rama pública de App, nunca en /admin.
  */
 export default function MetaPixel() {
   const { pathname } = useLocation()
   const primerRender = useRef(true)
-
-  useEffect(() => {
-    initMetaPixel()
-  }, [])
 
   useEffect(() => {
     if (primerRender.current) {

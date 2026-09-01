@@ -13,6 +13,23 @@
     <!-- Facebook / Meta domain verification (Business Manager) -->
     <meta name="facebook-domain-verification" content="evlb243pm2jvg6sshi04vudk1hgadn" />
 
+    <!-- Meta Pixel Code (código base en el HTML para que las herramientas de
+         Meta lo detecten y cargue lo antes posible). Los eventos de conversión
+         se disparan aparte desde React (src/lib/metaPixel.js). -->
+    <script>
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+      document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '2309058572967283');
+      // No rastreamos el panel de administración.
+      if (!location.pathname.startsWith('/admin')) fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=2309058572967283&ev=PageView&noscript=1" alt="" /></noscript>
+    <!-- End Meta Pixel Code -->
+
     <link rel="icon" type="image/png" href="https://images.intimaexclusive.com/logo-intima.png" />
     <link rel="apple-touch-icon" href="https://images.intimaexclusive.com/logo-intima.png" />
 
