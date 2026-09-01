@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
 import { Lock } from 'lucide-react'
 import { useCart } from '../lib/cartStore'
-import { trackPixel } from '../lib/metaPixel'
+import { trackPixel, aggregateContents } from '../lib/metaPixel'
 import { crearPedido, getConfig, validarCuponApi } from '../hooks/useApi'
 import Seo from '../components/Seo'
 import Img from '../components/Img'
@@ -85,11 +85,12 @@ export default function Checkout() {
   // Meta Pixel: InitiateCheckout una vez al montar el checkout con items.
   useEffect(() => {
     if (items.length === 0) return
+    const { content_ids, contents, num_items } = aggregateContents(items, { idKey: 'productoId' })
     trackPixel('InitiateCheckout', {
-      content_ids: items.map((i) => i.productoId),
-      contents: items.map((i) => ({ id: i.productoId, quantity: i.cantidad })),
+      content_ids,
+      contents,
       content_type: 'product',
-      num_items: items.reduce((s, i) => s + i.cantidad, 0),
+      num_items,
       value: subtotal,
       currency: 'COP',
     })

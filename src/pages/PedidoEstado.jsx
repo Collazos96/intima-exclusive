@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Clock, CheckCircle2, XCircle, Ban, AlertTriangle } from 'lucide-react'
 import { getPedido } from '../hooks/useApi'
-import { trackPixel } from '../lib/metaPixel'
+import { trackPixel, aggregateContents } from '../lib/metaPixel'
 import Seo from '../components/Seo'
 
 const formatPrecio = (cop) => '$' + cop.toLocaleString('es-CO')
@@ -45,11 +45,12 @@ export default function PedidoEstado() {
       // localStorage bloqueado (modo incógnito estricto): seguimos y asumimos
       // el pequeño riesgo de doble evento antes que perder la conversión.
     }
+    const { content_ids, contents, num_items } = aggregateContents(data.items, { idKey: 'producto_id' })
     trackPixel('Purchase', {
-      content_ids: data.items?.map((i) => i.producto_id) ?? [],
-      contents: data.items?.map((i) => ({ id: i.producto_id, quantity: i.cantidad })) ?? [],
+      content_ids,
+      contents,
       content_type: 'product',
-      num_items: data.items?.reduce((s, i) => s + i.cantidad, 0) ?? 0,
+      num_items,
       value: toCop(data.total),
       currency: 'COP',
     })
