@@ -1,10 +1,31 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Fragment } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
 import { getAdminProductos, getAdminPedidos, eliminarProducto, isAuthenticated } from '../../hooks/useAdmin'
 
 const fmt = (p) => '$' + p.toLocaleString('es-CO')
+
+// Orden de categorías para el listado del admin, según el orden en que están
+// lanzadas en la tienda. Las categorías que NO estén aquí se muestran al final,
+// alfabéticamente. Para cambiar el orden, edita solo este array.
+const ORDEN_CATEGORIAS = [
+  'corsets',     // Corsets
+  'croptops',    // Croptops
+  'bodys',       // Bodys
+  'sets',        // Sets
+  'lenceria',    // Básicos / Lencería
+  'babydolls',   // Baby Dolls
+  'tangas',      // Tangas
+  'pijamas',     // Pijamas
+  'accesorios',  // Accesorios
+  'promociones', // Promociones / Últimas unidades
+]
+// Índice de una categoría en el orden (las no listadas van al final).
+const ordenCat = (id) => {
+  const i = ORDEN_CATEGORIAS.indexOf(id)
+  return i === -1 ? ORDEN_CATEGORIAS.length : i
+}
 
 // Stock total de un producto sumando todas sus tallas
 function stockTotal(p) {
@@ -87,13 +108,14 @@ export default function AdminPanel() {
   const agotados = useMemo(() => productos.filter((p) => stockTotal(p) === 0), [productos])
   const enOferta = useMemo(() => productos.filter((p) => p.precio_oferta != null), [productos])
 
-  // Categorías presentes (para el select de filtro)
+  // Categorías presentes (para el select de filtro), en el orden definido.
   const categoriasDisponibles = useMemo(
-    () => Array.from(new Set(productos.map((p) => p.categoria_id))).sort(),
+    () => Array.from(new Set(productos.map((p) => p.categoria_id)))
+      .sort((a, b) => ordenCat(a) - ordenCat(b) || a.localeCompare(b)),
     [productos]
   )
 
-  // ===== Tabla filtrada =====
+  // ===== Tabla filtrada + ordenada por categoría =====
   const filtrados = useMemo(() => {
     let out = productos
     const q = busqueda.trim().toLowerCase()
@@ -101,7 +123,14 @@ export default function AdminPanel() {
     if (catFiltro) out = out.filter((p) => p.categoria_id === catFiltro)
     if (vistaFiltro === 'agotados') out = out.filter((p) => stockTotal(p) === 0)
     if (vistaFiltro === 'oferta') out = out.filter((p) => p.precio_oferta != null)
-    return out
+    // Agrupa por categoría (en el orden definido) y, dentro, alfabético por nombre.
+    return [...out].sort((a, b) => {
+      const d = ordenCat(a.categoria_id) - ordenCat(b.categoria_id)
+      if (d !== 0) return d
+      const c = a.categoria_id.localeCompare(b.categoria_id)
+      if (c !== 0) return c
+      return a.nombre.localeCompare(b.nombre)
+    })
   }, [productos, busqueda, catFiltro, vistaFiltro])
 
   if (loading) return (
@@ -207,10 +236,20 @@ export default function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtrados.map(p => {
+                  {filtrados.map((p, i) => {
                     const stock = stockTotal(p)
+                    // Encabezado de grupo cuando cambia la categoría respecto a la fila anterior.
+                    const nuevaCategoria = i === 0 || filtrados[i - 1].categoria_id !== p.categoria_id
                     return (
-                      <tr key={p.id} className="border-b border-cream-200 hover:bg-cream-100 transition-colors">
+                      <Fragment key={p.id}>
+                      {nuevaCategoria && (
+                        <tr className="bg-cream-200/70">
+                          <td colSpan={7} className="px-4 py-2 border-y border-gold-300 font-sans text-[0.64rem] font-bold tracking-widest uppercase text-wine-700 capitalize">
+                            {p.categoria_id}
+                          </td>
+                        </tr>
+                      )}
+                      <tr className="border-b border-cream-200 hover:bg-cream-100 transition-colors">
                         <td className="px-4 py-3">
                           {p.imagenes && p.imagenes.length > 0 ? (
                             <img src={p.imagenes[0].url} alt={p.nombre} className="w-14 h-14 object-cover border border-gold-300"/>
@@ -268,6 +307,7 @@ export default function AdminPanel() {
                           </div>
                         </td>
                       </tr>
+                      </Fragment>
                     )
                   })}
                 </tbody>
