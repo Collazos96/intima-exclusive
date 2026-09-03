@@ -7,7 +7,7 @@ export const categorias = [
   { id: 'babydolls', nombre: 'Baby Dolls', sub: 'Romanticismo y delicadeza' },
   { id: 'tangas', nombre: 'Tangas', sub: 'Sensualidad y comodidad' },
   { id: 'accesorios', nombre: 'Accesorios', sub: 'El toque final' },
-  { id: 'pijamas', nombre: 'Pijamas', sub: 'Suavidad para descansar' },
+  { id: 'pijamas', nombre: 'Levantadoras', sub: 'Realza tu figura' },
   { id: 'promociones', nombre: 'Promociones', sub: 'Ofertas exclusivas' },
 ]
 

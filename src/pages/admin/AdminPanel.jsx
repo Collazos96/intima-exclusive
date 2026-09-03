@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
 import { getAdminProductos, getAdminPedidos, eliminarProducto, isAuthenticated } from '../../hooks/useAdmin'
+import { categorias as CATS } from '../../data/productos'
+
+// Mapa id de categoría -> nombre visible (para mostrar el nombre en vez del id).
+const CAT_NOMBRE = Object.fromEntries(CATS.map((c) => [c.id, c.nombre]))
+const nombreCat = (id) => CAT_NOMBRE[id] || id
 
 const fmt = (p) => '$' + p.toLocaleString('es-CO')
 
@@ -17,7 +22,7 @@ const ORDEN_CATEGORIAS = [
   'lenceria',    // Básicos / Lencería
   'babydolls',   // Baby Dolls
   'tangas',      // Tangas
-  'pijamas',     // Pijamas
+  'pijamas',     // Levantadoras (id 'pijamas')
   'accesorios',  // Accesorios
   'promociones', // Promociones / Últimas unidades
 ]
@@ -208,7 +213,7 @@ export default function AdminPanel() {
               className="border border-gold-300 px-3 py-2 font-sans text-[0.78rem] text-wine-900 outline-none focus:border-wine-600 bg-white capitalize">
               <option value="">Todas las categorías</option>
               {categoriasDisponibles.map((c) => (
-                <option key={c} value={c} className="capitalize">{c}</option>
+                <option key={c} value={c} className="capitalize">{nombreCat(c)}</option>
               ))}
             </select>
             {(busqueda || catFiltro || vistaFiltro) && (
@@ -245,7 +250,7 @@ export default function AdminPanel() {
                       {nuevaCategoria && (
                         <tr className="bg-cream-200/70">
                           <td colSpan={7} className="px-4 py-2 border-y border-gold-300 font-sans text-[0.64rem] font-bold tracking-widest uppercase text-wine-700 capitalize">
-                            {p.categoria_id}
+                            {nombreCat(p.categoria_id)}
                           </td>
                         </tr>
                       )}
@@ -264,7 +269,7 @@ export default function AdminPanel() {
                           <p className="font-sans text-[0.62rem] text-taupe-400 mt-0.5">{p.id}</p>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600">{p.categoria_id}</span>
+                          <span className="font-sans text-[0.65rem] tracking-widest uppercase text-taupe-600">{nombreCat(p.categoria_id)}</span>
                         </td>
                         <td className="px-4 py-3">
                           {p.precio_oferta != null ? (
